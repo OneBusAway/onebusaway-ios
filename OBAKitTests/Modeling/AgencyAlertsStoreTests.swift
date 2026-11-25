@@ -459,4 +459,79 @@ final class AgencyAlertsStoreTests: OBATestCase {
         #expect(store.agencyAlerts.count == 1)
         #expect(store.agencyAlerts.first?.id == alertID)
     }
+
+    // MARK: - Active Period Filtering & Sorting
+
+    private func makeHighSeverityAlert(
+        id: String,
+        periods: [(start: TimeInterval, end: TimeInterval?)]
+    ) throws -> AgencyAlert {
+        var selector = TransitRealtime_EntitySelector()
+        selector.agencyID = ""
+
+        var transitAlert = TransitRealtime_Alert()
+        transitAlert.severityLevel = .warning
+        transitAlert.informedEntity = [selector]
+        transitAlert.activePeriod = periods.map { entry in
+            var range = TransitRealtime_TimeRange()
+            range.start = UInt64(entry.start)
+            if let end = entry.end {
+                range.end = UInt64(end)
+            }
+            return range
+        }
+
+        var entity = TransitRealtime_FeedEntity()
+        entity.id = id
+        entity.alert = transitAlert
+        return try AgencyAlert(feedEntity: entity, agency: nil)
+    }
+
+    @Test @MainActor
+    func `Recent high severity alerts excludes expired and future alerts`() throws {
+        let now = floor(Date().timeIntervalSince1970)
+
+        let expired = try makeHighSeverityAlert(id: "expired", periods: [(now - 7200, now - 3600)])
+        let upcoming = try makeHighSeverityAlert(id: "upcoming", periods: [(now + 3600, now + 14400)])
+        let corrupt = try makeHighSeverityAlert(id: "corrupt", periods: [(now + 3600, now - 3600)])
+        let active = try makeHighSeverityAlert(id: "active", periods: [(now - 1800, now + 3600)])
+        let openEndedZero = try makeHighSeverityAlert(id: "open-zero", periods: [(now - 1800, 0)])
+
+        store.insertAlerts([expired, upcoming, corrupt, active, openEndedZero])
+
+        #expect(Set(store.recentHighSeverityAlerts.map(\.id)) == ["active", "open-zero"])
+    }
+
+    @Test @MainActor
+    func `Recent high severity alerts includes multi period alert active now`() throws {
+        let now = floor(Date().timeIntervalSince1970)
+
+        let multiPeriod = try makeHighSeverityAlert(
+            id: "multi-period-active",
+            periods: [
+                (now - 259_200, now - 255_600), // expired 3 days ago
+                (now - 1800, now + 3600)        // active right now
+            ]
+        )
+        store.insertAlerts([multiPeriod])
+
+        #expect(store.recentHighSeverityAlerts.map(\.id) == ["multi-period-active"])
+    }
+
+    @Test @MainActor
+    func `Agency alerts sorts multi period alert by active period start date`() throws {
+        let now = floor(Date().timeIntervalSince1970)
+
+        let olderSingle = try makeHighSeverityAlert(id: "older-single", periods: [(now - 3600, now + 7200)])
+        let newerActiveMulti = try makeHighSeverityAlert(
+            id: "newer-active-multi",
+            periods: [
+                (now - 259_200, now - 255_600), // expired 3 days ago
+                (now - 600, now + 7200)         // active window started 10 min ago
+            ]
+        )
+        store.insertAlerts([olderSingle, newerActiveMulti])
+
+        #expect(store.agencyAlerts.map(\.id) == ["newer-active-multi", "older-single"])
+    }
 }

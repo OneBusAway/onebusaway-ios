@@ -272,7 +272,7 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
             highlightedTripIDs: highlighted,
             hasLoadedArrivalData: dataLoader.hasFetchedData(forStopID: bookmark.stopID),
             savedArrivalsDate: dataLoader.savedArrivalsDate(forStopID: bookmark.stopID),
-            scheduledDepartures: TripBookmarkKey(bookmark: bookmark).map { dataLoader.scheduledDepartures(for: $0) } ?? [],
+            scheduledDepartures: TripBookmarkKey(bookmark: bookmark).map { dataLoader.scheduledDepartures(for: $0, destinationStopID: bookmark.hasDestination ? bookmark.destinationStopID : nil) } ?? [],
             destinationLookup: destinationLookup(for: bookmark)
         )
     }

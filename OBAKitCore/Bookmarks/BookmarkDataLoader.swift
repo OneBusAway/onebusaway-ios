@@ -80,11 +80,50 @@ public class BookmarkDataLoader: NSObject {
     /// with `savedArrivalDates`.
     @MainActor private var scheduledDeparturesByStop = [StopID: [ScheduledDeparture]]()
 
+    /// The timetable's headsigns for each offline stop's bookmarks, from
+    /// `SavedArrivalsFallback.timetableHeadsigns`. Kept with
+    /// `scheduledDeparturesByStop`.
+    @MainActor private var timetableHeadsignsByStop = [StopID: [TripBookmarkKey: Set<String>]]()
+
+    /// When each trip reaches a destination stop, from the destination's saved
+    /// timetable, for the destination bookmarks whose stops are offline. Keyed
+    /// by the bookmark's stop, then the destination, since each stop's saved
+    /// timetable can be for a different day.
+    @MainActor private var destinationArrivalTimesByStop = [StopID: [StopID: [TripIdentifier: Date]]]()
+
     /// The timetable departures for `key` that haven't left, while its stop
     /// is offline and a timetable was saved; empty otherwise. For a bookmark
     /// whose saved real-time departures have run out.
-    @MainActor public func scheduledDepartures(for key: TripBookmarkKey) -> [ScheduledDeparture] {
-        (scheduledDeparturesByStop[key.stopID] ?? []).filter { $0.matches(key) && $0.minutes >= 0 }
+    ///
+    /// With `destinationStopID`, a departure only counts when the
+    /// destination's saved timetable has its trip reaching the destination
+    /// after it, so a short turn with the same headsign is left out. Without
+    /// a saved timetable for the destination on the same day, the route and
+    /// headsign decide.
+    @MainActor public func scheduledDepartures(for key: TripBookmarkKey, destinationStopID: StopID? = nil) -> [ScheduledDeparture] {
+        let arrivalTimes = destinationStopID.flatMap { destinationArrivalTimesByStop[key.stopID]?[$0] }
+        let timetableHeadsigns = timetableHeadsignsByStop[key.stopID]?[key] ?? []
+        return (scheduledDeparturesByStop[key.stopID] ?? []).filter { departure in
+            guard departure.matches(key, timetableHeadsigns: timetableHeadsigns), departure.minutes >= 0 else { return false }
+            guard let arrivalTimes else { return true }
+            return arrivalTimes[departure.tripID].map { $0 > departure.date } ?? false
+        }
+    }
+
+    /// The saved arrival times at each destination, from timetables for
+    /// `serviceDate`, the day of the bookmark stop's own saved timetable.
+    private func savedDestinationArrivalTimes(
+        for destinations: [BookmarkDestination],
+        serviceDate: Date?,
+        using apiService: RESTAPIService
+    ) -> [StopID: [TripIdentifier: Date]] {
+        guard let serviceDate else { return [:] }
+        let arrivalsLoader = BookmarkArrivalsLoader(savedArrivals: savedArrivals)
+        var arrivalTimes = [StopID: [TripIdentifier: Date]]()
+        for destination in destinations {
+            arrivalTimes[destination.stopID] = arrivalsLoader.savedArrivalTimes(stopID: destination.stopID, serviceDate: serviceDate, using: apiService)
+        }
+        return arrivalTimes
     }
 
     /// Where each stop's latest arrivals are saved for offline use; `nil` to
@@ -294,6 +333,7 @@ public class BookmarkDataLoader: NSObject {
             tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
             savedArrivalDates[stopID] = nil
             scheduledDeparturesByStop[stopID] = nil
+            timetableHeadsignsByStop[stopID] = nil
             for (key, deps) in arrivals.tripKeyGroupedElements {
                 tripBookmarkKeys[key] = deps
             }
@@ -307,6 +347,16 @@ public class BookmarkDataLoader: NSObject {
                 Task { @MainActor [weak self] in
                     await self?.loadTripSchedules(for: destinations, using: apiService, batchID: batchID)
                 }
+
+                // The destinations' timetables, saved for offline use, tell
+                // which trips reach them.
+                let arrivalsLoader = BookmarkArrivalsLoader(savedArrivals: savedArrivals)
+                let destinationStopIDs = Set(destinations.map(\.stopID))
+                Task {
+                    for destinationStopID in destinationStopIDs {
+                        await arrivalsLoader.saveTodaysScheduleIfNeeded(stopID: destinationStopID, using: apiService)
+                    }
+                }
             }
 
         case .failure(let error as APIError) where error.indicatesMissingStop:
@@ -316,6 +366,7 @@ public class BookmarkDataLoader: NSObject {
             fetchedStopIDs.insert(stopID)
             savedArrivalDates[stopID] = nil
             scheduledDeparturesByStop[stopID] = nil
+            timetableHeadsignsByStop[stopID] = nil
             tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
             delegate?.dataLoaderDidUpdate(self)
 
@@ -332,6 +383,8 @@ public class BookmarkDataLoader: NSObject {
             lastBatchHadError = true
             savedArrivalDates[stopID] = fallback.savedAt
             scheduledDeparturesByStop[stopID] = fallback.scheduledDepartures
+            timetableHeadsignsByStop[stopID] = fallback.timetableHeadsigns
+            destinationArrivalTimesByStop[stopID] = savedDestinationArrivalTimes(for: destinations, serviceDate: fallback.scheduleDate, using: apiService)
             tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
             for (key, deps) in fallback.arrivals.tripKeyGroupedElements {
                 tripBookmarkKeys[key] = deps

@@ -14,19 +14,26 @@ import Testing
 
 @Suite struct ThemeColorsTests {
 
-    /// The split must not move a single iOS color.
+    /// The split must not move a single iOS color in normal contrast mode.
     @Test func `iOS colors are unchanged by the palette split`() {
         let colors = ThemeColors()
+        let normalLight = UITraitCollection { $0.userInterfaceStyle = .light; $0.accessibilityContrast = .normal }
+        let normalDark = UITraitCollection { $0.userInterfaceStyle = .dark; $0.accessibilityContrast = .normal }
 
-        #expect(colors.departureEarly == .systemRed)
-        #expect(colors.departureEarlyBackground == .systemRed)
-        #expect(colors.departureLate == .systemBlue)
-        #expect(colors.departureLateBackground == .systemBlue)
+        for traits in [normalLight, normalDark] {
+            #expect(colors.departureEarly.resolvedColor(with: traits) == UIColor.systemRed.resolvedColor(with: traits))
+            #expect(colors.departureEarlyBackground.resolvedColor(with: traits) == UIColor.systemRed.resolvedColor(with: traits))
+            #expect(colors.departureLate.resolvedColor(with: traits) == UIColor.systemBlue.resolvedColor(with: traits))
+            #expect(colors.departureLateBackground.resolvedColor(with: traits) == UIColor.systemBlue.resolvedColor(with: traits))
+            #expect(colors.blue.resolvedColor(with: traits) == UIColor.systemBlue.resolvedColor(with: traits))
+            #expect(colors.stopArrowFillColor.resolvedColor(with: traits) == UIColor.systemRed.resolvedColor(with: traits))
+            #expect(colors.errorColor.resolvedColor(with: traits) == UIColor.systemRed.resolvedColor(with: traits))
+        }
+
         #expect(colors.departureUnknown == .label)
         #expect(colors.departureUnknownBackground == .systemGray)
         #expect(colors.gray == .systemGray)
         #expect(colors.green == .systemGreen)
-        #expect(colors.blue == .systemBlue)
         #expect(colors.groupedTableBackground == .systemGroupedBackground)
         #expect(colors.groupedTableRowBackground == .white)
         #expect(colors.systemBackground == .systemBackground)
@@ -38,10 +45,8 @@ import Testing
         #expect(colors.propertyChanged == .systemYellow)
         #expect(colors.stopAnnotationFillColor == .systemGray6)
         #expect(colors.stopAnnotationStrokeColor == .darkGray)
-        #expect(colors.stopArrowFillColor == .systemRed)
         #expect(colors.systemFill == .systemFill)
         #expect(colors.lightText == .white)
-        #expect(colors.errorColor == .systemRed)
     }
 
     @Test func `On time color is dark green in light mode and system green in dark mode`() {
@@ -80,20 +85,22 @@ import Testing
     }
 
     @Test func `The trait collection initializer still exists on iOS`() {
-        let colors = ThemeColors(bundle: .main, traitCollection: UITraitCollection(userInterfaceStyle: .dark))
-        #expect(colors.departureEarly == .systemRed)
+        let darkNormal = UITraitCollection { $0.userInterfaceStyle = .dark; $0.accessibilityContrast = .normal }
+        let colors = ThemeColors(bundle: .main, traitCollection: darkNormal)
+        #expect(colors.departureEarly.resolvedColor(with: darkNormal) == UIColor.systemRed.resolvedColor(with: darkNormal))
     }
 
     /// The eyebrow, "N more" link and planner links set the accent on the
     /// card's background, and the Call to Book pill sets white text on it.
-    @Test func `Brand accent keeps 4.5 to 1 on the card and under white text in both styles`() {
+    @Test(arguments: [UIAccessibilityContrast.normal, .high])
+    func `Brand accent keeps 4.5 to 1 on the card and under white text in both styles`(contrast: UIAccessibilityContrast) {
         let accent = ThemeColors().brandAccent
         for style in [UIUserInterfaceStyle.light, .dark] {
-            let traits = UITraitCollection(userInterfaceStyle: style)
+            let traits = UITraitCollection { $0.userInterfaceStyle = style; $0.accessibilityContrast = contrast }
             let resolved = accent.resolvedColor(with: traits)
             let card = UIColor.systemBackground.resolvedColor(with: traits)
-            #expect(resolved.wcagContrastRatio(against: card) >= 4.5, "accent on the \(style == .dark ? "dark" : "light") card")
-            #expect(UIColor.white.wcagContrastRatio(against: resolved) >= 4.5, "white pill text in \(style == .dark ? "dark" : "light") mode")
+            #expect(resolved.wcagContrastRatio(against: card) >= 4.5, "accent on the \(style == .dark ? "dark" : "light") card (contrast: \(contrast.rawValue))")
+            #expect(UIColor.white.wcagContrastRatio(against: resolved) >= 4.5, "white pill text in \(style == .dark ? "dark" : "light") mode (contrast: \(contrast.rawValue))")
         }
         let light = accent.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
         #expect(light == UIColor(red: 0x48 / 255.0, green: 0x66 / 255.0, blue: 0x21 / 255.0, alpha: 1.0), "light mode keeps #486621")
@@ -104,9 +111,11 @@ import Testing
     @Test(arguments: [UIUserInterfaceStyle.light, .dark])
     func `More header text clears AA on the brand accent`(style: UIUserInterfaceStyle) {
         let colors = ThemeColors()
-        let traits = UITraitCollection(userInterfaceStyle: style)
-        let background = colors.brandAccent.resolvedColor(with: traits)
-        #expect(colors.lightText.resolvedColor(with: traits).wcagContrastRatio(against: background) >= 4.5)
+        for contrast in [UIAccessibilityContrast.normal, .high] {
+            let traits = UITraitCollection { $0.userInterfaceStyle = style; $0.accessibilityContrast = contrast }
+            let background = colors.brandAccent.resolvedColor(with: traits)
+            #expect(colors.lightText.resolvedColor(with: traits).wcagContrastRatio(against: background) >= 4.5)
+        }
     }
 
     /// The host app's `AccentColor` asset is the SwiftUI accent: tinted text

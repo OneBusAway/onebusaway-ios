@@ -512,4 +512,36 @@ final class LocationServiceTests {
 
         #expect(service.isLocationUseAuthorized)
     }
+
+    // MARK: - Stream Cancellation And One-Shot Waiters
+
+    @Test func `Pending one-shot request resolves after location stream is cancelled`() async throws {
+        let mock = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        mock.deliversOneShotSynchronously = false
+        let service = LocationService(userDefaults: freshDefaults(), locationManager: mock, startsUpdatesOnAuthorization: false)
+
+        let stream = service.locationStream()
+        let streamTask = Task { @MainActor in
+            for await _ in stream {}
+        }
+        await poll(until: { service.locationStreamSubscriberCount == 1 }, "stream subscriber did not register")
+        #expect(mock.updatingLocation)
+        #expect(service.isUpdatingLocation)
+
+        async let oneShotTask = service.requestLocation(desiredAccuracy: kCLLocationAccuracyHundredMeters)
+        await poll(until: { service.pendingOneShotRequests.count == 1 }, "one-shot request was not registered")
+
+        streamTask.cancel()
+        await poll(until: { service.locationStreamSubscriberCount == 0 }, "stream subscriber did not cancel")
+
+        #expect(service.isUpdatingLocation)
+        #expect(service.pendingOneShotRequests.count == 1)
+
+        mock.deliverPendingOneShot()
+        let fix = try await oneShotTask
+        #expect(fix === TestData.mockSeattleLocation)
+
+        #expect(!service.isUpdatingLocation)
+        #expect(!mock.updatingLocation)
+    }
 }

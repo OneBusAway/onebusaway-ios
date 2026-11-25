@@ -122,7 +122,27 @@
 			<string>za %d minuty</string>
 		</dict>
 	</dict>
-	<key>rental_cluster.title_fmt</key>
+	<key>on_demand.address.inside_more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>W strefie %1$@ i %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>jeszcze %d</string>
+			<key>few</key>
+			<string>jeszcze %d</string>
+			<key>many</key>
+			<string>jeszcze %d</string>
+			<key>other</key>
+			<string>jeszcze %d</string>
+		</dict>
+	</dict>
+	<key>on_demand.card.more_services</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@count@</string>
@@ -132,14 +152,94 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>few</key>
-			<string>%d pojazdy tutaj</string>
-			<key>many</key>
-			<string>%d pojazdów tutaj</string>
 			<key>one</key>
-			<string>1 pojazd tutaj</string>
+			<string>Jeszcze %d usługa tutaj</string>
+			<key>few</key>
+			<string>Jeszcze %d usługi tutaj</string>
+			<key>many</key>
+			<string>Jeszcze %d usług tutaj</string>
 			<key>other</key>
-			<string>%d pojazdu tutaj</string>
+			<string>Jeszcze %d usługi tutaj</string>
+		</dict>
+	</dict>
+	<key>on_demand.detail.zone_count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d strefa</string>
+			<key>few</key>
+			<string>%d strefy</string>
+			<key>many</key>
+			<string>%d stref</string>
+			<key>other</key>
+			<string>%d strefy</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d usługa tutaj</string>
+			<key>few</key>
+			<string>%d usługi tutaj</string>
+			<key>many</key>
+			<string>%d usług tutaj</string>
+			<key>other</key>
+			<string>%d usługi tutaj</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title_nearby</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d usługa w pobliżu</string>
+			<key>few</key>
+			<string>%d usługi w pobliżu</string>
+			<key>many</key>
+			<string>%d usług w pobliżu</string>
+			<key>other</key>
+			<string>%d usługi w pobliżu</string>
+		</dict>
+	</dict>
+	<key>on_demand.planner.more_serving_both</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Jeszcze %d usługa obsługuje obie lokalizacje</string>
+			<key>few</key>
+			<string>Jeszcze %d usługi obsługują obie lokalizacje</string>
+			<key>many</key>
+			<string>Jeszcze %d usług obsługuje obie lokalizacje</string>
+			<key>other</key>
+			<string>Jeszcze %d usługi obsługuje obie lokalizacje</string>
 		</dict>
 	</dict>
 	<key>rental_annotation.vehicles_available_fmt</key>
@@ -160,6 +260,26 @@
 			<string>%d dostępny</string>
 			<key>other</key>
 			<string>%d dostępnego</string>
+		</dict>
+	</dict>
+	<key>rental_cluster.title_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d pojazdy tutaj</string>
+			<key>many</key>
+			<string>%d pojazdów tutaj</string>
+			<key>one</key>
+			<string>1 pojazd tutaj</string>
+			<key>other</key>
+			<string>%d pojazdu tutaj</string>
 		</dict>
 	</dict>
 	<key>rental_detail.walk_time_fmt</key>
@@ -200,6 +320,26 @@
 			<string>1 wynik</string>
 			<key>other</key>
 			<string>%d wyniku</string>
+		</dict>
+	</dict>
+	<key>stop_cluster_picker.nav_title_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Wybierz przystanek — 1 przystanek w pobliżu</string>
+			<key>few</key>
+			<string>Wybierz przystanek — %d przystanki w pobliżu</string>
+			<key>many</key>
+			<string>Wybierz przystanek — %d przystanków w pobliżu</string>
+			<key>other</key>
+			<string>Wybierz przystanek — %d przystanków w pobliżu</string>
 		</dict>
 	</dict>
 	<key>stop_page.a11y.past_shown_fmt</key>
@@ -310,6 +450,26 @@
 			<string>%5$d odjazd</string>
 			<key>other</key>
 			<string>%5$d odjazdu</string>
+		</dict>
+	</dict>
+	<key>stop_page.past_toggle_earlier_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d wcześniejszy</string>
+			<key>few</key>
+			<string>%d wcześniejsze</string>
+			<key>many</key>
+			<string>%d wcześniejszych</string>
+			<key>other</key>
+			<string>%d wcześniejszego</string>
 		</dict>
 	</dict>
 	<key>stop_page.past_toggle_show_a11y_fmt</key>
@@ -512,127 +672,7 @@
 			<string>%2$d przystanku</string>
 		</dict>
 	</dict>
-	<key>on_demand.card.more_services</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Jeszcze %d usługa tutaj</string>
-			<key>few</key>
-			<string>Jeszcze %d usługi tutaj</string>
-			<key>many</key>
-			<string>Jeszcze %d usług tutaj</string>
-			<key>other</key>
-			<string>Jeszcze %d usługi tutaj</string>
-		</dict>
-	</dict>
-	<key>on_demand.planner.more_serving_both</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Jeszcze %d usługa obsługuje obie lokalizacje</string>
-			<key>few</key>
-			<string>Jeszcze %d usługi obsługują obie lokalizacje</string>
-			<key>many</key>
-			<string>Jeszcze %d usług obsługuje obie lokalizacje</string>
-			<key>other</key>
-			<string>Jeszcze %d usługi obsługuje obie lokalizacje</string>
-		</dict>
-	</dict>
-	<key>on_demand.picker.title</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d usługa tutaj</string>
-			<key>few</key>
-			<string>%d usługi tutaj</string>
-			<key>many</key>
-			<string>%d usług tutaj</string>
-			<key>other</key>
-			<string>%d usługi tutaj</string>
-		</dict>
-	</dict>
-	<key>on_demand.picker.title_nearby</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d usługa w pobliżu</string>
-			<key>few</key>
-			<string>%d usługi w pobliżu</string>
-			<key>many</key>
-			<string>%d usług w pobliżu</string>
-			<key>other</key>
-			<string>%d usługi w pobliżu</string>
-		</dict>
-	</dict>
-	<key>on_demand.detail.zone_count</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d strefa</string>
-			<key>few</key>
-			<string>%d strefy</string>
-			<key>many</key>
-			<string>%d stref</string>
-			<key>other</key>
-			<string>%d strefy</string>
-		</dict>
-	</dict>
-	<key>on_demand.address.inside_more</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>W strefie %1$@ i %2$#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>jeszcze %d</string>
-			<key>few</key>
-			<string>jeszcze %d</string>
-			<key>many</key>
-			<string>jeszcze %d</string>
-			<key>other</key>
-			<string>jeszcze %d</string>
-		</dict>
-	</dict>
-	<key>trip_page.stop_list.run_count_fmt</key>
+	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@count@</string>
@@ -643,13 +683,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>few</key>
-			<string>%d przystanki</string>
+			<string>%d przystanki przed Twoim przystankiem</string>
 			<key>many</key>
-			<string>%d przystanków</string>
+			<string>%d przystanków przed Twoim przystankiem</string>
 			<key>one</key>
-			<string>1 przystanek</string>
+			<string>1 przystanek przed Twoim przystankiem</string>
 			<key>other</key>
-			<string>%d przystanku</string>
+			<string>%d przystanku przed Twoim przystankiem</string>
 		</dict>
 	</dict>
 	<key>trip_page.stop_list.a11y_run_passed_fmt</key>
@@ -672,7 +712,7 @@
 			<string>%d miniętego przystanku</string>
 		</dict>
 	</dict>
-	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
+	<key>trip_page.stop_list.run_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@count@</string>
@@ -683,33 +723,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>few</key>
-			<string>%d przystanki przed Twoim przystankiem</string>
+			<string>%d przystanki</string>
 			<key>many</key>
-			<string>%d przystanków przed Twoim przystankiem</string>
+			<string>%d przystanków</string>
 			<key>one</key>
-			<string>1 przystanek przed Twoim przystankiem</string>
+			<string>1 przystanek</string>
 			<key>other</key>
-			<string>%d przystanku przed Twoim przystankiem</string>
-		</dict>
-	</dict>
-	<key>stop_page.past_toggle_earlier_fmt</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d wcześniejszy</string>
-			<key>few</key>
-			<string>%d wcześniejsze</string>
-			<key>many</key>
-			<string>%d wcześniejszych</string>
-			<key>other</key>
-			<string>%d wcześniejszego</string>
+			<string>%d przystanku</string>
 		</dict>
 	</dict>
 </dict>

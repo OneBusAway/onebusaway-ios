@@ -513,4 +513,186 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
             #expect(applied.tripStatus?.statusModifier == .canceled)
         }
     }
+
+    /// With no known zone there is no start_date to match exactly, so undated
+    /// updates still go through the 36-hour timestamp check.
+    @Test func `With no known zone, a stale undated update is rejected`() {
+        let serviceDate = Date(timeIntervalSince1970: 1_795_305_600)
+        let arrDep = makeArrivalDeparture(tripID: "trip_no_zone", serviceDate: serviceDate)
+
+        let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [arrDep],
+            with: [GTFSRTTripUpdate(tripID: "trip_no_zone", timestamp: serviceDate.addingTimeInterval(37 * 3600), tripDelay: 60)]
+        )
+
+        #expect(results[0].tripUpdate == nil)
+    }
+
+    @Test func `With no known zone, the nearest undated update wins`() {
+        let serviceDate = Date(timeIntervalSince1970: 1_795_305_600)
+        let arrDep = makeArrivalDeparture(tripID: "trip_no_zone", serviceDate: serviceDate)
+
+        let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [arrDep],
+            with: [
+                GTFSRTTripUpdate(tripID: "trip_no_zone", timestamp: serviceDate.addingTimeInterval(30 * 3600), tripDelay: 60),
+                GTFSRTTripUpdate(tripID: "trip_no_zone", timestamp: serviceDate.addingTimeInterval(3600), tripDelay: 120)
+            ]
+        )
+
+        #expect(results[0].arrivalDelay == 120)
+    }
+
+    /// An empty or unknown agency zone falls through to the trip's zone.
+    @Test func `An unusable agency zone falls back to the trip's zone`() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = try #require(TimeZone(identifier: "Pacific/Kiritimati"))
+        let serviceDate = try #require(cal.date(from: DateComponents(year: 2026, month: 11, day: 22)))
+        let tripJSON = """
+        {"blockId": "1_block", "id": "1_trip_kiritimati", "routeId": "1_10", "routeShortName": "10",
+         "serviceId": "1_weekday", "tripShortName": "", "timeZone": "Pacific/Kiritimati"}
+        """
+        let trip = try JSONDecoder().decode(Trip.self, from: Data(tripJSON.utf8))
+
+        for agencyZone in ["", "Not/AZone"] {
+            let arrDep = ArrivalDeparture(
+                arrivalEnabled: true,
+                routeID: "1_10",
+                route: try makeRoute(agencyTimeZone: agencyZone),
+                scheduledArrival: serviceDate.addingTimeInterval(13 * 3600),
+                scheduledDeparture: serviceDate.addingTimeInterval(13 * 3600 + 60),
+                serviceDate: serviceDate,
+                stopID: "1_stop",
+                tripID: "1_trip_kiritimati",
+                trip: trip
+            )
+
+            let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+                arrivalDepartures: [arrDep],
+                with: [GTFSRTTripUpdate(tripID: "trip_kiritimati", startDate: "20261122", tripDelay: 240)]
+            )
+
+            #expect(results[0].arrivalDelay == 240, "agency zone \"\(agencyZone)\"")
+        }
+    }
+
+    // MARK: - Reconciled Schedule Parity & Auxiliary Boundaries
+
+    @Test func `ReconciledArrivalDeparture reconciledDate returns scheduled date matching arrivalDepartureStatus when isNoData`() {
+        let schedArr = Date(timeIntervalSince1970: 1_700_000_000)
+        let schedDep = Date(timeIntervalSince1970: 1_700_000_100)
+
+        // Case 1: Arriving (stopSequence > 0) returns scheduledArrival
+        let arrivingArrDep = makeArrivalDeparture(
+            stopSequence: 5,
+            scheduledArrival: schedArr,
+            scheduledDeparture: schedDep
+        )
+        let arrivingNoDataUpdate = GTFSRTTripUpdate(
+            tripID: arrivingArrDep.tripID,
+            stopTimeUpdates: [
+                GTFSRTStopTimeUpdate(
+                    stopID: arrivingArrDep.stopID,
+                    scheduleRelationship: .noData
+                )
+            ]
+        )
+        let arrivingResult = GTFSRealtimeDelayReconciler.standard.reconcile(arrivalDeparture: arrivingArrDep, with: arrivingNoDataUpdate)
+        #expect(arrivingResult.isNoData == true)
+        #expect(arrivingResult.reconciledDate == schedArr)
+
+        // Case 2: Departing (stopSequence == 0) returns scheduledDeparture
+        let departingArrDep = makeArrivalDeparture(
+            stopSequence: 0,
+            scheduledArrival: schedArr,
+            scheduledDeparture: schedDep
+        )
+        let departingNoDataUpdate = GTFSRTTripUpdate(
+            tripID: departingArrDep.tripID,
+            stopTimeUpdates: [
+                GTFSRTStopTimeUpdate(
+                    stopID: departingArrDep.stopID,
+                    scheduleRelationship: .noData
+                )
+            ]
+        )
+        let departingResult = GTFSRealtimeDelayReconciler.standard.reconcile(arrivalDeparture: departingArrDep, with: departingNoDataUpdate)
+        #expect(departingResult.isNoData == true)
+        #expect(departingResult.reconciledDate == schedDep)
+    }
+
+    @Test func `PropagateUpstream with custom stopOrder propagates delay to stop without direct update`() {
+        let reconciler = GTFSRealtimeDelayReconciler.standard
+
+        // Feed has updates for stop_A (delay: 100), stop_B (delay: 250), and stop_X (delay: 500).
+        // Neither update specifies a stop sequence.
+        let updateStopA = GTFSRTStopTimeUpdate(
+            stopID: "stop_A",
+            departure: GTFSRTStopTimeEvent(delay: 100)
+        )
+        let updateStopB = GTFSRTStopTimeUpdate(
+            stopID: "stop_B",
+            departure: GTFSRTStopTimeEvent(delay: 250)
+        )
+        let updateStopX = GTFSRTStopTimeUpdate(
+            stopID: "stop_X",
+            departure: GTFSRTStopTimeEvent(delay: 500)
+        )
+
+        let tripUpdate = GTFSRTTripUpdate(
+            tripID: "trip_ordered",
+            stopTimeUpdates: [updateStopA, updateStopB, updateStopX]
+        )
+
+        // Target stop is stop_C, which has no direct update in the feed.
+        let itemC = GTFSRTScheduleItem(
+            tripID: "trip_ordered",
+            stopID: "stop_C",
+            stopSequence: nil,
+            scheduledArrival: Date(timeIntervalSince1970: 1_700_003_000),
+            scheduledDeparture: Date(timeIntervalSince1970: 1_700_003_060)
+        )
+
+        // stop_C comes after stop_B and stop_A, but before stop_X in stopOrder.
+        // Propagation filters out downstream stop_X and takes the last upstream update (stop_B, delay: 250).
+        let resultWithStopOrder = reconciler.reconcile(
+            schedule: itemC,
+            with: tripUpdate,
+            stopOrder: ["stop_A", "stop_B", "stop_C", "stop_X"]
+        )
+        #expect(resultWithStopOrder.departureDelay == 250)
+        #expect(resultWithStopOrder.matchedStopTimeUpdate == nil)
+
+        // Without stopOrder or sequence, target stop_C cannot match upstream updates, falling back to tripDelay (nil).
+        let resultWithoutStopOrder = reconciler.reconcile(
+            schedule: itemC,
+            with: tripUpdate,
+            stopOrder: nil
+        )
+        #expect(resultWithoutStopOrder.departureDelay == nil)
+        #expect(resultWithoutStopOrder.matchedStopTimeUpdate == nil)
+    }
+
+    @Test func `Agency prefix extraction and stripping handles nested and edge string formats`() {
+        #expect(GTFSRealtimeDelayReconciler.agencyPrefix(from: "1_100") == "1")
+        #expect(GTFSRealtimeDelayReconciler.agencyPrefix(from: "agency-kcm_route99") == "agency-kcm")
+        #expect(GTFSRealtimeDelayReconciler.agencyPrefix(from: "_leading") == nil)
+        #expect(GTFSRealtimeDelayReconciler.agencyPrefix(from: "noUnderscore") == nil)
+        #expect(GTFSRealtimeDelayReconciler.agencyPrefix(from: nil) == nil)
+
+        #expect(GTFSRealtimeDelayReconciler.stripAgencyPrefix(from: "1_100") == "100")
+        #expect(GTFSRealtimeDelayReconciler.stripAgencyPrefix(from: "agency_sub_component") == "sub_component")
+        #expect(GTFSRealtimeDelayReconciler.stripAgencyPrefix(from: "_leading") == "_leading")
+        #expect(GTFSRealtimeDelayReconciler.stripAgencyPrefix(from: "plainText") == "plainText")
+    }
+
+    @Test func `StopIDsMatch validates optional agency ID prefix and rejects empty identifiers`() {
+        #expect(GTFSRealtimeDelayReconciler.stopIDsMatch(feedStopID: "50", restStopID: "1_50", agencyID: "1"))
+        #expect(!GTFSRealtimeDelayReconciler.stopIDsMatch(feedStopID: "50", restStopID: "40_50", agencyID: "1"))
+        #expect(!GTFSRealtimeDelayReconciler.stopIDsMatch(feedStopID: "", restStopID: "1_50"))
+        #expect(!GTFSRealtimeDelayReconciler.stopIDsMatch(feedStopID: "50", restStopID: ""))
+        #expect(!GTFSRealtimeDelayReconciler.stopIDsMatch(feedStopID: nil, restStopID: "1_50"))
+        #expect(!GTFSRealtimeDelayReconciler.stopIDsMatch(feedStopID: "50", restStopID: nil))
+        #expect(GTFSRealtimeDelayReconciler.stopIDsMatch(feedStopID: "same_stop", restStopID: "same_stop"))
+    }
 }

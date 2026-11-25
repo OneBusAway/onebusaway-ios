@@ -39,9 +39,11 @@ public struct ScheduledDeparture: Hashable, @unchecked Sendable {
         Int(date.timeIntervalSinceNow / 60.0)
     }
 
-    /// Whether this departure is for the trips `key` bookmarks.
-    func matches(_ key: TripBookmarkKey) -> Bool {
-        routeID == key.routeID && tripHeadsign == key.tripHeadsign
+    /// Whether this departure is for the trips `key` bookmarks. The
+    /// timetable can name them by `timetableHeadsigns` instead of the
+    /// bookmark's headsign.
+    func matches(_ key: TripBookmarkKey, timetableHeadsigns: Set<String> = []) -> Bool {
+        routeID == key.routeID && (tripHeadsign == key.tripHeadsign || timetableHeadsigns.contains(tripHeadsign))
     }
 }
 

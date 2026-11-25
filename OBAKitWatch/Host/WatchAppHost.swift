@@ -200,6 +200,13 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServi
         Task { await regionsService.updateRegionsList() }
     }
 
+    /// Creates and returns an `AsyncStream<CLLocation>` from the host's location service.
+    public func locationStream(
+        bufferingPolicy: AsyncStream<CLLocation>.Continuation.BufferingPolicy = .bufferingNewest(1)
+    ) -> AsyncStream<CLLocation> {
+        locationService.locationStream(bufferingPolicy: bufferingPolicy)
+    }
+
     // MARK: - LocationServiceDelegate
 
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {

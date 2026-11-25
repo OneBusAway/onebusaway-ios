@@ -100,6 +100,13 @@ public struct SavedArrivalsFallback: Error {
     /// timetable was saved.
     public let scheduledDepartures: [ScheduledDeparture]
 
+    /// The timetable's headsigns for each bookmark's saved trips, where the
+    /// timetable has them. They can differ from the departures' headsigns.
+    public let timetableHeadsigns: [TripBookmarkKey: Set<String>]
+
+    /// The server's date for the saved timetable, or `nil` when none was saved.
+    public let scheduleDate: Date?
+
     /// Why the fetch failed.
     public let underlyingError: Error
 }
