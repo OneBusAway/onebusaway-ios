@@ -100,6 +100,9 @@ public struct SavedArrivalsFallback: Error {
     /// timetable was saved.
     public let scheduledDepartures: [ScheduledDeparture]
 
+    /// The service day of the saved timetable, or `nil` when none was saved.
+    public let scheduleDate: Date?
+
     /// Why the fetch failed.
     public let underlyingError: Error
 }

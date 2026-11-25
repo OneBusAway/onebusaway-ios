@@ -63,7 +63,7 @@ final class SavedArrivalsTests: OBATestCase {
     /// `headsign` and running at each of `minutesFromNow`, and the second
     /// route's first trip `otherRouteMinutes` from now. Every other trip in the
     /// fixture is from 2025, so has left.
-    private func scheduleBody(routeID: String, headsign: String, departingInMinutes minutesFromNow: [Double], otherRouteMinutes: Double = 3, tripIDs: [String]? = nil) throws -> Data {
+    private func scheduleBody(routeID: String, headsign: String, departingInMinutes minutesFromNow: [Double], otherRouteMinutes: Double = 3, tripIDs: [String]? = nil, daysEarlier: Double = 0) throws -> Data {
         var root = try #require(try JSONSerialization.jsonObject(with: Fixtures.loadData(file: scheduleFixture)) as? [String: Any])
         var data = try #require(root["data"] as? [String: Any])
         var entry = try #require(data["entry"] as? [String: Any])
@@ -99,6 +99,9 @@ final class SavedArrivalsTests: OBATestCase {
         routes[1] = second
 
         entry["stopRouteSchedules"] = routes
+        if daysEarlier != 0, let date = entry["date"] as? Double {
+            entry["date"] = date - daysEarlier * 86_400_000
+        }
         data["entry"] = entry
         root["data"] = data
         return try JSONSerialization.data(withJSONObject: root)
@@ -610,11 +613,39 @@ final class SavedArrivalsTests: OBATestCase {
         let loader = BookmarkDataLoader(application: application, delegate: Delegate(), bookmarkProvider: { [bookmark] }, autoRefreshes: false, savedArrivals: store)
         await loader.loadDataAndWait()
 
+        // The origin's and the destination's timetables are saved by separate
+        // tasks that `loadDataAndWait()` doesn't wait for, so wait for both.
         await poll(
-            until: { self.store.load(kind: .schedule, stopID: destinationStopID, regionID: regionID) != nil },
-            "the destination's timetable was never saved"
+            until: {
+                self.store.load(kind: .schedule, stopID: destinationStopID, regionID: regionID) != nil
+                    && self.store.load(kind: .schedule, stopID: bookmark.stopID, regionID: regionID) != nil
+            },
+            "the origin's and the destination's timetables were never both saved"
         )
-        #expect(store.load(kind: .schedule, stopID: bookmark.stopID, regionID: regionID) != nil)
+    }
+
+    /// A failed save keeps the destination's previous timetable. Its times
+    /// are for another day, so they must not drop today's trips.
+    @Test @MainActor
+    func `Offline, a destination timetable from another day doesn't drop trips`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let bookmark = try makeDestinationBookmark(application: application)
+        let key = try #require(TripBookmarkKey(bookmark: bookmark))
+        let destinationStopID = try #require(bookmark.destinationStopID)
+        let regionID = try #require(application.apiService?.regionIdentifier)
+
+        store.save(try savedBody(departingInMinutes: [-10]), stopID: bookmark.stopID, regionID: regionID)
+        let origin = try scheduleBody(routeID: key.routeID, headsign: key.tripHeadsign, departingInMinutes: [6, 21], tripIDs: ["full", "short"])
+        store.save(origin, kind: .schedule, stopID: bookmark.stopID, regionID: regionID)
+        let yesterday = try scheduleBody(routeID: key.routeID, headsign: key.tripHeadsign, departingInMinutes: [30 - 1440], tripIDs: ["full"], daysEarlier: 1)
+        store.save(yesterday, kind: .schedule, stopID: destinationStopID, regionID: regionID)
+        mockArrivalsError(dataLoader, URLError(.notConnectedToInternet))
+
+        let loader = BookmarkDataLoader(application: application, delegate: Delegate(), bookmarkProvider: { [bookmark] }, autoRefreshes: false, savedArrivals: store)
+        await loader.loadDataAndWait()
+
+        #expect(loader.scheduledDepartures(for: key, destinationStopID: destinationStopID).map(\.tripID) == ["full", "short"])
     }
 
     /// Departures from an earlier fetch that aren't in the saved set have

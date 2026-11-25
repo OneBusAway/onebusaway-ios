@@ -175,20 +175,25 @@ public struct BookmarkArrivalsLoader: Sendable {
             arrivals: (liveArrivals ?? []).filter { $0.temporalState != .past },
             savedAt: savedAt,
             scheduledDepartures: (schedule?.scheduledDepartures ?? []).filter { $0.minutes >= 0 && !savedTripIDs.contains($0.tripID) },
+            scheduleDate: schedule?.date,
             underlyingError: error
         )
     }
 
     /// When each trip in `stopID`'s saved timetable reaches the stop (the last
-    /// time, for a trip that visits it twice), or `nil` when no timetable is
-    /// saved for it. Offline, this is how a destination bookmark tells the
-    /// trips that reach its destination from short turns.
-    public func savedArrivalTimes(stopID: StopID, using apiService: RESTAPIService) -> [TripIdentifier: Date]? {
+    /// time, for a trip that visits it twice), or `nil` when no timetable for
+    /// `serviceDate` is saved for it. Offline, this is how a destination
+    /// bookmark tells the trips that reach its destination from short turns.
+    ///
+    /// A timetable for another day is no use: a failed save keeps the
+    /// previous day's file, and its times would drop today's trips.
+    public func savedArrivalTimes(stopID: StopID, serviceDate: Date, using apiService: RESTAPIService) -> [TripIdentifier: Date]? {
         guard
             let savedArrivals,
             let regionID = apiService.regionIdentifier,
             let saved = savedArrivals.load(kind: .schedule, stopID: stopID, regionID: regionID),
-            let schedule = try? apiService.decodeKeptBody(ScheduleForStop.self, from: saved.body).entry
+            let schedule = try? apiService.decodeKeptBody(ScheduleForStop.self, from: saved.body).entry,
+            schedule.date == serviceDate
         else {
             return nil
         }
