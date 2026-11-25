@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import Synchronization
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -245,5 +246,123 @@ final class AgencyAlertActivePeriodTests: OBATestCase {
         let alert = try makeAlert(activePeriods: [])
 
         #expect(!alert.hasActivePeriod)
+    }
+
+    // MARK: - Corrupt period warning deduplication
+
+    private nonisolated final class WarningRecorder: Sendable {
+        private let ids = Mutex<[String]>([])
+        var warnedIDs: [String] { ids.withLock { $0 } }
+        func record(_ id: String) { ids.withLock { $0.append(id) } }
+    }
+
+    private func withCorruptWarningRecorder(
+        for alertIDs: Set<String>,
+        perform body: (WarningRecorder) async throws -> Void
+    ) async throws -> [String] {
+        let recorder = WarningRecorder()
+        AgencyAlert.onCorruptWarningForTesting = { warnedID in
+            if alertIDs.contains(warnedID) {
+                recorder.record(warnedID)
+            }
+        }
+        defer { AgencyAlert.onCorruptWarningForTesting = nil }
+        try await body(recorder)
+        return recorder.warnedIDs
+    }
+
+    @Test func `Corrupt period warning logs once per alert ID across calls and instances`() async throws {
+        let alertID = "corrupt-once-\(UUID().uuidString)"
+        let corrupt = period(start: futureTimestamp, end: pastTimestamp)
+        let firstInstance = try makeAlert(activePeriods: [corrupt], id: alertID)
+        let refreshedInstance = try makeAlert(activePeriods: [corrupt], id: alertID)
+
+        let warned = try await withCorruptWarningRecorder(for: [alertID]) { _ in
+            #expect(!firstInstance.isActive(at: now))
+            #expect(!firstInstance.isActive(at: now))
+            #expect(!refreshedInstance.isActive(at: now))
+        }
+
+        #expect(warned == [alertID])
+    }
+
+    @Test func `Multiple corrupt periods on one alert warn only once`() async throws {
+        let alertID = "corrupt-multi-\(UUID().uuidString)"
+        let firstCorrupt = period(start: futureTimestamp, end: pastTimestamp)
+        let secondCorrupt = period(start: farFutureTimestamp, end: farPastTimestamp)
+        let alert = try makeAlert(activePeriods: [firstCorrupt, secondCorrupt], id: alertID)
+
+        let warned = try await withCorruptWarningRecorder(for: [alertID]) { _ in
+            #expect(!alert.isActive(at: now))
+        }
+
+        #expect(warned == [alertID])
+    }
+
+    @Test func `Distinct corrupt alert IDs each log one warning`() async throws {
+        let firstID = "corrupt-distinct-1-\(UUID().uuidString)"
+        let secondID = "corrupt-distinct-2-\(UUID().uuidString)"
+        let corrupt = period(start: futureTimestamp, end: pastTimestamp)
+        let firstAlert = try makeAlert(activePeriods: [corrupt], id: firstID)
+        let secondAlert = try makeAlert(activePeriods: [corrupt], id: secondID)
+
+        let warned = try await withCorruptWarningRecorder(for: [firstID, secondID]) { _ in
+            #expect(!firstAlert.isActive(at: now))
+            #expect(!firstAlert.isActive(at: now))
+            #expect(!secondAlert.isActive(at: now))
+            #expect(!secondAlert.isActive(at: now))
+        }
+
+        #expect(warned == [firstID, secondID])
+    }
+
+    @Test func `sortStartDate and activeStartDate do not suppress the first isActive warning`() async throws {
+        let alertID = "corrupt-sort-\(UUID().uuidString)"
+        let corrupt = period(start: futureTimestamp, end: pastTimestamp)
+        let alert = try makeAlert(activePeriods: [corrupt], id: alertID)
+
+        let warned = try await withCorruptWarningRecorder(for: [alertID]) { recorder in
+            #expect(alert.activeStartDate(at: now) == nil)
+            #expect(alert.sortStartDate(asOf: now) == nil)
+            #expect(recorder.warnedIDs.isEmpty)
+
+            #expect(!alert.isActive(at: now))
+        }
+
+        #expect(warned == [alertID])
+    }
+
+    private nonisolated func runConcurrentIsActiveChecks(
+        alert: AgencyAlert,
+        at date: Date,
+        iterations: Int
+    ) async -> [Bool] {
+        await withTaskGroup(of: Bool.self) { group in
+            for _ in 0..<iterations {
+                group.addTask {
+                    alert.isActive(at: date)
+                }
+            }
+            var results: [Bool] = []
+            for await active in group {
+                results.append(active)
+            }
+            return results
+        }
+    }
+
+    @Test func `Concurrent isActive checks on corrupt alert warn exactly once`() async throws {
+        let alertID = "corrupt-concurrent-\(UUID().uuidString)"
+        let corrupt = period(start: futureTimestamp, end: pastTimestamp)
+        let alert = try makeAlert(activePeriods: [corrupt], id: alertID)
+        let checkDate = now
+
+        let warned = try await withCorruptWarningRecorder(for: [alertID]) { _ in
+            let results = await runConcurrentIsActiveChecks(alert: alert, at: checkDate, iterations: 25)
+            #expect(results.count == 25)
+            #expect(results.allSatisfy { !$0 })
+        }
+
+        #expect(warned == [alertID])
     }
 }

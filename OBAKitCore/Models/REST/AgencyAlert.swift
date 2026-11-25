@@ -8,20 +8,33 @@
 //
 
 import Foundation
+import Synchronization
 
 /// A wrapper around a Protocol Buffer alert object. ProtoBuf is somewhat unpleasant to use directly,
 /// and so this class offers some Swifty niceties on top of its jank.
 ///
-/// Every stored property is set in `init` and never mutated, which is what makes the
-/// `@unchecked Sendable` conformance sound (`@unchecked` only because NSObject is not Sendable).
+/// Every instance property is set in `init` and never mutated, and static state
+/// (`warnedCorruptAlertIDs`, plus the debug-only test observer) is synchronized via `Mutex`,
+/// which makes the `@unchecked Sendable` conformance sound (`@unchecked` only because
+/// NSObject is not Sendable).
 public final class AgencyAlert: NSObject, Identifiable, @unchecked Sendable {
     private let alert: TransitRealtime_Alert
     public let id: String
 
     /// Alert IDs that have already logged a corrupt active-period warning.
-    /// Guards the once-per-alert log in `normalizedBounds(for:logCorrupt:)`.
-    private static let corruptWarningLock = NSLock()
-    private static nonisolated(unsafe) var warnedCorruptAlertIDs = Set<String>()
+    /// Guards the once-per-alert log in `warnCorruptPeriod(period:)`.
+    private static let warnedCorruptAlertIDs = Mutex<Set<String>>([])
+
+    #if DEBUG
+    private static let corruptWarningObserver = Mutex<(@Sendable (String) -> Void)?>(nil)
+
+    /// Test-only observer notified when `warnCorruptPeriod(period:)` emits a
+    /// warning for an alert ID.
+    static var onCorruptWarningForTesting: (@Sendable (String) -> Void)? {
+        get { corruptWarningObserver.withLock { $0 } }
+        set { corruptWarningObserver.withLock { $0 = newValue } }
+    }
+    #endif
 
     public var isHighSeverity: Bool {
         guard alert.hasSeverityLevel else {
@@ -221,8 +234,8 @@ extension AgencyAlert {
     /// (`[start, end)`): inclusive of `start` and exclusive of an explicitly
     /// present positive `end`. An omitted `end` or `end == 0` is treated as
     /// unbounded, matching feeds that encode "no end" as `0`. Any period with
-    /// inverted bounds (`start > end` when `end > 0`) logs a warning and is
-    /// treated as inactive without forming a `ClosedRange`.
+    /// inverted bounds (`start > end` when `end > 0`) logs a warning (once per
+    /// alert ID) and is treated as inactive without forming a `ClosedRange`.
     ///
     /// - Parameter date: The point in time to test against. Defaults to `now`.
     /// - Returns: `true` when at least one active period covers `date`, or when
@@ -296,13 +309,14 @@ extension AgencyAlert {
     /// alert ID is seen, so repeated calls don't spam the log on every map
     /// refresh.
     private func warnCorruptPeriod(period: TransitRealtime_TimeRange) {
-        Self.corruptWarningLock.lock()
-        let isNewWarning = Self.warnedCorruptAlertIDs.insert(id).inserted
-        Self.corruptWarningLock.unlock()
-
+        let isNewWarning = Self.warnedCorruptAlertIDs.withLock { $0.insert(id).inserted }
         guard isNewWarning else {
             return
         }
+
+        #if DEBUG
+        Self.onCorruptWarningForTesting?(id)
+        #endif
 
         Logger.warn(
             "AgencyAlert \(id): corrupt active period (start \(period.start) > end \(period.end)); treating as inactive."
