@@ -53,14 +53,23 @@ struct FloatingSheetContainer<Route: SheetRouteable, SheetContent: View>: ViewMo
 /// with the previous sheet peeking beneath.
 ///
 /// Implemented as a `ViewModifier` (not a `View`) so the `.sheet` modifier attaches directly to the host content
+/// Keys SwiftUI `.sheet(item:)` on the full `Route` value (`Equatable`/`Hashable`)
+/// rather than `Route.id`. Some routes (such as `.tripPlanner`) keep coordinates out of
+/// `id` for analytics privacy, so different payloads share an analytics `id` while still
+/// comparing unequal as routes and needing a fresh sheet identity.
+struct SheetRouteItem<Route: SheetRouteable>: Identifiable {
+    let route: Route
+    var id: Route { route }
+}
+
 private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: ViewModifier {
     @ObservedObject var coordinator: SheetCoordinator<Route>
     let depth: Int
     let sheetContent: (Route) -> SheetContent
 
-    private var routeBinding: Binding<Route?> {
+    private var routeBinding: Binding<SheetRouteItem<Route>?> {
         Binding(
-            get: { coordinator.stackedRoute(at: depth) },
+            get: { coordinator.stackedRoute(at: depth).map(SheetRouteItem.init) },
             set: { newValue in
                 if newValue == nil {
                     coordinator.truncateStacked(toDepth: depth)
@@ -87,7 +96,8 @@ private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: Vie
     }
 
     func body(content: Content) -> some View {
-        content.sheet(item: routeBinding, onDismiss: moveFocusAfterUnwind) { route in
+        content.sheet(item: routeBinding, onDismiss: moveFocusAfterUnwind) { item in
+            let route = item.route
             sheetContent(route)
                 .sheetBackground(route.sheetBackground)
                 .applyDetentConfig(

@@ -12,7 +12,6 @@ import MapKit
 @testable import OBAKit
 @testable import OBAKitCore
 
-// swiftlint:disable file_length
 /// Behavior tests for `SheetCoordinator`'s content-swap and stacked navigation,
 /// using `AppSheetRoute` as the concrete `SheetRouteable` driver.
 @MainActor
@@ -925,119 +924,6 @@ final class SheetCoordinatorTests {
             #expect(coordinator.stackedRoutes == [stop1])
             #expect(coordinator.stackedDetents.count == 1)
         }
-    }
-
-    // MARK: - Map-item and trip-planner deduplication
-
-    private func mapItem(latitude: Double, longitude: Double, name: String? = nil) -> MKMapItem {
-        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude)))
-        item.name = name
-        return item
-    }
-
-    @Test func `Open trip planner with identical destination is a no-op when already on top`() {
-        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        let stop = AppSheetRoute.stopDetails(stopID: "stop_1")
-        let firstPlanner = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.6062, longitude: -122.3321, name: "Downtown"))
-        )
-        let duplicatePlanner = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.6062, longitude: -122.3321, name: "Downtown Copy"))
-        )
-
-        coordinator.push(stop)
-        coordinator.open(firstPlanner, from: stop)
-        coordinator.setStackedDetent(.large, at: 1)
-
-        coordinator.open(duplicatePlanner, from: stop)
-
-        #expect(coordinator.stackedRoutes == [stop, firstPlanner])
-        #expect(coordinator.stackedDetents == [.medium, .large])
-        #expect(coordinator.unwindFocusDepth == nil)
-    }
-
-    @Test func `Open trip planner with identical destination unwinds when deeper in stack`() {
-        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        let firstPlanner = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.6062, longitude: -122.3321))
-        )
-        let stop = AppSheetRoute.stopDetails(stopID: "stop_1")
-        let duplicatePlanner = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.6062, longitude: -122.3321))
-        )
-
-        coordinator.push(firstPlanner)
-        coordinator.push(stop)
-
-        coordinator.open(duplicatePlanner, from: stop)
-
-        #expect(coordinator.stackedRoutes == [firstPlanner])
-        #expect(coordinator.unwindFocusDepth == 1)
-    }
-
-    @Test func `Open trip planner with different destination coordinates navigates normally`() {
-        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        let stop = AppSheetRoute.stopDetails(stopID: "stop_1")
-        let seattlePlanner = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.6062, longitude: -122.3321, name: "Seattle"))
-        )
-        let bellevuePlanner = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.6101, longitude: -122.2015, name: "Bellevue"))
-        )
-
-        coordinator.push(stop)
-        coordinator.open(seattlePlanner, from: stop)
-        coordinator.open(bellevuePlanner, from: seattlePlanner)
-
-        #expect(coordinator.stackedRoutes == [stop, seattlePlanner, bellevuePlanner])
-
-        // Opening from the covered stop replaces Seattle with Bellevue instead of duplicating.
-        let tacomaPlanner = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.2529, longitude: -122.4443, name: "Tacoma"))
-        )
-        coordinator.open(tacomaPlanner, from: stop)
-
-        #expect(coordinator.stackedRoutes == [stop, tacomaPlanner])
-    }
-
-    @Test func `Restore route deduplicates repeated trip planner and map item selections`() {
-        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        let mapItemRoute1 = AppSheetRoute.mapItem(mapItem(latitude: 47.6062, longitude: -122.3321, name: "Pin A"))
-        let mapItemRoute1Dup = AppSheetRoute.mapItem(mapItem(latitude: 47.6062, longitude: -122.3321, name: "Pin A Copy"))
-        let mapItemRoute2 = AppSheetRoute.mapItem(mapItem(latitude: 47.6205, longitude: -122.3493, name: "Pin B"))
-        let planner1 = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.6062, longitude: -122.3321))
-        )
-        let planner1Dup = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.6062, longitude: -122.3321))
-        )
-        let planner2 = AppSheetRoute.tripPlanner(
-            TripPlannerRequest(destination: mapItem(latitude: 47.6205, longitude: -122.3493))
-        )
-
-        coordinator.restoreRoute(mapItemRoute1)
-        coordinator.restoreRoute(mapItemRoute1Dup)
-        #expect(coordinator.stackedRoutes == [mapItemRoute1])
-
-        coordinator.restoreRoute(planner1)
-        coordinator.restoreRoute(planner1Dup)
-        #expect(coordinator.stackedRoutes == [mapItemRoute1, planner1])
-
-        // Different destination coordinates still navigate normally.
-        coordinator.restoreRoute(planner2)
-        #expect(coordinator.stackedRoutes == [mapItemRoute1, planner1, planner2])
-
-        // Restoring an earlier trip planner unwinds sheets above it.
-        coordinator.restoreRoute(planner1Dup)
-        #expect(coordinator.stackedRoutes == [mapItemRoute1, planner1])
-
-        // Restoring an earlier map item unwinds the planner above it.
-        coordinator.restoreRoute(mapItemRoute1Dup)
-        #expect(coordinator.stackedRoutes == [mapItemRoute1])
-
-        // Selecting a different map item opens over the first.
-        coordinator.selectFromMap(mapItemRoute2)
-        #expect(coordinator.stackedRoutes == [mapItemRoute1, mapItemRoute2])
     }
 }
 

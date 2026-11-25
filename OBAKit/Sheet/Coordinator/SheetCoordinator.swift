@@ -151,8 +151,12 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
             truncateStacked(toDepth: closingDepth)
             return
         }
-        if let sourceDepth = stackedEntries.lastIndex(where: { $0.route == source }) {
-            truncateStacked(toDepth: sourceDepth + 1)
+        var targetDepth = stackedEntries.lastIndex(where: { $0.route == source }).map { $0 + 1 }
+        if let singletonDepth = stackedEntries.lastIndex(where: { route.isSameSingletonKind(as: $0.route) }) {
+            targetDepth = targetDepth.map { min($0, singletonDepth) } ?? singletonDepth
+        }
+        if let targetDepth {
+            truncateStacked(toDepth: targetDepth)
         }
         push(route)
     }
