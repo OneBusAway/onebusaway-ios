@@ -141,13 +141,13 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Back returns to `source`. A `source` that is no longer in the pile changes
     /// nothing below, and `route` is pushed on top.
     func open(_ route: Route, from source: Route) {
+        if stackedRoutes.last == route {
+            return
+        }
         lastChangeWasPopToRoot = false
         if let existing = stackedEntries.lastIndex(where: { $0.route == route }) {
             let closingDepth = existing + 1
-            // Already on top: nothing closes, so there is no dismissal to claim this.
-            if closingDepth < stackedEntries.count {
-                unwindFocusDepth = closingDepth
-            }
+            unwindFocusDepth = closingDepth
             truncateStacked(toDepth: closingDepth)
             return
         }
@@ -167,18 +167,6 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// over the current sheet, consolidating map-selection and panel navigation paths.
     func restoreRoute(_ route: Route) {
         if route.prefersStacking {
-            if stackedRoutes.last == route {
-                return
-            }
-            lastChangeWasPopToRoot = false
-            if let existing = stackedEntries.lastIndex(where: { $0.route == route }) {
-                let closingDepth = existing + 1
-                if closingDepth < stackedEntries.count {
-                    unwindFocusDepth = closingDepth
-                }
-                truncateStacked(toDepth: closingDepth)
-                return
-            }
             if let current = stackedRoutes.last {
                 open(route, from: current)
             } else {

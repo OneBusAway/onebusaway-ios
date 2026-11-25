@@ -324,11 +324,21 @@ nonisolated extension AppSheetRoute {
     // MARK: Hashable / Equatable
 
     static func == (lhs: AppSheetRoute, rhs: AppSheetRoute) -> Bool {
-        return lhs.id == rhs.id
+        switch (lhs, rhs) {
+        case (.tripPlanner(let lhsRequest), .tripPlanner(let rhsRequest)):
+            // `.tripPlanner`'s `id` intentionally omits coordinates for analytics
+            // privacy, so route equality must compare the full request payload.
+            return lhsRequest == rhsRequest
+        default:
+            return lhs.id == rhs.id
+        }
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        if case .tripPlanner(let request) = self {
+            hasher.combine(request)
+        }
     }
 }
 
