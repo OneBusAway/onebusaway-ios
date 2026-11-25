@@ -26,6 +26,7 @@ private final class FakeStopEnvironment: StopViewModelEnvironment {
     let apiService: RESTAPIService?
     let obacoService: ObacoAPIService? = nil
     let pushService: PushService? = nil
+    let savedArrivals: SavedArrivalsStore? = nil
     let surveyService: SurveyService
     let userDefaults: UserDefaults
     let reviewPromptPolicy: ReviewPromptPolicy
