@@ -1584,12 +1584,11 @@ private extension MapViewController {
         viewModel.$mapType
             .sink { [weak self] mapType in
                 guard let self else { return }
-                // Persistence is owned by `MapViewModel.toggleMapType()`; the
-                // sink here only mirrors the selection onto MapKit's mapView
-                // and refreshes the toolbar icon so both stay in step when
-                // the value changes through any path (VM toggle, external
-                // defaults edit, cross-view sync).
-                mapRegionManager.mapView.mapType = mapType.mkMapType
+                // Persistence is owned by `MapViewModel.setMapType(_:)`; routing
+                // through `setBaseMapType` here keeps MapKit's mapView, overlay
+                // cleanup, and toolbar icon in step regardless of who triggered
+                // the change (VM toggle, external defaults edit, cross-view sync).
+                mapRegionManager.setBaseMapType(mapType)
                 // Route mode swaps in `tripPlannerMapView` and hides the main map,
                 // so a change made mid-trip has to reach the map the rider can see
                 // too. Gated on the flag rather than applied unconditionally: the

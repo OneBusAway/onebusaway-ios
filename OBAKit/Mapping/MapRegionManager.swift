@@ -224,6 +224,11 @@ public class MapRegionManager: NSObject,
 
     private let mapViewMapTypeKey = "mapRegionManager.selectedMapType"
 
+    /// Tracks the last map type applied by `MapRegionManager` so external
+    /// `mapView.mapType` writes (e.g. from Combine `willSet` sinks) cannot mask
+    /// a basemap transition and skip cleanup.
+    private var activeMapType: MKMapType = .mutedStandard
+
     /// Baseline directional layout margins restored when switching basemaps so
     /// camera margins do not drift or leak across basemap transitions.
     var preferredCameraLayoutMargins: NSDirectionalEdgeInsets = .zero
@@ -254,7 +259,7 @@ public class MapRegionManager: NSObject,
             let rawMapType: Int = application.userDefaults.integer(forKey: mapViewMapTypeKey)
             return MKMapType(rawValue: UInt(rawMapType)) ?? .mutedStandard
         } set {
-            let previousMapType = mapView.mapType
+            let previousMapType = activeMapType
             application.userDefaults.set(newValue.rawValue, forKey: mapViewMapTypeKey)
             applyMapTypeTransition(from: previousMapType, to: newValue)
         }
@@ -279,7 +284,9 @@ public class MapRegionManager: NSObject,
         mapView.showsUserLocation = application.locationService.isLocationUseAuthorized
         mapView.showsScale = mapViewShowsScale
         mapView.showsTraffic = mapViewShowsTraffic
-        mapView.mapType = userSelectedMapType
+        let initialMapType = userSelectedMapType
+        activeMapType = initialMapType
+        mapView.mapType = initialMapType
         currentVisibleMapRect = mapView.visibleMapRect
         applyPointsOfInterestVisibility()
 
@@ -1416,11 +1423,13 @@ extension MapRegionManager {
             || previousBaseType.requiresOverlayAndRendererCleanup(transitioningTo: nextBaseType)
 
         guard requiresCleanup else {
+            activeMapType = newMapType
             mapView.mapType = newMapType
             return
         }
 
         cleanupObsoleteBasemapOverlaysAndCaches()
+        activeMapType = newMapType
         mapView.mapType = newMapType
         applyPointsOfInterestVisibility()
         reconcileCameraMarginsForBasemapChange()
