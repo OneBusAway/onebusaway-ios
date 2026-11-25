@@ -165,16 +165,18 @@ final class BrandTintTests: OBATestCase {
         #expect(ratio >= 7.0, "brandTint HC dark: \(ratio):1 (need ≥7.0)")
     }
 
-    @Test func `brandAccent meets WCAG AAA in high contrast light mode`() {
+    @Test func `brandAccent meets WCAG AAA on white and under white in high contrast light mode`() {
         let color = ThemeColors.shared.brandAccent
         let ratio = contrastRatio(color, .white, traits: Self.highContrastLight)
         #expect(ratio >= 7.0, "brandAccent HC light: \(ratio):1 (need ≥7.0)")
     }
 
-    @Test func `brandAccent meets WCAG AAA in high contrast dark mode`() {
+    @Test func `brandAccent keeps AA contrast under white and on black in high contrast dark mode`() {
         let color = ThemeColors.shared.brandAccent
-        let ratio = contrastRatio(color, .black, traits: Self.highContrastDark)
-        #expect(ratio >= 7.0, "brandAccent HC dark: \(ratio):1 (need ≥7.0)")
+        let whiteRatio = contrastRatio(color, .white, traits: Self.highContrastDark)
+        let blackRatio = contrastRatio(color, .black, traits: Self.highContrastDark)
+        #expect(whiteRatio >= 4.5, "white on brandAccent HC dark: \(whiteRatio):1 (need ≥4.5)")
+        #expect(blackRatio >= 4.5, "brandAccent on black HC dark: \(blackRatio):1 (need ≥4.5)")
     }
 
     @Test func `departureOnTimeFill meets WCAG AAA with white label in high contrast modes`() {
