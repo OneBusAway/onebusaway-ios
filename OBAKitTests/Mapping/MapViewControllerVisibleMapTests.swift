@@ -95,4 +95,25 @@ final class MapViewControllerVisibleMapTests: OBATestCase {
 
         #expect(application.mapRegionManager.mapView.mapType == .satellite)
     }
+
+    @Test func `Switching basemaps preserves MapViewController panel margins`() {
+        let controller = MapViewController(application: application)
+        controller.loadViewIfNeeded()
+        controller.layoutMapMargins()
+
+        let expectedMargins = application.mapRegionManager.preferredCameraLayoutMargins
+        #expect(expectedMargins != .zero)
+        #expect(application.mapRegionManager.mapView.directionalLayoutMargins == expectedMargins)
+
+        // Simulate margin drift and verify cycling basemaps reconciles back to the controller's panel margins.
+        application.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12)
+        controller.viewModel.setMapType(.satellite)
+        #expect(application.mapRegionManager.mapView.directionalLayoutMargins == expectedMargins)
+
+        controller.viewModel.setMapType(.hybrid)
+        #expect(application.mapRegionManager.mapView.directionalLayoutMargins == expectedMargins)
+
+        controller.viewModel.setMapType(.standard)
+        #expect(application.mapRegionManager.mapView.directionalLayoutMargins == expectedMargins)
+    }
 }

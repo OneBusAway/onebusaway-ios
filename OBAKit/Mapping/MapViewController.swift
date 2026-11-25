@@ -995,11 +995,14 @@ class MapViewController: UIViewController,
     /// Sets the margins for the map view to keep the scale and legal info within the viewable area.
     /// Call this when you modify top level UI.
     func layoutMapMargins() {
+        let margins: NSDirectionalEdgeInsets
         if traitCollection.horizontalSizeClass == .regular {
-            self.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: MapPanelLandscapeLayout.WidthSize + ThemeMetrics.padding, bottom: 0, trailing: 0)
+            margins = NSDirectionalEdgeInsets(top: 0, leading: MapPanelLandscapeLayout.WidthSize + ThemeMetrics.padding, bottom: 0, trailing: 0)
         } else {
-            self.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: MapPanelLayout.EstimatedDrawerTipStateHeight, trailing: 0)
+            margins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: MapPanelLayout.EstimatedDrawerTipStateHeight, trailing: 0)
         }
+        self.mapRegionManager.preferredCameraLayoutMargins = margins
+        self.mapRegionManager.mapView.directionalLayoutMargins = margins
     }
 
     // MARK: - Semi Modals
