@@ -33,6 +33,8 @@ enum ProximityAlertUIAction: Equatable {
     case showSettings(ProximityAlertSettingsReason)
     /// iOS already monitors every region it allows.
     case showLimit(Int)
+    /// The alert armed but couldn't be saved, so nothing is set. Say so.
+    case showSaveFailed
     /// The page's idea of this stop's alert is stale. Re-read it, say nothing.
     case refresh
     /// Authorization moved between resolving the step and arming. Resolve again.
@@ -101,6 +103,8 @@ enum ProximityAlertOutcome {
             return .resolveAgain
         case .regionLimitReached(let limit):
             return .showLimit(limit)
+        case .saveFailed:
+            return .showSaveFailed
         }
     }
 

@@ -157,4 +157,8 @@ final class ProximityAlertOutcomeTests: OBATestCase {
         // the rider told to cancel one of an unstated many.
         #expect(ProximityAlertOutcome.action(forResult: .regionLimitReached(limit: 20)) == .showLimit(20))
     }
+
+    @Test func `A failed save says so instead of confirming`() {
+        #expect(ProximityAlertOutcome.action(forResult: .saveFailed) == .showSaveFailed)
+    }
 }

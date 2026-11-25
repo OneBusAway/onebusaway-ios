@@ -44,6 +44,10 @@ public enum ProximityAlertActivationResult: Equatable {
     /// Nothing was stored: the app already monitors `limit` regions, which is all
     /// iOS allows. An existing alert has to go before another can arm.
     case regionLimitReached(limit: Int)
+
+    /// Nothing was stored: the geofence armed, but saving the alert failed, so
+    /// the geofence was taken down again.
+    case saveFailed
 }
 
 /// Owns the destination proximity alerts a rider has set: which ones are armed
@@ -253,10 +257,10 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
 
         switch locationService.startMonitoringProximity(for: alert) {
         case .started:
-            userDataStore.add(proximityAlert: alert)
+            guard save(alert) else { return .saveFailed }
             return .activated(alert)
         case .startedWithClampedRadius(let requested, let monitored):
-            userDataStore.add(proximityAlert: alert)
+            guard save(alert) else { return .saveFailed }
             return .activatedWithClampedRadius(alert, requested: requested, monitored: monitored)
         case .insufficientAuthorization(let status):
             return .needsLocationAuthorization(status)
@@ -265,17 +269,47 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
         }
     }
 
+    /// Saves an alert whose geofence just armed. When the save fails, the
+    /// store posts no change, so reconciling here is what takes the geofence
+    /// down again instead of leaving it armed with no alert behind it.
+    private func save(_ alert: ProximityAlert) -> Bool {
+        guard userDataStore.add(proximityAlert: alert) else {
+            Logger.error("Proximity alert for stop \(alert.stopID) armed but could not be saved; disarming it.")
+            reconcileMonitoredRegions()
+            return false
+        }
+        return true
+    }
+
     /// Disarms and forgets a single alert.
-    public func cancelProximityAlert(_ alert: ProximityAlert) {
+    ///
+    /// - Returns: `false` when the alert couldn't be deleted. It is still
+    ///   stored, so it is armed again and stays set.
+    @discardableResult
+    public func cancelProximityAlert(_ alert: ProximityAlert) -> Bool {
         locationService.stopMonitoringProximity(for: alert)
-        userDataStore.delete(proximityAlert: alert)
+        guard userDataStore.delete(proximityAlert: alert) else {
+            Logger.error("Proximity alert for stop \(alert.stopID) could not be deleted; re-arming it.")
+            reconcileMonitoredRegions()
+            return false
+        }
+        return true
     }
 
     /// Disarms and forgets every alert, leaving regions the app monitors for
     /// other reasons alone.
-    public func cancelAllProximityAlerts() {
+    ///
+    /// - Returns: `false` when the alerts couldn't be deleted. They are still
+    ///   stored, so they are armed again and stay set.
+    @discardableResult
+    public func cancelAllProximityAlerts() -> Bool {
         locationService.stopMonitoringAllProximityAlerts()
-        userDataStore.deleteAllProximityAlerts()
+        guard userDataStore.deleteAllProximityAlerts() else {
+            Logger.error("Proximity alerts could not be deleted; re-arming them.")
+            reconcileMonitoredRegions()
+            return false
+        }
+        return true
     }
 
     // MARK: - Reconciliation
