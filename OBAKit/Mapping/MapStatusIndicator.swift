@@ -17,7 +17,7 @@ import OBAKitCore
 ///
 /// MapKit-free by design (symbol names are plain strings) so it stays usable
 /// from either host without pulling MapKit into the presentation layer.
-enum MapStatusIndicator {
+enum MapStatusIndicator: CaseIterable {
     /// Location authorization is unavailable (not determined, denied, or
     /// system-restricted). Shown when the app can't use the user's location.
     case locationUnavailable
@@ -80,5 +80,10 @@ enum MapStatusIndicator {
                 comment: "Displayed in the map status view at the top of the map when a bikes or scooters layer is on but the map is zoomed out too far to show rental vehicles"
             )
         }
+    }
+
+    /// Spoken copy posted to VoiceOver when the status pill transitions into this state.
+    var accessibilityAnnouncement: String {
+        localizedText
     }
 }

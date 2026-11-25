@@ -149,7 +149,10 @@ class MapViewController: UIViewController,
 
         view.addSubview(mapStatusView)
 
-        mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
+        mapStatusView.onLargeContentViewerActivate = { [weak self] in
+            guard let self else { return }
+            self.activateMapStatus(sender: self.mapStatusView)
+        }
 
         floatingPanel.addPanel(toParent: self)
         installOnDemandDock()
@@ -373,6 +376,10 @@ class MapViewController: UIViewController,
     // MARK: - Status View Handlers
 
     @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
+        activateMapStatus(sender: sender)
+    }
+
+    private func activateMapStatus(sender: Any) {
         // The stops zoom target (~1 km tall) is inside the rental window too, so
         // one zoom serves both hints.
         //
@@ -1543,9 +1550,8 @@ extension MapViewController {
     }
 
     public func largeContentViewerInteraction(_ interaction: UILargeContentViewerInteraction, didEndOn item: UILargeContentViewerItem?, at point: CGPoint) {
-        if mapStatusView.frame.contains(point) {
-            didTapMapStatus(interaction)
-        }
+        guard mapStatusView.indicator != nil, item === mapStatusView, mapStatusView.bounds.contains(point) else { return }
+        activateMapStatus(sender: interaction)
     }
 }
 

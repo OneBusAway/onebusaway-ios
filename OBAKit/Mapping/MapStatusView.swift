@@ -58,6 +58,14 @@ class MapStatusView: UIView {
     /// What the pill last showed; `nil` when it is hidden.
     private(set) var indicator: MapStatusIndicator?
 
+    /// Posts accessibility notifications when the visible status changes; defaults to `UIAccessibility.post(notification:argument:)`.
+    var accessibilityAnnouncer: (UIAccessibility.Notification, Any?) -> Void = { notification, argument in
+        UIAccessibility.post(notification: notification, argument: argument)
+    }
+
+    /// Called when the user finishes a large-content-viewer long-press gesture on the pill.
+    var onLargeContentViewerActivate: (() -> Void)?
+
     // MARK: - Layout Constants
 
     private enum Layout {
@@ -151,6 +159,9 @@ class MapStatusView: UIView {
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, _: UITraitCollection) in
             self.updateShadowForCurrentAppearance()
         }
+
+        // Show the full status text and symbol in the HUD when long-pressed at accessibility text sizes.
+        addInteraction(UILargeContentViewerInteraction(delegate: self))
     }
 
     override func layoutSubviews() {
@@ -206,11 +217,15 @@ class MapStatusView: UIView {
             }
         }
 
+        // Keep traits aligned with the current location state even when the visible indicator stays unchanged.
+        accessibilityTraits = accessibilityTraits(for: indicator, locationState: state)
+
         // Nothing changed: skip the animation, and the layout of the whole map it
         // forces. Against the alpha it is headed for, which `UIView.animate` sets at
         // once, not `isHidden`, which a hide sets only when it finishes: a repeat
         // hide in the meantime would restart it, and a run of them never let it end.
         guard indicator != self.indicator || alpha != (indicator == nil ? 0 : 1) else { return }
+        let previousIndicator = self.indicator
         self.indicator = indicator
         let shouldHide = indicator == nil
         let setImage = indicator.map { UIImage(systemName: $0.symbolName) } ?? nil
@@ -226,6 +241,8 @@ class MapStatusView: UIView {
         iconView.image = setImage
         detailLabel.text = setLabel
         largeContentImage = setLargeImage
+        isAccessibilityElement = !shouldHide
+        accessibilityLabel = setLabel
         invalidateIntrinsicContentSize()
 
         if !shouldHide {
@@ -241,6 +258,28 @@ class MapStatusView: UIView {
                 self.isHidden = true
             }
         }
+
+        announceStatusChangeIfNeeded(from: previousIndicator, to: indicator)
+    }
+
+    private func accessibilityTraits(for indicator: MapStatusIndicator?, locationState: LocationState) -> UIAccessibilityTraits {
+        switch indicator {
+        case .zoomInForStops, .zoomInForRentals, .preciseLocationUnavailable:
+            return .button
+        case .locationUnavailable:
+            return locationState == .locationServicesUnavailable ? .staticText : .button
+        case nil:
+            return .none
+        }
+    }
+
+    private func announceStatusChangeIfNeeded(from previousIndicator: MapStatusIndicator?, to indicator: MapStatusIndicator?) {
+        guard window != nil, let indicator, indicator != previousIndicator else { return }
+        let announcement = NSAttributedString(
+            string: indicator.accessibilityAnnouncement,
+            attributes: [.accessibilitySpeechQueueAnnouncement: true]
+        )
+        accessibilityAnnouncer(.announcement, announcement)
     }
 
     /// The purpose key, from the app's `NSLocationTemporaryUsageDescriptionDictionary`,
@@ -262,6 +301,19 @@ class MapStatusView: UIView {
         alert.addAction(UIAlertAction(title: goToSettingsTitle, style: .default) { _ in onOpenSettings() })
         alert.addAction(UIAlertAction(title: OBALoc("locationservices_alert_keepoff.button", value: "Keep Location Off", comment: ""), style: .default))
         return alert
+    }
+}
+
+// MARK: - UILargeContentViewerInteractionDelegate
+
+extension MapStatusView: UILargeContentViewerInteractionDelegate {
+    func largeContentViewerInteraction(
+        _ interaction: UILargeContentViewerInteraction,
+        didEndOn item: UILargeContentViewerItem?,
+        at point: CGPoint
+    ) {
+        guard indicator != nil, item === self, bounds.contains(point) else { return }
+        onLargeContentViewerActivate?()
     }
 }
 
