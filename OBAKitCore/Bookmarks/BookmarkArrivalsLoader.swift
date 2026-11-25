@@ -180,20 +180,24 @@ public struct BookmarkArrivalsLoader: Sendable {
         )
     }
 
-    /// When each trip in `stopID`'s saved timetable reaches the stop (the last
-    /// time, for a trip that visits it twice), or `nil` when no timetable for
-    /// `serviceDate` is saved for it. Offline, this is how a destination
-    /// bookmark tells the trips that reach its destination from short turns.
+    /// When each trip in `stopID`'s saved timetable lets riders off at the
+    /// stop (the last time, for a trip that visits it twice), or `nil` when no
+    /// timetable for `serviceDate`'s day is saved for it. Offline, this is how
+    /// a destination bookmark tells the trips that reach its destination from
+    /// short turns. A pickup-only visit doesn't count: riders can't get off.
     ///
     /// A timetable for another day is no use: a failed save keeps the
-    /// previous day's file, and its times would drop today's trips.
+    /// previous day's file, and its times would drop today's trips. The day is
+    /// compared, not the exact `date`: for today's timetable the server sends
+    /// the time of the request, which differs between the two stops' fetches.
+    /// It uses the device's calendar, as `saveTodaysScheduleIfNeeded` does.
     public func savedArrivalTimes(stopID: StopID, serviceDate: Date, using apiService: RESTAPIService) -> [TripIdentifier: Date]? {
         guard
             let savedArrivals,
             let regionID = apiService.regionIdentifier,
             let saved = savedArrivals.load(kind: .schedule, stopID: stopID, regionID: regionID),
             let schedule = try? apiService.decodeKeptBody(ScheduleForStop.self, from: saved.body).entry,
-            schedule.date == serviceDate
+            Calendar.current.isDate(schedule.date, inSameDayAs: serviceDate)
         else {
             return nil
         }
@@ -201,7 +205,7 @@ public struct BookmarkArrivalsLoader: Sendable {
         var times = [TripIdentifier: Date]()
         for routeSchedule in schedule.stopRouteSchedules {
             for direction in routeSchedule.stopRouteDirectionSchedules {
-                for stopTime in direction.scheduleStopTimes {
+                for stopTime in direction.scheduleStopTimes where stopTime.arrivalEnabled {
                     times[stopTime.tripID] = max(times[stopTime.tripID] ?? .distantPast, stopTime.arrivalDate)
                 }
             }
