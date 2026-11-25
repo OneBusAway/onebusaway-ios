@@ -80,6 +80,11 @@ public class BookmarkDataLoader: NSObject {
     /// with `savedArrivalDates`.
     @MainActor private var scheduledDeparturesByStop = [StopID: [ScheduledDeparture]]()
 
+    /// The timetable's headsigns for each offline stop's bookmarks, from
+    /// `SavedArrivalsFallback.timetableHeadsigns`. Kept with
+    /// `scheduledDeparturesByStop`.
+    @MainActor private var timetableHeadsignsByStop = [StopID: [TripBookmarkKey: Set<String>]]()
+
     /// When each trip reaches a destination stop, from the destination's saved
     /// timetable, for the destination bookmarks whose stops are offline. Keyed
     /// by the bookmark's stop, then the destination, since each stop's saved
@@ -97,8 +102,9 @@ public class BookmarkDataLoader: NSObject {
     /// headsign decide.
     @MainActor public func scheduledDepartures(for key: TripBookmarkKey, destinationStopID: StopID? = nil) -> [ScheduledDeparture] {
         let arrivalTimes = destinationStopID.flatMap { destinationArrivalTimesByStop[key.stopID]?[$0] }
+        let timetableHeadsigns = timetableHeadsignsByStop[key.stopID]?[key] ?? []
         return (scheduledDeparturesByStop[key.stopID] ?? []).filter { departure in
-            guard departure.matches(key), departure.minutes >= 0 else { return false }
+            guard departure.matches(key, timetableHeadsigns: timetableHeadsigns), departure.minutes >= 0 else { return false }
             guard let arrivalTimes else { return true }
             return arrivalTimes[departure.tripID].map { $0 > departure.date } ?? false
         }
@@ -327,6 +333,7 @@ public class BookmarkDataLoader: NSObject {
             tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
             savedArrivalDates[stopID] = nil
             scheduledDeparturesByStop[stopID] = nil
+            timetableHeadsignsByStop[stopID] = nil
             for (key, deps) in arrivals.tripKeyGroupedElements {
                 tripBookmarkKeys[key] = deps
             }
@@ -359,6 +366,7 @@ public class BookmarkDataLoader: NSObject {
             fetchedStopIDs.insert(stopID)
             savedArrivalDates[stopID] = nil
             scheduledDeparturesByStop[stopID] = nil
+            timetableHeadsignsByStop[stopID] = nil
             tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
             delegate?.dataLoaderDidUpdate(self)
 
@@ -375,6 +383,7 @@ public class BookmarkDataLoader: NSObject {
             lastBatchHadError = true
             savedArrivalDates[stopID] = fallback.savedAt
             scheduledDeparturesByStop[stopID] = fallback.scheduledDepartures
+            timetableHeadsignsByStop[stopID] = fallback.timetableHeadsigns
             destinationArrivalTimesByStop[stopID] = savedDestinationArrivalTimes(for: destinations, serviceDate: fallback.scheduleDate, using: apiService)
             tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
             for (key, deps) in fallback.arrivals.tripKeyGroupedElements {
