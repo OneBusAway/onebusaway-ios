@@ -200,6 +200,51 @@ extension AgencyAlert {
 
         return Date(timeIntervalSince1970: TimeInterval(period.end))
     }
+
+    /// Whether this alert has at least one `active_period` entry.
+    public var hasActivePeriod: Bool {
+        !alert.activePeriod.isEmpty
+    }
+
+    /// Whether this alert is active at the given date.
+    ///
+    /// An alert with **no** active periods is treated as always active, per the
+    /// GTFS-RT spec: "If this field is not provided, the alert will be shown as
+    /// long as it appears in the feed."
+    ///
+    /// Each active period is checked individually. If a period has a corrupt
+    /// timestamp pair (`start > end`), it is treated as **inactive** rather than
+    /// forming a `ClosedRange` that would trigger a fatal runtime trap.
+    ///
+    /// - Parameter date: The point in time to test against. Defaults to `now`.
+    /// - Returns: `true` when at least one active period covers `date`, or when
+    ///   the alert has no active periods at all.
+    public func isActive(at date: Date = Date()) -> Bool {
+        // No active periods ⇒ always active (GTFS-RT spec).
+        guard !alert.activePeriod.isEmpty else { return true }
+
+        return alert.activePeriod.contains { period in
+            let start = period.hasStart
+                ? Date(timeIntervalSince1970: TimeInterval(period.start))
+                : Date.distantPast
+            let end = period.hasEnd
+                ? Date(timeIntervalSince1970: TimeInterval(period.end))
+                : Date.distantFuture
+
+            // Guard against corrupt feeds where start > end. Using a
+            // ClosedRange (start...end) would trigger:
+            //   "Precondition failed: Range requires lowerBound <= upperBound"
+            // which is a fatal runtime trap.
+            guard start <= end else {
+                Logger.warn(
+                    "AgencyAlert \(id): corrupt active period (start \(period.start) > end \(period.end)); treating as inactive."
+                )
+                return false
+            }
+
+            return date >= start && date <= end
+        }
+    }
 }
 
 // MARK: - Translated Text
