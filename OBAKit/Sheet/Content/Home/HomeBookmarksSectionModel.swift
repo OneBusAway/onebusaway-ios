@@ -189,7 +189,7 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
                 highlightedTripIDs: [],
                 hasLoadedArrivalData: loader.hasFetchedData(forStopID: bookmark.stopID),
                 savedArrivalsDate: loader.savedArrivalsDate(forStopID: bookmark.stopID),
-                scheduledDepartures: TripBookmarkKey(bookmark: bookmark).map { loader.scheduledDepartures(for: $0) } ?? [],
+                scheduledDepartures: TripBookmarkKey(bookmark: bookmark).map { loader.scheduledDepartures(for: $0, destinationStopID: bookmark.hasDestination ? bookmark.destinationStopID : nil) } ?? [],
                 destinationLookup: destinationLookup(for: bookmark)
             )
         }

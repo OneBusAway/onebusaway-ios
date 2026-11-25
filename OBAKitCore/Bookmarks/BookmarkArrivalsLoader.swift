@@ -120,7 +120,11 @@ public struct BookmarkArrivalsLoader: Sendable {
     /// Saves the stop's timetable for today, unless one was already saved
     /// today: a day's timetable doesn't change, so one fetch per stop per day
     /// is enough. A failure is logged; the next good fetch tries again.
-    private func saveTodaysScheduleIfNeeded(stopID: StopID, using apiService: RESTAPIService) async {
+    ///
+    /// `arrivals(for:using:)` calls this for each stop it fetches.
+    /// `BookmarkDataLoader` also calls it for destination stops, whose
+    /// timetables say offline which trips reach them.
+    public func saveTodaysScheduleIfNeeded(stopID: StopID, using apiService: RESTAPIService) async {
         guard let savedArrivals, let regionID = apiService.regionIdentifier else { return }
         if let saved = savedArrivals.load(kind: .schedule, stopID: stopID, regionID: regionID),
            Calendar.current.isDateInToday(saved.savedAt) {
@@ -171,8 +175,42 @@ public struct BookmarkArrivalsLoader: Sendable {
             arrivals: (liveArrivals ?? []).filter { $0.temporalState != .past },
             savedAt: savedAt,
             scheduledDepartures: (schedule?.scheduledDepartures ?? []).filter { $0.minutes >= 0 && !savedTripIDs.contains($0.tripID) },
+            scheduleDate: schedule?.date,
             underlyingError: error
         )
+    }
+
+    /// When each trip in `stopID`'s saved timetable lets riders off at the
+    /// stop (the last time, for a trip that visits it twice), or `nil` when no
+    /// timetable for `serviceDate`'s day is saved for it. Offline, this is how
+    /// a destination bookmark tells the trips that reach its destination from
+    /// short turns. A pickup-only visit doesn't count: riders can't get off.
+    ///
+    /// A timetable for another day is no use: a failed save keeps the
+    /// previous day's file, and its times would drop today's trips. The day is
+    /// compared, not the exact `date`: for today's timetable the server sends
+    /// the time of the request, which differs between the two stops' fetches.
+    /// It uses the device's calendar, as `saveTodaysScheduleIfNeeded` does.
+    public func savedArrivalTimes(stopID: StopID, serviceDate: Date, using apiService: RESTAPIService) -> [TripIdentifier: Date]? {
+        guard
+            let savedArrivals,
+            let regionID = apiService.regionIdentifier,
+            let saved = savedArrivals.load(kind: .schedule, stopID: stopID, regionID: regionID),
+            let schedule = try? apiService.decodeKeptBody(ScheduleForStop.self, from: saved.body).entry,
+            Calendar.current.isDate(schedule.date, inSameDayAs: serviceDate)
+        else {
+            return nil
+        }
+
+        var times = [TripIdentifier: Date]()
+        for routeSchedule in schedule.stopRouteSchedules {
+            for direction in routeSchedule.stopRouteDirectionSchedules {
+                for stopTime in direction.scheduleStopTimes where stopTime.arrivalEnabled {
+                    times[stopTime.tripID] = max(times[stopTime.tripID] ?? .distantPast, stopTime.arrivalDate)
+                }
+            }
+        }
+        return times
     }
 
     /// Collects the stream into per-bookmark departures. A bookmark whose stop
