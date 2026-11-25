@@ -60,3 +60,9 @@
 
 /* Warning shown when nearby departures could not be refreshed and may be out of date */
 "nearby.stale" = "此数据可能已过期。";
+
+/* %@ is the time the departure was saved, e.g. 8:42 AM */
+"bookmarks.offline_saved_fmt" = "离线，保存于 %@";
+
+/* The saved departures have left; the time is from the saved timetable */
+"bookmarks.offline_timetable" = "离线，按时刻表";

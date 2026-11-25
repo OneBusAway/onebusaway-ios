@@ -85,15 +85,21 @@ struct WatchBookmarkRow: View {
         bookmarkArrival.nextArrival
     }
 
+    /// Offline, once the saved departures have left.
+    private var scheduledDeparture: ScheduledDeparture? {
+        bookmarkArrival.nextScheduledDeparture
+    }
+
+    private var route: Route? {
+        arrival?.route ?? scheduledDeparture?.route
+    }
+
     private var routeColor: Color {
-        if let arrival, let route = arrival.route {
-            return Color(uiColor: route.color ?? ThemeColors.shared.brand)
-        }
-        return Color(uiColor: ThemeColors.shared.brand)
+        Color(uiColor: route?.color ?? ThemeColors.shared.brand)
     }
 
     private var routeTextColor: Color? {
-        arrival?.route?.textColor.map { Color(uiColor: $0) }
+        route?.textColor.map { Color(uiColor: $0) }
     }
 
     private var countdownColor: Color {
@@ -131,6 +137,13 @@ struct WatchBookmarkRow: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                if let savedText {
+                    // Not truncated: the save time is at the end.
+                    Text(savedText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer(minLength: 4)
             if let arrival {
@@ -138,7 +151,7 @@ struct WatchBookmarkRow: View {
                 // so the row is unchanged unless the glyph is drawn.
                 HStack(spacing: 2) {
                     // Schedule-only countdowns already carry a clock glyph.
-                    if differentiateWithoutColor, arrival.predicted {
+                    if differentiateWithoutColor, arrival.predicted, bookmarkArrival.savedAt == nil {
                         Image(systemName: arrival.scheduleStatus.differentiateWithoutColorGlyphName(isRealTime: true))
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(countdownColor)
@@ -146,11 +159,15 @@ struct WatchBookmarkRow: View {
                     }
                     CountdownView(
                         departure: arrival.arrivalDepartureDate,
-                        isRealTime: arrival.predicted,
+                        // A saved prediction is no longer live.
+                        isRealTime: arrival.predicted && bookmarkArrival.savedAt == nil,
                         color: countdownColor,
                         emphasized: false
                     )
                 }
+            } else if let scheduledDeparture {
+                // A timetable time has no prediction: grey, with the clock glyph.
+                CountdownView(departure: scheduledDeparture.date, isRealTime: false, color: .secondary, emphasized: false)
             }
         }
         // The route badge and countdown hide themselves from VoiceOver, so the
@@ -161,7 +178,35 @@ struct WatchBookmarkRow: View {
         // The countdown's color is its only adherence cue; say it. With no
         // arrival there is no countdown, so no value either.
         .accessibilityValue(arrival.map { formatters.deviationLabel(for: $0) } ?? "")
-        .accessibilityAddTraits(arrival == nil ? [] : .updatesFrequently)
+        .accessibilityAddTraits(arrival == nil && scheduledDeparture == nil ? [] : .updatesFrequently)
+    }
+
+    /// "Offline, saved 8:47 PM" while the departure shown is a saved one, or
+    /// "Offline, scheduled times" once it comes from the saved timetable, as
+    /// the phone's bookmark cards say. `nil` while live.
+    private var savedText: String? {
+        guard let savedAt = bookmarkArrival.savedAt else { return nil }
+        if arrival == nil, scheduledDeparture != nil {
+            return OBALoc("bookmarks.offline_timetable", value: "Offline, scheduled times", comment: "Shown on a bookmark row when the watch is offline, the departures it saved have all left, and the time shown comes from the stop's saved timetable instead.")
+        }
+        let format = OBALoc("bookmarks.offline_saved_fmt", value: "Offline, saved %@", comment: "Shown on a bookmark row when the watch is offline and the departure shown is the last one it saved. The placeholder is the time it was saved, e.g. 'Offline, saved 8:42 AM'.")
+        return String(format: format, savedAtString(savedAt))
+    }
+
+    /// The save time, with the date in front when it wasn't today, so
+    /// "8:42 AM" can't be mistaken for this morning.
+    private func savedAtString(_ savedAt: Date) -> String {
+        var calendar = Calendar.current
+        calendar.timeZone = formatters.timeFormatter.timeZone
+        if calendar.isDateInToday(savedAt) {
+            return formatters.timeFormatter.string(from: savedAt)
+        }
+        let formatter = DateFormatter()
+        formatter.locale = formatters.timeFormatter.locale
+        formatter.timeZone = formatters.timeFormatter.timeZone
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: savedAt)
     }
 
     /// Route and title, stop name, then time until the next arrival when there
@@ -178,6 +223,12 @@ struct WatchBookmarkRow: View {
         }
         if let arrival {
             clauses.append(formatters.formattedTime(until: arrival))
+        } else if let scheduledDeparture {
+            let minutes = scheduledDeparture.minutes
+            clauses.append(formatters.formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: minutes, temporalState: minutes == 0 ? .present : .future))
+        }
+        if let savedText {
+            clauses.append(savedText)
         }
         return clauses.joined(separator: ", ")
     }

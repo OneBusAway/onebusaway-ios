@@ -60,3 +60,9 @@
 
 /* Warning shown when nearby departures could not be refreshed and may be out of date */
 "nearby.stale" = "Questi dati potrebbero non essere aggiornati.";
+
+/* %@ is the time the departure was saved, e.g. 8:42 AM */
+"bookmarks.offline_saved_fmt" = "Offline, salvato alle %@";
+
+/* The saved departures have left; the time is from the saved timetable */
+"bookmarks.offline_timetable" = "Offline, orari programmati";
