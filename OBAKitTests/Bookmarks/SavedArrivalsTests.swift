@@ -171,6 +171,12 @@ final class SavedArrivalsTests: OBATestCase {
         let loaded = try #require(store.load(stopID: stopID, regionID: 1))
         #expect(loaded.body == body)
         #expect(abs(loaded.savedAt.timeIntervalSince(savedAt)) < 1)
+
+        // Independent kinds (.arrivals and .schedule) load separately for the same stop and region
+        let scheduleBody = Data("{\"schedule\":true}".utf8)
+        store.save(scheduleBody, kind: .schedule, stopID: stopID, regionID: 1)
+        #expect(store.load(kind: .schedule, stopID: stopID, regionID: 1)?.body == scheduleBody)
+        #expect(store.load(kind: .arrivals, stopID: stopID, regionID: 1)?.body == body)
     }
 
     @Test func `A later save replaces the earlier one`() throws {
@@ -888,81 +894,24 @@ final class SavedArrivalsTests: OBATestCase {
     // MARK: - SavedArrivalsStore & ScheduledDeparture Edge Conditions
 
     @Test
-    func `SavedArrivalsStore encodes special characters and punctuation in stopID without filesystem collision`() {
-        let store = SavedArrivalsStore(directory: directory)
-        let specialStopID = "agency:123/456#sub_stop@north"
-        let data = "{\"status\":\"ok\"}".data(using: .utf8)!
+    func `Distinct raw stop IDs with delimiters map to different files and load back separately`() throws {
+        let idColon = "agency:100"
+        let idSlash = "agency/100"
+        let colonData = Data("colon".utf8)
+        let slashData = Data("slash".utf8)
 
-        let arrivalsURL = store.fileURL(kind: .arrivals, stopID: specialStopID, regionID: 42)
-        let scheduleURL = store.fileURL(kind: .schedule, stopID: specialStopID, regionID: 42)
+        let colonURL = store.fileURL(kind: .arrivals, stopID: idColon, regionID: 1)
+        let slashURL = store.fileURL(kind: .arrivals, stopID: idSlash, regionID: 1)
+        #expect(colonURL != slashURL)
+        #expect(colonURL.lastPathComponent != slashURL.lastPathComponent)
 
-        #expect(arrivalsURL.lastPathComponent.hasSuffix(".json"))
-        #expect(!arrivalsURL.lastPathComponent.hasSuffix(".schedule.json"))
-        #expect(scheduleURL.lastPathComponent.hasSuffix(".schedule.json"))
-        #expect(!arrivalsURL.path.contains(":"))
-        #expect(!arrivalsURL.lastPathComponent.contains("/"))
+        store.save(colonData, kind: .arrivals, stopID: idColon, regionID: 1)
+        store.save(slashData, kind: .arrivals, stopID: idSlash, regionID: 1)
 
-        store.save(data, kind: .arrivals, stopID: specialStopID, regionID: 42)
-        store.save(data, kind: .schedule, stopID: specialStopID, regionID: 42)
-
-        let loadedArrivals = store.load(kind: .arrivals, stopID: specialStopID, regionID: 42)
-        let loadedSchedule = store.load(kind: .schedule, stopID: specialStopID, regionID: 42)
-
-        #expect(loadedArrivals?.body == data)
-        #expect(loadedSchedule?.body == data)
-    }
-
-    @Test
-    func `SavedArrivalsStore isolates identical stopIDs across distinct regionIDs`() {
-        let store = SavedArrivalsStore(directory: directory)
-        let stop = "shared_stop_1001"
-        let region1Data = "region_1_payload".data(using: .utf8)!
-        let region2Data = "region_2_payload".data(using: .utf8)!
-
-        store.save(region1Data, kind: .arrivals, stopID: stop, regionID: 1)
-        store.save(region2Data, kind: .arrivals, stopID: stop, regionID: 2)
-
-        let loaded1 = store.load(kind: .arrivals, stopID: stop, regionID: 1)
-        let loaded2 = store.load(kind: .arrivals, stopID: stop, regionID: 2)
-        let loadedNonExistent = store.load(kind: .arrivals, stopID: stop, regionID: 999)
-
-        #expect(loaded1?.body == region1Data)
-        #expect(loaded2?.body == region2Data)
-        #expect(loadedNonExistent == nil)
-    }
-
-    @Test
-    func `SavedArrivalsStore overwrites existing payload atomically and updates savedAt timestamp`() throws {
-        let store = SavedArrivalsStore(directory: directory)
-        let stop = "stop_overwrite_test"
-        let initialData = "initial_data".data(using: .utf8)!
-        let updatedData = "updated_data".data(using: .utf8)!
-
-        let pastDate = Date(timeIntervalSince1970: 1_700_000_000)
-        let recentDate = Date(timeIntervalSince1970: 1_750_000_000)
-
-        store.save(initialData, kind: .arrivals, stopID: stop, regionID: 1, savedAt: pastDate)
-        let firstLoad = try #require(store.load(kind: .arrivals, stopID: stop, regionID: 1))
-        #expect(firstLoad.body == initialData)
-        #expect(abs(firstLoad.savedAt.timeIntervalSince(pastDate)) < 1.0)
-
-        store.save(updatedData, kind: .arrivals, stopID: stop, regionID: 1, savedAt: recentDate)
-        let secondLoad = try #require(store.load(kind: .arrivals, stopID: stop, regionID: 1))
-        #expect(secondLoad.body == updatedData)
-        #expect(abs(secondLoad.savedAt.timeIntervalSince(recentDate)) < 1.0)
-    }
-
-    @Test
-    func `SavedArrivalsStore returns nil when attempting to load missing or unwritten kind`() {
-        let store = SavedArrivalsStore(directory: directory)
-        let stop = "unwritten_stop"
-
-        #expect(store.load(kind: .arrivals, stopID: stop, regionID: 1) == nil)
-        #expect(store.load(kind: .schedule, stopID: stop, regionID: 1) == nil)
-
-        store.save("arrivals_only".data(using: .utf8)!, kind: .arrivals, stopID: stop, regionID: 1)
-        #expect(store.load(kind: .arrivals, stopID: stop, regionID: 1) != nil)
-        #expect(store.load(kind: .schedule, stopID: stop, regionID: 1) == nil)
+        let loadedColon = try #require(store.load(kind: .arrivals, stopID: idColon, regionID: 1))
+        let loadedSlash = try #require(store.load(kind: .arrivals, stopID: idSlash, regionID: 1))
+        #expect(loadedColon.body == colonData)
+        #expect(loadedSlash.body == slashData)
     }
 
     @Test
@@ -989,15 +938,13 @@ final class SavedArrivalsTests: OBATestCase {
     }
 
     @Test
-    func `ScheduledDeparture minutes accurately computes signed intervals across past and future thresholds`() {
+    func `ScheduledDeparture minutes truncates toward zero and pins negative interval boundary`() {
         let now = Date()
-        let departureIn5Min = ScheduledDeparture(tripID: "t1", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(305))
-        let departureIn30Sec = ScheduledDeparture(tripID: "t2", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(30))
-        let departurePast2Min = ScheduledDeparture(tripID: "t3", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(-125))
+        let departure59SecAgo = ScheduledDeparture(tripID: "t1", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(-59))
+        let departure61SecAgo = ScheduledDeparture(tripID: "t2", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(-61))
 
-        #expect(departureIn5Min.minutes >= 4 && departureIn5Min.minutes <= 5)
-        #expect(departureIn30Sec.minutes == 0)
-        #expect(departurePast2Min.minutes <= -2 && departurePast2Min.minutes >= -3)
+        #expect(departure59SecAgo.minutes == 0)
+        #expect(departure61SecAgo.minutes == -1)
     }
 
     @Test
