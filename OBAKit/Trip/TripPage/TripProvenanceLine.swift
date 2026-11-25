@@ -9,8 +9,8 @@
 
 import Foundation
 
-/// The trip card's footer: which route, which vehicle, and how fresh the
-/// position is — "RapidRide H · Vehicle 6821 · position updated 12s ago".
+/// The trip card's footer: which route, which trip, which vehicle, and how fresh
+/// the position is — "RapidRide H · Vehicle 6821 · position updated 12s ago".
 ///
 /// Every clause is optional in practice. A schedule-only trip has no vehicle and
 /// no position age; some feeds omit the route's long name. Joining these by
@@ -24,13 +24,20 @@ nonisolated enum TripProvenanceLine {
 
     /// - Returns: `nil` when there is nothing to say, so the caller can drop the
     ///   label rather than render an empty row that still takes vertical space.
-    static func text(routeName: String?, vehicleLabel: String?, freshness: String?) -> String? {
-        let clauses = [routeName, vehicleLabel, freshness]
+    static func text(routeName: String?, tripLabel: String? = nil, vehicleLabel: String?, freshness: String?) -> String? {
+        let clauses = [routeName, tripLabel, vehicleLabel, freshness]
             .compactMap { $0 }
             .filter { !$0.isEmpty }
 
         guard !clauses.isEmpty else { return nil }
         return clauses.joined(separator: separator)
+    }
+
+    /// The trip's public short name, such as a Sounder train number: "Trip 1519".
+    /// `nil` for the many feeds that leave it out, so the clause disappears.
+    @MainActor static func tripLabel(shortName: String?) -> String? {
+        guard let shortName = shortName?.trimmingCharacters(in: .whitespacesAndNewlines), !shortName.isEmpty else { return nil }
+        return String(format: OBALoc("trip_page.trip_short_name_fmt", value: "Trip %@", comment: "Identifies a trip by its public short name on the trip page, such as a commuter rail train number, e.g. 'Trip 1519'."), shortName)
     }
 
     /// How old the vehicle's position is: "position updated 12 sec. ago", or, while

@@ -254,6 +254,7 @@ struct TripPageView: View {
             routeTextColor: route?.textColor.map { Color(uiColor: $0) },
             provenance: TripProvenanceLine.text(
                 routeName: route?.longName,
+                tripLabel: TripProvenanceLine.tripLabel(shortName: convertible.trip.shortName),
                 vehicleLabel: vehicleLabel,
                 freshness: freshness
             )

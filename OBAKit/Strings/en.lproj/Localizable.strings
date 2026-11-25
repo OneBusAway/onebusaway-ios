@@ -2082,6 +2082,9 @@
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "This trip's stop list isn't available right now.";
 
+/* Identifies a trip by its public short name on the trip page, such as a commuter rail train number, e.g. 'Trip 1519'. */
+"trip_page.trip_short_name_fmt" = "Trip %@";
+
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Vehicle %@";
 

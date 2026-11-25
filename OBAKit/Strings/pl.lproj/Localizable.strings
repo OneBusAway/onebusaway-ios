@@ -2076,6 +2076,8 @@
 "trip_page.stops_loading" = "Wczytywanie przystanków tego kursu…";
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "Lista przystanków tego kursu jest teraz niedostępna.";
+/* Identifies a trip by its public short name on the trip page, such as a commuter rail train number, e.g. 'Trip 1519'. */
+"trip_page.trip_short_name_fmt" = "Kurs %@";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Pojazd %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */
