@@ -867,4 +867,184 @@ final class GTFSRealtimeDelayReconcilerTests {
         #expect(tripFallbackResult.departureDelay == 420)
         #expect(tripFallbackResult.reconciledArrival == arrival.scheduledArrival.addingTimeInterval(420))
     }
+
+    // MARK: - Delay Reconciliation Fallbacks, Exact Matches, & Mutating Semantics
+
+    @Test func `Reconciler selects exact sequence and stop match over duplicate sequence candidate`() {
+        let reconciler = GTFSRealtimeDelayReconciler.standard
+
+        // Feed has two updates for sequence 5: one for stop_X and one for stop_Y
+        let updateX = GTFSRTStopTimeUpdate(
+            stopSequence: 5,
+            stopID: "stop_X",
+            arrival: GTFSRTStopTimeEvent(delay: 111),
+            departure: GTFSRTStopTimeEvent(delay: 222)
+        )
+        let updateY = GTFSRTStopTimeUpdate(
+            stopSequence: 5,
+            stopID: "stop_Y",
+            arrival: GTFSRTStopTimeEvent(delay: 333),
+            departure: GTFSRTStopTimeEvent(delay: 444)
+        )
+
+        let tripUpdate = GTFSRTTripUpdate(
+            tripID: "trip_multi_seq",
+            stopTimeUpdates: [updateX, updateY]
+        )
+
+        let targetSchedule = GTFSRTScheduleItem(
+            tripID: "trip_multi_seq",
+            stopID: "stop_Y",
+            stopSequence: 5,
+            scheduledArrival: Date(timeIntervalSince1970: 1_700_000_000),
+            scheduledDeparture: Date(timeIntervalSince1970: 1_700_000_060)
+        )
+
+        let matched = reconciler.findMatchingStopTimeUpdate(for: targetSchedule, in: tripUpdate)
+        #expect(matched?.stopID == "stop_Y")
+        #expect(matched?.arrivalDelay == 333)
+        #expect(matched?.departureDelay == 444)
+    }
+
+    @Test func `Reconciler matches stop ID when sequence is absent in target schedule`() {
+        let reconciler = GTFSRealtimeDelayReconciler.standard
+
+        let update = GTFSRTStopTimeUpdate(
+            stopSequence: 8,
+            stopID: "stop_standalone",
+            arrival: GTFSRTStopTimeEvent(delay: 150),
+            departure: GTFSRTStopTimeEvent(delay: 200)
+        )
+
+        let tripUpdate = GTFSRTTripUpdate(
+            tripID: "trip_standalone",
+            stopTimeUpdates: [update]
+        )
+
+        // Schedule has nil stop sequence
+        let scheduleWithoutSeq = GTFSRTScheduleItem(
+            tripID: "trip_standalone",
+            stopID: "stop_standalone",
+            stopSequence: nil
+        )
+
+        let matched = reconciler.findMatchingStopTimeUpdate(for: scheduleWithoutSeq, in: tripUpdate)
+        #expect(matched?.stopID == "stop_standalone")
+        #expect(matched?.arrivalDelay == 150)
+        #expect(matched?.departureDelay == 200)
+    }
+
+    @Test func `Applying reconciliation updates vehicleID and occupancyStatus on ArrivalDeparture`() {
+        let arrDep = makeArrivalDeparture(tripID: "trip_veh", stopID: "stop_veh")
+
+        let stopUpdate = GTFSRTStopTimeUpdate(
+            stopID: "stop_veh",
+            arrival: GTFSRTStopTimeEvent(delay: 90),
+            departure: GTFSRTStopTimeEvent(delay: 120),
+            departureOccupancyStatus: .fewSeatsAvailable
+        )
+
+        let tripUpdate = GTFSRTTripUpdate(
+            tripID: "trip_veh",
+            vehicleID: "new_vehicle_888",
+            stopTimeUpdates: [stopUpdate]
+        )
+
+        let result = GTFSRealtimeDelayReconciler.standard.reconcile(arrivalDeparture: arrDep, with: tripUpdate)
+        let applied = arrDep.applying(reconciliation: result)
+
+        #expect(applied.vehicleID == "new_vehicle_888")
+        #expect(applied.occupancyStatus == .fewSeatsAvailable)
+        #expect(applied.predicted == true)
+        #expect(applied.predictedArrival == arrDep.scheduledArrival.addingTimeInterval(90))
+        #expect(applied.predictedDeparture == arrDep.scheduledDeparture.addingTimeInterval(120))
+    }
+
+    @Test func `Applying reconciliation preserves existing vehicleID when update vehicleID is absent`() {
+        let arrDep = makeArrivalDeparture(tripID: "trip_preserve", stopID: "stop_preserve")
+        #expect(arrDep.vehicleID == "veh_10")
+
+        let stopUpdate = GTFSRTStopTimeUpdate(
+            stopID: "stop_preserve",
+            arrival: GTFSRTStopTimeEvent(delay: 60),
+            departure: GTFSRTStopTimeEvent(delay: 60)
+        )
+
+        let tripUpdateWithoutVehicle = GTFSRTTripUpdate(
+            tripID: "trip_preserve",
+            vehicleID: nil,
+            stopTimeUpdates: [stopUpdate]
+        )
+
+        let result = GTFSRealtimeDelayReconciler.standard.reconcile(arrivalDeparture: arrDep, with: tripUpdateWithoutVehicle)
+        let applied = arrDep.applying(reconciliation: result)
+
+        #expect(applied.vehicleID == "veh_10")
+    }
+
+    @Test func `Batch reconciliation filters candidate updates matching routeID when routeID is present`() {
+        let arrDepRoute1 = makeArrivalDeparture(tripID: "trip_shared", stopID: "stop_shared")
+        #expect(arrDepRoute1.routeID == "route_1")
+
+        // Feed has trip update for trip_shared with route_2 (mismatch) and route_1 (match)
+        let updateWrongRoute = GTFSRTTripUpdate(
+            tripID: "trip_shared",
+            routeID: "route_2",
+            tripDelay: 500
+        )
+        let updateCorrectRoute = GTFSRTTripUpdate(
+            tripID: "trip_shared",
+            routeID: "route_1",
+            tripDelay: 150
+        )
+
+        let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [arrDepRoute1],
+            with: [updateWrongRoute, updateCorrectRoute]
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].arrivalDelay == 150)
+        #expect(results[0].tripUpdate?.routeID == "route_1")
+    }
+
+    @Test func `ScheduleForStop StopScheduleStopTime conforms to GTFSRTReconcilableSchedule`() throws {
+        let stopTimeJSON: [String: Any] = [
+            "tripId": "trip_schedule_entry",
+            "serviceId": "svc_1",
+            "arrivalTime": Int64(1_700_000_500_000),
+            "departureTime": Int64(1_700_000_600_000),
+            "arrivalEnabled": true,
+            "departureEnabled": true,
+            "stopHeadsign": "Downtown"
+        ]
+
+        let data = try JSONSerialization.data(withJSONObject: stopTimeJSON)
+        let stopTime = try JSONDecoder().decode(ScheduleForStop.StopScheduleStopTime.self, from: data)
+        stopTime.stopID = "stop_timetable_123"
+
+        #expect(stopTime.reconcilableTripID == "trip_schedule_entry")
+        #expect(stopTime.reconcilableStopID == "stop_timetable_123")
+        #expect(stopTime.reconcilableStopSequence == nil)
+        #expect(stopTime.scheduledArrivalDate == Date(timeIntervalSince1970: 1_700_000_500))
+        #expect(stopTime.scheduledDepartureDate == Date(timeIntervalSince1970: 1_700_000_600))
+
+        let tripUpdate = GTFSRTTripUpdate(
+            tripID: "trip_schedule_entry",
+            stopTimeUpdates: [
+                GTFSRTStopTimeUpdate(
+                    stopID: "stop_timetable_123",
+                    arrival: GTFSRTStopTimeEvent(delay: 120),
+                    departure: GTFSRTStopTimeEvent(delay: 180)
+                )
+            ]
+        )
+
+        let reconciled = GTFSRealtimeDelayReconciler.standard.reconcile(schedule: stopTime, with: tripUpdate)
+        #expect(reconciled.isLive == true)
+        #expect(reconciled.arrivalDelay == 120)
+        #expect(reconciled.departureDelay == 180)
+        #expect(reconciled.reconciledArrival == Date(timeIntervalSince1970: 1_700_000_620))
+        #expect(reconciled.reconciledDeparture == Date(timeIntervalSince1970: 1_700_000_780))
+    }
 }
