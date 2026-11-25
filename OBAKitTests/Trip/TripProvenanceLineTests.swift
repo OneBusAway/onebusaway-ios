@@ -69,14 +69,18 @@ struct TripProvenanceLineTests {
     // MARK: - Trip short name
 
     /// Sounder trips carry a train number; it sits between the route and the vehicle.
+    /// The expected trip clause comes from the same localized key, so the test
+    /// holds in any test-host language.
     @Test func `A trip short name shows between the route and the vehicle`() {
+        let format = Bundle.obaKit.localizedString(forKey: "trip_page.trip_short_name_fmt", value: "MISSING", table: nil)
+        #expect(format != "MISSING", "trip_page.trip_short_name_fmt is missing from the strings catalog")
         let line = TripProvenanceLine.text(
             routeName: "Sounder S Line",
             tripLabel: TripProvenanceLine.tripLabel(shortName: "1519"),
             vehicleLabel: "Vehicle 1402",
             freshness: nil
         )
-        #expect(line == "Sounder S Line · Trip 1519 · Vehicle 1402")
+        #expect(line == "Sounder S Line · \(String(format: format, "1519")) · Vehicle 1402")
     }
 
     /// Link and buses send no trip short name, and their line must not change.
@@ -88,4 +92,3 @@ struct TripProvenanceLineTests {
                 == "1 Line · Vehicle 140")
     }
 }
-
