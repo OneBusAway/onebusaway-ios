@@ -43,19 +43,22 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
     /// The color used to represent early departures.
     public let departureEarly: UIColor
 
-    /// The background color used to represent early departures on smaller user interfaces like a Today View extension.
+    /// Solid early-departure red fill that carries white text on departure badges
+    /// (clears WCAG AA in normal appearances and AAA in high-contrast modes).
     public let departureEarlyBackground: UIColor
 
     /// The color used to represent late departures.
     public let departureLate: UIColor
 
-    /// The background color used to represent late departures on smaller user interfaces like a Today View extension.
+    /// Solid late-departure blue fill that carries white text on departure badges
+    /// (clears WCAG AA in normal appearances and AAA in high-contrast modes).
     public let departureLateBackground: UIColor
 
     /// The color used to represent on-time departures.
     public let departureOnTime: UIColor
 
-    /// The background color used to represent on time departures on smaller user interfaces like a Today View extension.
+    /// Solid on-time green fill that carries white text on departure badges
+    /// (clears WCAG AA in normal appearances and AAA in high-contrast modes).
     public let departureOnTimeBackground: UIColor
 
     /// Solid on-time green for a fill that carries white text or a white glyph
@@ -139,17 +142,17 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
         onDemandOpenGreen = UIColor(red: 0x24 / 255.0, green: 0x8a / 255.0, blue: 0x3d / 255.0, alpha: 1.0)
 
         departureEarly = palette.red
-        departureEarlyBackground = palette.red
+        departureEarlyBackground = palette.earlyFill
 
         departureOnTime = palette.onTime
-        departureOnTimeBackground = palette.onTime
+        departureOnTimeBackground = palette.onTimeFill
         departureOnTimeFill = palette.onTimeFill
 
         departureUnknown = palette.label
         departureUnknownBackground = palette.gray
 
         departureLate = palette.blue
-        departureLateBackground = palette.blue
+        departureLateBackground = palette.lateFill
 
         gray = palette.gray
         green = palette.green
@@ -184,6 +187,8 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
         let green: UIColor
         let onTime: UIColor
         let onTimeFill: UIColor
+        let earlyFill: UIColor
+        let lateFill: UIColor
         let gray: UIColor
         let yellow: UIColor
         let warningText: UIColor
@@ -209,8 +214,10 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
             blue: UIColor(red: 0.039, green: 0.518, blue: 1.000, alpha: 1),
             green: UIColor(red: 0.188, green: 0.820, blue: 0.345, alpha: 1),
             onTime: UIColor(red: 0.188, green: 0.820, blue: 0.345, alpha: 1),
-            // Same value as the iOS dark appearance: a watch face is always dark.
+            // Same values as the iOS dark appearance: a watch face is always dark.
             onTimeFill: UIColor(red: 0.122, green: 0.478, blue: 0.208, alpha: 1),
+            earlyFill: UIColor(red: 0xC4 / 255.0, green: 0x2B / 255.0, blue: 0x23 / 255.0, alpha: 1),
+            lateFill: UIColor(red: 0x0B / 255.0, green: 0x65 / 255.0, blue: 0xC2 / 255.0, alpha: 1),
             gray: UIColor(red: 0.557, green: 0.557, blue: 0.576, alpha: 1),
             yellow: UIColor(red: 1.000, green: 0.839, blue: 0.039, alpha: 1),
             // systemOrange's dark value: 10:1 on black.
@@ -299,6 +306,34 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
                     return UIColor(red: 0.122, green: 0.478, blue: 0.208, alpha: 1.00)
                 } else {
                     return UIColor(red: 0.00, green: 0.45, blue: 0.00, alpha: 1.00)
+                }
+            },
+            // Light: #C92A22 (5.47:1 under white). Dark: #C42B23 (5.65:1 under white).
+            // HC light: #A00000 (8.42:1 under white). HC dark: #A01914 (7.94:1 under white).
+            earlyFill: UIColor { traitCollection in
+                if traitCollection.accessibilityContrast == .high {
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(red: 0xA0 / 255.0, green: 0x19 / 255.0, blue: 0x14 / 255.0, alpha: 1.00) // #A01914, 7.94:1 under white
+                        : UIColor(red: 0xA0 / 255.0, green: 0x00 / 255.0, blue: 0x00 / 255.0, alpha: 1.00) // #A00000, 8.42:1 under white
+                }
+                if traitCollection.userInterfaceStyle == .dark {
+                    return UIColor(red: 0xC4 / 255.0, green: 0x2B / 255.0, blue: 0x23 / 255.0, alpha: 1.00) // #C42B23, 5.65:1 under white
+                } else {
+                    return UIColor(red: 0xC9 / 255.0, green: 0x2A / 255.0, blue: 0x22 / 255.0, alpha: 1.00) // #C92A22, 5.47:1 under white
+                }
+            },
+            // Light: #0066CC (5.57:1 under white). Dark: #0B65C2 (5.75:1 under white).
+            // HC light: #0040CC (8.06:1 under white). HC dark: #0047B3 (8.23:1 under white).
+            lateFill: UIColor { traitCollection in
+                if traitCollection.accessibilityContrast == .high {
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(red: 0x00 / 255.0, green: 0x47 / 255.0, blue: 0xB3 / 255.0, alpha: 1.00) // #0047B3, 8.23:1 under white
+                        : UIColor(red: 0x00 / 255.0, green: 0x40 / 255.0, blue: 0xCC / 255.0, alpha: 1.00) // #0040CC, 8.06:1 under white
+                }
+                if traitCollection.userInterfaceStyle == .dark {
+                    return UIColor(red: 0x0B / 255.0, green: 0x65 / 255.0, blue: 0xC2 / 255.0, alpha: 1.00) // #0B65C2, 5.75:1 under white
+                } else {
+                    return UIColor(red: 0x00 / 255.0, green: 0x66 / 255.0, blue: 0xCC / 255.0, alpha: 1.00) // #0066CC, 5.57:1 under white
                 }
             },
             gray: .systemGray,

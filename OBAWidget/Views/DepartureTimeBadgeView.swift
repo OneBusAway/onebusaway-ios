@@ -40,14 +40,8 @@ struct DepartureTimeBadgeView: View {
         self.formatters = formatters
     }
 
-    /// The schedule-status color, except that on-time badges use
-    /// `departureOnTimeFill`: in dark mode the on-time color is systemGreen,
-    /// which white text only reaches 2.0:1 against.
     private var fillColor: UIColor {
-        if scheduleStatus == .onTime {
-            return ThemeColors.shared.departureOnTimeFill
-        }
-        return formatters.backgroundColorForScheduleStatus(scheduleStatus)
+        formatters.backgroundColorForScheduleStatus(scheduleStatus)
     }
 
     @Environment(\.colorScheme) private var colorScheme

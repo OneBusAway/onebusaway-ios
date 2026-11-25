@@ -54,8 +54,11 @@ final class ThemeTests {
         let tokens: [(String, UIColor)] = [
             ("departureOnTime", colors.departureOnTime),
             ("departureOnTimeFill", colors.departureOnTimeFill),
+            ("departureOnTimeBackground", colors.departureOnTimeBackground),
             ("departureEarly", colors.departureEarly),
+            ("departureEarlyBackground", colors.departureEarlyBackground),
             ("departureLate", colors.departureLate),
+            ("departureLateBackground", colors.departureLateBackground),
             ("warningText", colors.warningText),
             ("brandAccent", colors.brandAccent),
             ("brandTint", colors.brandTint)
