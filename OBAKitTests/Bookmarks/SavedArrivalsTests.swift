@@ -884,4 +884,212 @@ final class SavedArrivalsTests: OBATestCase {
         #expect(online.upcomingArrivalDepartures.map(\.tripID) == ["left", "coming"])
         #expect(offline.upcomingArrivalDepartures.map(\.tripID) == ["coming"])
     }
+
+    // MARK: - SavedArrivalsStore & ScheduledDeparture Edge Conditions
+
+    @Test
+    func `SavedArrivalsStore encodes special characters and punctuation in stopID without filesystem collision`() {
+        let store = SavedArrivalsStore(directory: directory)
+        let specialStopID = "agency:123/456#sub_stop@north"
+        let data = "{\"status\":\"ok\"}".data(using: .utf8)!
+
+        let arrivalsURL = store.fileURL(kind: .arrivals, stopID: specialStopID, regionID: 42)
+        let scheduleURL = store.fileURL(kind: .schedule, stopID: specialStopID, regionID: 42)
+
+        #expect(arrivalsURL.lastPathComponent.hasSuffix(".json"))
+        #expect(!arrivalsURL.lastPathComponent.hasSuffix(".schedule.json"))
+        #expect(scheduleURL.lastPathComponent.hasSuffix(".schedule.json"))
+        #expect(!arrivalsURL.path.contains(":"))
+        #expect(!arrivalsURL.lastPathComponent.contains("/"))
+
+        store.save(data, kind: .arrivals, stopID: specialStopID, regionID: 42)
+        store.save(data, kind: .schedule, stopID: specialStopID, regionID: 42)
+
+        let loadedArrivals = store.load(kind: .arrivals, stopID: specialStopID, regionID: 42)
+        let loadedSchedule = store.load(kind: .schedule, stopID: specialStopID, regionID: 42)
+
+        #expect(loadedArrivals?.body == data)
+        #expect(loadedSchedule?.body == data)
+    }
+
+    @Test
+    func `SavedArrivalsStore isolates identical stopIDs across distinct regionIDs`() {
+        let store = SavedArrivalsStore(directory: directory)
+        let stop = "shared_stop_1001"
+        let region1Data = "region_1_payload".data(using: .utf8)!
+        let region2Data = "region_2_payload".data(using: .utf8)!
+
+        store.save(region1Data, kind: .arrivals, stopID: stop, regionID: 1)
+        store.save(region2Data, kind: .arrivals, stopID: stop, regionID: 2)
+
+        let loaded1 = store.load(kind: .arrivals, stopID: stop, regionID: 1)
+        let loaded2 = store.load(kind: .arrivals, stopID: stop, regionID: 2)
+        let loadedNonExistent = store.load(kind: .arrivals, stopID: stop, regionID: 999)
+
+        #expect(loaded1?.body == region1Data)
+        #expect(loaded2?.body == region2Data)
+        #expect(loadedNonExistent == nil)
+    }
+
+    @Test
+    func `SavedArrivalsStore overwrites existing payload atomically and updates savedAt timestamp`() throws {
+        let store = SavedArrivalsStore(directory: directory)
+        let stop = "stop_overwrite_test"
+        let initialData = "initial_data".data(using: .utf8)!
+        let updatedData = "updated_data".data(using: .utf8)!
+
+        let pastDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let recentDate = Date(timeIntervalSince1970: 1_750_000_000)
+
+        store.save(initialData, kind: .arrivals, stopID: stop, regionID: 1, savedAt: pastDate)
+        let firstLoad = try #require(store.load(kind: .arrivals, stopID: stop, regionID: 1))
+        #expect(firstLoad.body == initialData)
+        #expect(abs(firstLoad.savedAt.timeIntervalSince(pastDate)) < 1.0)
+
+        store.save(updatedData, kind: .arrivals, stopID: stop, regionID: 1, savedAt: recentDate)
+        let secondLoad = try #require(store.load(kind: .arrivals, stopID: stop, regionID: 1))
+        #expect(secondLoad.body == updatedData)
+        #expect(abs(secondLoad.savedAt.timeIntervalSince(recentDate)) < 1.0)
+    }
+
+    @Test
+    func `SavedArrivalsStore returns nil when attempting to load missing or unwritten kind`() {
+        let store = SavedArrivalsStore(directory: directory)
+        let stop = "unwritten_stop"
+
+        #expect(store.load(kind: .arrivals, stopID: stop, regionID: 1) == nil)
+        #expect(store.load(kind: .schedule, stopID: stop, regionID: 1) == nil)
+
+        store.save("arrivals_only".data(using: .utf8)!, kind: .arrivals, stopID: stop, regionID: 1)
+        #expect(store.load(kind: .arrivals, stopID: stop, regionID: 1) != nil)
+        #expect(store.load(kind: .schedule, stopID: stop, regionID: 1) == nil)
+    }
+
+    @Test
+    func `ScheduledDeparture matches key on exact routeID and headsign and rejects partial or case mismatches`() {
+        let departure = ScheduledDeparture(
+            tripID: "trip_101",
+            routeID: "Route_44",
+            tripHeadsign: "Downtown Seattle",
+            route: nil,
+            date: Date()
+        )
+
+        let matchingKey = TripBookmarkKey(routeID: "Route_44", tripHeadsign: "Downtown Seattle")
+        let wrongRouteKey = TripBookmarkKey(routeID: "Route_45", tripHeadsign: "Downtown Seattle")
+        let wrongHeadsignKey = TripBookmarkKey(routeID: "Route_44", tripHeadsign: "U-District")
+        let caseMismatchRoute = TripBookmarkKey(routeID: "route_44", tripHeadsign: "Downtown Seattle")
+        let caseMismatchHeadsign = TripBookmarkKey(routeID: "Route_44", tripHeadsign: "downtown seattle")
+
+        #expect(departure.matches(matchingKey))
+        #expect(!departure.matches(wrongRouteKey))
+        #expect(!departure.matches(wrongHeadsignKey))
+        #expect(!departure.matches(caseMismatchRoute))
+        #expect(!departure.matches(caseMismatchHeadsign))
+    }
+
+    @Test
+    func `ScheduledDeparture minutes accurately computes signed intervals across past and future thresholds`() {
+        let now = Date()
+        let departureIn5Min = ScheduledDeparture(tripID: "t1", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(300))
+        let departureIn30Sec = ScheduledDeparture(tripID: "t2", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(30))
+        let departurePast2Min = ScheduledDeparture(tripID: "t3", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(-120))
+
+        #expect(departureIn5Min.minutes == 5)
+        #expect(departureIn30Sec.minutes == 0)
+        #expect(departurePast2Min.minutes == -2)
+    }
+
+    @Test
+    func `ScheduleForStop scheduledDepartures prefers arrivalDate when departure is disabled and arrival is enabled`() throws {
+        var root = try #require(try JSONSerialization.jsonObject(with: Fixtures.loadData(file: scheduleFixture)) as? [String: Any])
+        var data = try #require(root["data"] as? [String: Any])
+        var entry = try #require(data["entry"] as? [String: Any])
+        var routes = try #require(entry["stopRouteSchedules"] as? [[String: Any]])
+
+        let arrivalEpochMs: Int64 = 1_700_000_600_000 // T + 600s
+        let departureEpochMs: Int64 = 1_700_001_200_000 // T + 1200s
+
+        // Construct a single route, single direction with drop-off only stop time (departureEnabled: false, arrivalEnabled: true)
+        var stopTimeDict: [String: Any] = [
+            "tripId": "drop_off_trip",
+            "serviceId": "weekday",
+            "arrivalTime": arrivalEpochMs,
+            "departureTime": departureEpochMs,
+            "arrivalEnabled": true,
+            "departureEnabled": false,
+            "stopHeadsign": "Drop-off Only"
+        ]
+
+        var firstRoute = routes[0]
+        var firstDirections = try #require(firstRoute["stopRouteDirectionSchedules"] as? [[String: Any]])
+        firstDirections[0]["scheduleStopTimes"] = [stopTimeDict]
+        firstRoute["stopRouteDirectionSchedules"] = [firstDirections[0]]
+        entry["stopRouteSchedules"] = [firstRoute]
+        data["entry"] = entry
+        root["data"] = data
+
+        let modifiedJSON = try JSONSerialization.data(withJSONObject: root)
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(RESTAPIResponse<ScheduleForStop>.self, from: modifiedJSON)
+        let schedule = response.data.entry
+
+        let departures = schedule.scheduledDepartures
+        #expect(departures.count == 1)
+        let departure = try #require(departures.first)
+        #expect(departure.tripID == "drop_off_trip")
+        #expect(departure.date == Date(timeIntervalSince1970: Double(arrivalEpochMs) / 1000.0))
+    }
+
+    @Test
+    func `ScheduleForStop scheduledDepartures sorts multiple routes and directions chronologically`() throws {
+        var root = try #require(try JSONSerialization.jsonObject(with: Fixtures.loadData(file: scheduleFixture)) as? [String: Any])
+        var data = try #require(root["data"] as? [String: Any])
+        var entry = try #require(data["entry"] as? [String: Any])
+        var routes = try #require(entry["stopRouteSchedules"] as? [[String: Any]])
+
+        func makeStopTime(tripID: String, epochSeconds: Double) -> [String: Any] {
+            [
+                "tripId": tripID,
+                "serviceId": "srv",
+                "arrivalTime": Int64(epochSeconds * 1000),
+                "departureTime": Int64(epochSeconds * 1000),
+                "arrivalEnabled": true,
+                "departureEnabled": true,
+                "stopHeadsign": ""
+            ]
+        }
+
+        // Route A with direction 1 (trip @ 300s) and direction 2 (trip @ 100s)
+        var routeA = routes[0]
+        routeA["routeId"] = "Route_A"
+        var dirA1 = try #require((routeA["stopRouteDirectionSchedules"] as? [[String: Any]])?.first)
+        dirA1["tripHeadsign"] = "Northbound"
+        dirA1["scheduleStopTimes"] = [makeStopTime(tripID: "trip_A_300", epochSeconds: 1_700_000_300)]
+
+        var dirA2 = dirA1
+        dirA2["tripHeadsign"] = "Southbound"
+        dirA2["scheduleStopTimes"] = [makeStopTime(tripID: "trip_A_100", epochSeconds: 1_700_000_100)]
+        routeA["stopRouteDirectionSchedules"] = [dirA1, dirA2]
+
+        // Route B with direction 1 (trip @ 200s)
+        var routeB = routes[1]
+        routeB["routeId"] = "Route_B"
+        var dirB = try #require((routeB["stopRouteDirectionSchedules"] as? [[String: Any]])?.first)
+        dirB["tripHeadsign"] = "Eastbound"
+        dirB["scheduleStopTimes"] = [makeStopTime(tripID: "trip_B_200", epochSeconds: 1_700_000_200)]
+        routeB["stopRouteDirectionSchedules"] = [dirB]
+
+        entry["stopRouteSchedules"] = [routeA, routeB]
+        data["entry"] = entry
+        root["data"] = data
+
+        let modifiedJSON = try JSONSerialization.data(withJSONObject: root)
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(RESTAPIResponse<ScheduleForStop>.self, from: modifiedJSON)
+        let schedule = response.data.entry
+
+        let sortedTripIDs = schedule.scheduledDepartures.map(\.tripID)
+        #expect(sortedTripIDs == ["trip_A_100", "trip_B_200", "trip_A_300"])
+    }
 }
