@@ -18,11 +18,30 @@ import UIKit
 /// identically. Presentation lives on-device — the server never sends
 /// localized strings or colors.
 public struct TripActivityPresenter {
+    /// Presentation state for a Dynamic Island countdown slot (expanded trailing,
+    /// compact trailing, or minimal).
+    public enum DynamicIslandTrailingState: Equatable {
+        case countdown(TripAttributes.ContentState.ArrivalInfo)
+        case fallback(text: String, accessibilityLabel: String)
+    }
+
     private let formatters: Formatters
 
     public init(formatters: Formatters = Formatters(locale: .autoupdatingCurrent, calendar: .autoupdatingCurrent, themeColors: ThemeColors.shared)) {
         self.formatters = formatters
     }
+
+    /// Status text shown when all tracked departures have elapsed or none are upcoming.
+    public var emptyStateStatusText: String {
+        OBALoc(
+            "live_activity.no_upcoming_departures",
+            value: "No upcoming departures",
+            comment: "Shown on a Live Activity Dynamic Island when all tracked departures have passed and no upcoming departure is available yet."
+        )
+    }
+
+    /// Compact placeholder shown in Dynamic Island countdown slots when no upcoming departures remain.
+    public var countdownFallbackText: String { "--" }
 
     public func minuteText(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date = Date()) -> String {
         let minutes = Int(floor(arrival.departureDate.timeIntervalSince(now) / 60.0))
@@ -111,6 +130,58 @@ public struct TripActivityPresenter {
         return color(for: first)
     }
 
+    /// Whether the expanded Dynamic Island bottom region should draw the colored status dot.
+    /// Suppressed when no upcoming departures remain so an orphaned dot is never shown.
+    public func shouldShowStatusDot(for state: TripAttributes.ContentState, now: Date = Date()) -> Bool {
+        !state.upcomingArrivals(now: now).isEmpty
+    }
+
+    /// Returns the primary arrival's status text, or `emptyStateStatusText` when no upcoming departures remain.
+    public func statusText(for state: TripAttributes.ContentState, now: Date = Date()) -> String {
+        guard let primary = state.upcomingArrivals(now: now).first else {
+            return emptyStateStatusText
+        }
+        return statusText(for: primary, now: now)
+    }
+
+    /// Presentation state for `DynamicIslandExpandedRegion(.trailing)`.
+    public func expandedTrailingState(for state: TripAttributes.ContentState, now: Date = Date()) -> DynamicIslandTrailingState {
+        if let primary = state.upcomingArrivals(now: now).first {
+            return .countdown(primary)
+        }
+        return .fallback(text: countdownFallbackText, accessibilityLabel: emptyStateStatusText)
+    }
+
+    /// Presentation state for Dynamic Island `compactTrailing`.
+    public func compactTrailingState(for state: TripAttributes.ContentState, now: Date = Date()) -> DynamicIslandTrailingState {
+        expandedTrailingState(for: state, now: now)
+    }
+
+    /// Presentation state for Dynamic Island `minimal`.
+    /// Minimal has no `compactLeading` triangle to carry the stale warning, so its fallback
+    /// accessibility label prepends the stale warning when `isStale` is true.
+    public func minimalState(for state: TripAttributes.ContentState, isStale: Bool, now: Date = Date()) -> DynamicIslandTrailingState {
+        if let primary = state.upcomingArrivals(now: now).first {
+            return .countdown(primary)
+        }
+        let label = isStale
+            ? "\(LiveActivityStaleChrome.warningText), \(emptyStateStatusText)"
+            : emptyStateStatusText
+        return .fallback(text: countdownFallbackText, accessibilityLabel: label)
+    }
+
+    /// VoiceOver label override for an active `minimal` countdown when stale; `nil` lets
+    /// `TickingCountdownText` speak the live relative countdown.
+    public func minimalCountdownAccessibilityLabel(
+        for arrival: TripAttributes.ContentState.ArrivalInfo,
+        isStale: Bool,
+        now: Date = Date()
+    ) -> String? {
+        guard isStale else { return nil }
+        let minuteText = TickingCountdownText.spokenSnapshot(departure: arrival.departureDate, now: now)
+        return "\(LiveActivityStaleChrome.warningText), \(minuteText)"
+    }
+
     // MARK: - Accessibility
 
     /// One piece of the card's spoken label. Countdowns stay symbolic so the
@@ -134,6 +205,39 @@ public struct TripActivityPresenter {
         isStale: Bool,
         now: Date = Date()
     ) -> [SpokenSegment] {
+        buildAccessibilitySegments(
+            staticData: staticData,
+            contentState: contentState,
+            isStale: isStale,
+            now: now,
+            emptyFallbackText: nil
+        )
+    }
+
+    /// VoiceOver segments for the Dynamic Island layout, including `emptyStateStatusText`
+    /// when all tracked departures have elapsed so VoiceOver announces the fallback state.
+    public func dynamicIslandAccessibilitySegments(
+        staticData: TripAttributes.StaticData,
+        contentState: TripAttributes.ContentState,
+        isStale: Bool,
+        now: Date = Date()
+    ) -> [SpokenSegment] {
+        buildAccessibilitySegments(
+            staticData: staticData,
+            contentState: contentState,
+            isStale: isStale,
+            now: now,
+            emptyFallbackText: emptyStateStatusText
+        )
+    }
+
+    private func buildAccessibilitySegments(
+        staticData: TripAttributes.StaticData,
+        contentState: TripAttributes.ContentState,
+        isStale: Bool,
+        now: Date,
+        emptyFallbackText: String?
+    ) -> [SpokenSegment] {
         let upcoming = contentState.upcomingArrivals(now: now)
         var segments: [SpokenSegment] = [
             .text(formatters.accessibilityLabelForArrivalDeparture(routeAndHeadsign: staticData.routeShortName)),
@@ -144,12 +248,14 @@ public struct TripActivityPresenter {
             segments.append(.countdown(primary.departureDate))
             segments.append(.text(timeDisplay(for: primary).accessibilityTimeDescription))
             segments.append(.text(deviationLabel(for: primary, now: now)))
-        }
 
-        let later = upcoming.dropFirst()
-        if !later.isEmpty {
-            segments.append(.text(OBALoc("live_activity.a11y_later_departures", value: "later departures", comment: "VoiceOver lead-in before the spoken list of the next departures on a Live Activity, e.g. '…, later departures, 15 minutes, 22 minutes'.")))
-            segments.append(contentsOf: later.map { .countdown($0.departureDate) })
+            let later = upcoming.dropFirst()
+            if !later.isEmpty {
+                segments.append(.text(OBALoc("live_activity.a11y_later_departures", value: "later departures", comment: "VoiceOver lead-in before the spoken list of the next departures on a Live Activity, e.g. '…, later departures, 15 minutes, 22 minutes'.")))
+                segments.append(contentsOf: later.map { .countdown($0.departureDate) })
+            }
+        } else if let emptyFallbackText {
+            segments.append(.text(emptyFallbackText))
         }
 
         if isStale {

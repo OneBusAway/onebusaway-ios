@@ -436,6 +436,9 @@
 /* Shown under the arrivals on a rider's first Live Activity on the Lock Screen, explaining how to remove it. The direction is the Lock Screen's swipe; in right-to-left languages it is mirrored. */
 "live_activity.dismiss_hint" = "Przesuń w lewo, aby zamknąć";
 
+/* Shown on a Live Activity Dynamic Island when all tracked departures have passed and no upcoming departure is available yet. */
+"live_activity.no_upcoming_departures" = "Brak nadchodzących odjazdów";
+
 /* Error shown when a location request is made without authorization */
 "location_service.error.not_authorized" = "Dostęp do lokalizacji nie jest dozwolony.";
 
