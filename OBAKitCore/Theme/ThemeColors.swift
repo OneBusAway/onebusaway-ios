@@ -249,14 +249,37 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
         }
 
         static let system = Palette(
-            red: .systemRed,
-            blue: .systemBlue,
+            // High-contrast (HC) variants achieve WCAG AAA ≥7:1 on the system background.
+            // Light HC: #A00000 is 8.43:1 on white. Dark HC: #FF7070 is 7.80:1 on black.
+            red: UIColor { traitCollection in
+                if traitCollection.accessibilityContrast == .high {
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(red: 1.000, green: 0.439, blue: 0.439, alpha: 1.00) // #FF7070, 7.80:1 on black
+                        : UIColor(red: 0.627, green: 0.000, blue: 0.000, alpha: 1.00) // #A00000, 8.43:1 on white
+                }
+                return .systemRed
+            },
+            // HC light: #0040CC is 8.06:1 on white. HC dark: #409CFF is 7.42:1 on black.
+            blue: UIColor { traitCollection in
+                if traitCollection.accessibilityContrast == .high {
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(red: 0.251, green: 0.612, blue: 1.000, alpha: 1.00) // #409CFF, 7.42:1 on black
+                        : UIColor(red: 0.000, green: 0.251, blue: 0.800, alpha: 1.00) // #0040CC, 8.06:1 on white
+                }
+                return .systemBlue
+            },
             green: .systemGreen,
             // Hex #007300 (red: 0.00, green: 0.45, blue: 0.00) has a 6.1:1 contrast ratio against white in
             // light mode, clearing the WCAG AA minimum of 4.5:1 for normal-size text.
             // UIColor.systemGreen is better visibility for small text in dark mode.
             // See #506, #508, and #599 for user feedback.
+            // HC light: #005C00 is 8.29:1 on white. HC dark: #5AE87A is 13.26:1 on black.
             onTime: UIColor { traitCollection in
+                if traitCollection.accessibilityContrast == .high {
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(red: 0.353, green: 0.910, blue: 0.478, alpha: 1.00) // #5AE87A, 13.26:1 on black
+                        : UIColor(red: 0.000, green: 0.361, blue: 0.000, alpha: 1.00) // #005C00, 8.29:1 on white
+                }
                 if traitCollection.userInterfaceStyle == .dark {
                     return UIColor.systemGreen
                 } else {
@@ -265,7 +288,13 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
             },
             // Light: the same #007300 as `onTime` (white on it is 6.1:1). Dark:
             // #1F7A35 — white on it is 5.4:1, where white on systemGreen is 2.0:1.
+            // HC light: #005C00 (8.29:1 under white). HC dark: #145E28 (7.88:1 under white).
             onTimeFill: UIColor { traitCollection in
+                if traitCollection.accessibilityContrast == .high {
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(red: 0.078, green: 0.369, blue: 0.157, alpha: 1.00) // #145E28, 7.88:1 under white
+                        : UIColor(red: 0.000, green: 0.361, blue: 0.000, alpha: 1.00) // #005C00, 8.29:1 under white
+                }
                 if traitCollection.userInterfaceStyle == .dark {
                     return UIColor(red: 0.122, green: 0.478, blue: 0.208, alpha: 1.00)
                 } else {
@@ -275,7 +304,13 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
             gray: .systemGray,
             yellow: .systemYellow,
             // Light: #C93400, 5.3:1 on white. Dark: systemOrange, 10:1 on black.
+            // HC light: #8B2000 is 9.12:1 on white. HC dark: #FFAD70 is 11.45:1 on black.
             warningText: UIColor { traitCollection in
+                if traitCollection.accessibilityContrast == .high {
+                    return traitCollection.userInterfaceStyle == .dark
+                        ? UIColor(red: 1.000, green: 0.678, blue: 0.439, alpha: 1.00) // #FFAD70, 11.45:1 on black
+                        : UIColor(red: 0.545, green: 0.125, blue: 0.000, alpha: 1.00) // #8B2000, 9.12:1 on white
+                }
                 if traitCollection.userInterfaceStyle == .dark {
                     return UIColor.systemOrange
                 } else {
@@ -290,8 +325,15 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
             secondaryBackground: .secondarySystemBackground,
             groupedBackground: .systemGroupedBackground,
             gray6: .systemGray6,
+            // HC light: #374D19 is 9.38:1 on white and under white labels.
+            // HC dark keeps darkBrandAccent (#5B802A): brandAccent serves as both
+            // fill behind white labels (4.60:1) and card text (4.57:1 on black), and
+            // lightening it for black cards would drop white labels below 4.5:1.
             brandAccent: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? darkBrandAccent : lightBrandAccent
+                if traitCollection.accessibilityContrast == .high, traitCollection.userInterfaceStyle != .dark {
+                    return UIColor(red: 0.216, green: 0.302, blue: 0.098, alpha: 1.00) // #374D19, 9.38:1 on white
+                }
+                return traitCollection.userInterfaceStyle == .dark ? darkBrandAccent : lightBrandAccent
             }
         )
         #endif

@@ -26,6 +26,9 @@ nonisolated struct MockDataResponse {
     let urlResponse: URLResponse?
     let error: Error?
     let matcher: MockDataLoaderMatcher
+    /// The server never answers: `data(for:)` suspends until the caller's task
+    /// is cancelled, like a request that hangs before its timeout.
+    var hangs: Bool = false
 }
 
 // @unchecked Sendable: all mutable state is guarded by the locks below.
@@ -96,6 +99,16 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
             fatalError("\(testName): Missing response to URL: \(request.url!)")
         }
 
+        if response.hangs {
+            // The server never answers: suspend until the caller gives up and
+            // cancels, the way a hung request does before its timeout, so a
+            // test can hold one fetch hostage while the rest keep flowing.
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+            }
+            throw URLError(.cancelled)
+        }
+
         if let error = response.error {
             throw error
         }
@@ -145,6 +158,12 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
 
     func mock(response: MockDataResponse) {
         mockResponsesLock.withLock { mockResponses.append(response) }
+    }
+
+    /// Registers a request the mock never answers. `data(for:)` suspends until
+    /// the caller cancels, like a download that hangs until its timeout.
+    func mock(hangs matcher: @escaping MockDataLoaderMatcher) {
+        mock(response: MockDataResponse(data: nil, urlResponse: nil, error: nil, matcher: matcher, hangs: true))
     }
 
     func removeMappedResponses() {

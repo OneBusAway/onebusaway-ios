@@ -23,6 +23,10 @@ struct WidgetRowView: View {
     let formatters: Formatters
     let departures: [ArrivalDeparture]?
 
+    /// Offline only, `nil` while live: the saved timetable's upcoming
+    /// departures, shown once the saved real-time ones have all left.
+    var scheduledDepartures: [ScheduledDeparture]?
+
     /// The stop rows' countdown tint is otherwise their only adherence cue.
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
@@ -34,10 +38,17 @@ struct WidgetRowView: View {
     /// describe: no data yet → "tap for more information"; fetched-but-empty →
     /// "no departures in the next hour". Only reached when `departures?.first`
     /// is nil, so the two cases below are exhaustive.
+    ///
+    /// Offline, saved data can't say nothing is coming, so it reads as no data.
     private var fallbackLabel: String {
-        guard departures != nil else { return LocalizationKeys.tapForMoreInformation }
+        guard departures != nil, scheduledDepartures == nil else { return LocalizationKeys.tapForMoreInformation }
 
         return WidgetStrings.noDepartures(inNextMinutes: Constants.minutes)
+    }
+
+    /// The timetable departures to show: none while a real-time one is left.
+    private var timetable: [ScheduledDeparture] {
+        departures?.isEmpty == false ? [] : (scheduledDepartures ?? [])
     }
 
     var body: some View {
@@ -65,12 +76,14 @@ struct WidgetRowView: View {
                 departureLabel
             }
             // if the badge is hidden take up the full width otherwise use constant
-            .frame(maxWidth: departures?.isEmpty == false ? Constants.rowWidth : .infinity, alignment: .leading)
+            .frame(maxWidth: departures?.isEmpty == false || !timetable.isEmpty ? Constants.rowWidth : .infinity, alignment: .leading)
 
             Spacer()
 
             if departures?.isEmpty == false {
                 departureTimeBadges
+            } else if !timetable.isEmpty {
+                timetableBadges
             }
         }
     }
@@ -107,6 +120,22 @@ struct WidgetRowView: View {
                     .accessibilityElement(children: .ignore)
                     // The countdown's tint is inaudible: say the adherence too.
                     .accessibilityLabel("\(departure.routeAndHeadsign), \(formatters.explanation(from: departure)), \(formatters.deviationLabel(for: departure))")
+                }
+            } else if !timetable.isEmpty {
+                ForEach(timetable.prefix(Constants.maxStopDeparturesToShow), id: \.self) { departure in
+                    HStack {
+                        Text(Self.routeAndHeadsign(departure))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                        Spacer()
+                        Text(Self.shortTime(departure, formatters: formatters))
+                            .font(.footnote.weight(.bold))
+                            .foregroundStyle(Color(formatters.colorForScheduleStatus(.unknown)))
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(Self.routeAndHeadsign(departure)), \(Self.explanation(departure, formatters: formatters)), \(Strings.scheduledNotRealTime)")
                 }
             } else {
                 Text(fallbackLabel)
@@ -153,11 +182,59 @@ struct WidgetRowView: View {
                 // The strikethrough is inaudible, so speak the correction in
                 // words instead of letting VoiceOver read two bare times.
                 .accessibilityLabel("\(display.accessibilityTimeDescription), \(deviation)")
+        } else if let first = timetable.first {
+            (Text(formatters.timeFormatter.string(from: first.date))
+                + Text(" · ").foregroundStyle(.tertiary)
+                + Text(Strings.scheduledNotRealTime))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
         } else {
             Text(fallbackLabel)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
+        }
+    }
+
+    // MARK: - Timetable Departures
+
+    /// A timetable row reads like a live one: "75 - Northgate".
+    private static func routeAndHeadsign(_ departure: ScheduledDeparture) -> String {
+        [departure.route?.shortName, departure.tripHeadsign]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .joined(separator: " - ")
+    }
+
+    private static func temporalState(_ departure: ScheduledDeparture) -> TemporalState {
+        departure.minutes == 0 ? .present : .future
+    }
+
+    static func shortTime(_ departure: ScheduledDeparture, formatters: Formatters) -> String {
+        formatters.shortFormattedTime(untilMinutes: departure.minutes, temporalState: temporalState(departure))
+    }
+
+    static func explanation(_ departure: ScheduledDeparture, formatters: Formatters) -> String {
+        formatters.explanationForArrivalDeparture(
+            tempuraState: temporalState(departure),
+            arrivalDepartureStatus: .departing,
+            arrivalDepartureMinutes: departure.minutes
+        )
+    }
+
+    /// Gray, like a live departure with no real-time data: nothing tracks a
+    /// timetable time.
+    private var timetableBadges: some View {
+        HStack(spacing: 5) {
+            ForEach(timetable.prefix(Constants.maxDeparturesToShow), id: \.self) { departure in
+                DepartureTimeBadgeView(
+                    displayText: Self.shortTime(departure, formatters: formatters),
+                    accessibilityLabel: Self.explanation(departure, formatters: formatters),
+                    scheduleStatus: .unknown,
+                    formatters: formatters
+                )
+            }
         }
     }
 

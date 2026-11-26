@@ -43,6 +43,13 @@ public enum WidgetStrings {
         return String(format: fmt, locale: .current, minutes)
     }
 
+    /// Header label in place of `lastUpdated(at:)` while the departures shown are saved ones.
+    /// - Parameter time: An already-formatted clock time, e.g. "8:42 AM".
+    public static func offlineSaved(at time: String) -> String {
+        let fmt = OBALoc("widget.offline_saved_fmt", value: "Offline, saved %@", comment: "Home screen widget header when the device is offline and the departures shown are the last ones the widget saved. The placeholder is the time they were saved, e.g. 'Offline, saved 8:42 AM'.")
+        return String(format: fmt, time)
+    }
+
     /// Shown in place of rows when no bookmark is set to appear in the widget.
     public static var emptyState: String {
         OBALoc("widget.empty_state", value: "Turn on “Show in Today View widget” for a bookmark to see it here.", comment: "Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical.")

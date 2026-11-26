@@ -10,6 +10,7 @@
 import Foundation
 import MapKit
 import Testing
+import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -28,7 +29,14 @@ final class StopClusterTests {
         stops = try Fixtures.loadSomeStops()
     }
 
-    private func makeStop(id: String, code: String, name: String, direction: String? = nil) throws -> Stop {
+    private func makeStop(
+        id: String,
+        code: String,
+        name: String,
+        direction: String? = nil,
+        routeIDs: [String] = [],
+        routes: [Route]? = nil
+    ) throws -> Stop {
         var dict: [String: Any] = [
             "id": id,
             "code": code,
@@ -36,12 +44,38 @@ final class StopClusterTests {
             "lat": 47.6062,
             "lon": -122.3321,
             "locationType": 0,
-            "routeIds": ["1_100"]
+            "routeIds": routeIDs
         ]
         if let direction {
             dict["direction"] = direction
         }
-        return try Fixtures.dictionaryToModel(type: Stop.self, dictionary: dict)
+        let stop = try Fixtures.dictionaryToModel(type: Stop.self, dictionary: dict)
+        if let routes {
+            stop.routes = routes
+        }
+        return stop
+    }
+
+    private func makeRoute(
+        id: String,
+        shortName: String,
+        colorHex: String? = nil,
+        textColorHex: String? = nil,
+        agencyID: String = "1"
+    ) throws -> Route {
+        var dict: [String: Any] = [
+            "id": id,
+            "agencyId": agencyID,
+            "shortName": shortName,
+            "type": 3
+        ]
+        if let colorHex {
+            dict["color"] = colorHex
+        }
+        if let textColorHex {
+            dict["textColor"] = textColorHex
+        }
+        return try Fixtures.dictionaryToModel(type: Route.self, dictionary: dict)
     }
 
     private func cluster(_ members: [MKAnnotation]) -> MKClusterAnnotation {
@@ -311,6 +345,491 @@ final class StopClusterTests {
         let mixed = StopCluster.stops(in: [pin1, stops[0], pin2])
         #expect(mixed.count == 1)
         #expect(mixed.first?.id == stops[0].id)
+    }
+
+    // MARK: - StopClusterPickerViewController
+
+    /// A cluster with 25 stops builds a picker with all 25 rows reachable and searchable.
+    @Test func `Picker displays all 25 stops and filters by name or route`() throws {
+        var largeStops: [Stop] = []
+        for i in 0 ..< 25 {
+            let s = try makeStop(
+                id: "1_cluster_\(i)",
+                code: "C\(i)",
+                name: "Cluster Stop \(i)",
+                direction: i.isMultiple(of: 2) ? "N" : "S"
+            )
+            largeStops.append(s)
+        }
+
+        let picker = StopClusterPickerViewController(stops: largeStops)
+        picker.loadViewIfNeeded()
+
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
+        for row in 0 ..< 25 {
+            let cell = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: row, section: 0))
+            #expect(cell.accessibilityLabel?.contains("Cluster Stop \(row)") == true)
+        }
+
+        picker.applyFilter(query: "Cluster Stop 24")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 1)
+
+        picker.applyFilter(query: "")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
+    }
+
+    /// VoiceOver: `StopClusterAnnotationView.accessibilityLabel` uses the pluralized
+    /// stop count and delegates action guidance to `StopCluster.accessibilityHint`.
+    @Test func `Cluster annotation view label contains stop count for 7 stops`() throws {
+        var sevenStops: [Stop] = []
+        for i in 0 ..< 7 {
+            sevenStops.append(try makeStop(id: "1_seven_\(i)", code: "S\(i)", name: "Seven Stop \(i)"))
+        }
+        let clusterAnnotation = cluster(sevenStops)
+        let view = StopClusterAnnotationView(annotation: clusterAnnotation, reuseIdentifier: nil)
+        view.prepareForDisplay()
+
+        let label = try #require(view.accessibilityLabel)
+        #expect(label == StopCluster.accessibilityLabel(stopCount: 7))
+        #expect(label.contains("7 stops"))
+        #expect(view.accessibilityHint == StopCluster.accessibilityHint)
+    }
+
+    // MARK: - StopClusterPickerViewController Filter Boundaries
+
+    @Test func `Picker filter resets to all stops when query is empty or whitespace only`() throws {
+        let stopA = try makeStop(id: "1_a", code: "101", name: "Pike St & 4th Ave")
+        let stopB = try makeStop(id: "1_b", code: "102", name: "Pine St & 5th Ave")
+        let picker = StopClusterPickerViewController(stops: [stopA, stopB])
+        picker.loadViewIfNeeded()
+
+        picker.applyFilter(query: "Pike")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 1)
+
+        picker.applyFilter(query: "")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 2)
+
+        picker.applyFilter(query: "   \t\n   ")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 2)
+    }
+
+    @Test func `Picker filter matches stop name and stop code case-insensitively`() throws {
+        let stopA = try makeStop(id: "1_a", code: "CODE99", name: "University Street Station")
+        let stopB = try makeStop(id: "1_b", code: "CODE100", name: "Westlake Station")
+        let picker = StopClusterPickerViewController(stops: [stopA, stopB])
+        picker.loadViewIfNeeded()
+
+        picker.applyFilter(query: "uNiVeRsItY")
+        try #require(picker.tableView.numberOfRows(inSection: 0) == 1)
+        let cellA = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
+        #expect(cellA.accessibilityLabel?.contains("University Street Station") == true)
+
+        picker.applyFilter(query: "code99")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 1)
+
+        picker.applyFilter(query: "code100")
+        try #require(picker.tableView.numberOfRows(inSection: 0) == 1)
+        let cellB = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
+        #expect(cellB.accessibilityLabel?.contains("Westlake Station") == true)
+    }
+
+    @Test func `Picker filter matches cardinal direction adjective names`() throws {
+        let northStop = try makeStop(id: "1_n", code: "101", name: "3rd & Union", direction: "N")
+        let southStop = try makeStop(id: "1_s", code: "102", name: "3rd & Union", direction: "S")
+        let eastStop = try makeStop(id: "1_e", code: "103", name: "3rd & Union", direction: "E")
+        let westStop = try makeStop(id: "1_w", code: "104", name: "3rd & Union", direction: "W")
+        let picker = StopClusterPickerViewController(stops: [northStop, southStop, eastStop, westStop])
+        picker.loadViewIfNeeded()
+
+        picker.applyFilter(query: "northbound")
+        try #require(picker.tableView.numberOfRows(inSection: 0) == 1)
+        let cellN = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
+        #expect(cellN.accessibilityLabel?.contains("101") == true)
+
+        picker.applyFilter(query: "SOUTH")
+        try #require(picker.tableView.numberOfRows(inSection: 0) == 1)
+        let cellS = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
+        #expect(cellS.accessibilityLabel?.contains("102") == true)
+
+        picker.applyFilter(query: "Eastbound")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 1)
+
+        picker.applyFilter(query: "west")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 1)
+    }
+
+    @Test func `Picker filter matches resolved route shortName and fallback route ID`() throws {
+        let route44 = try makeRoute(id: "1_44", shortName: "44")
+        let routeRapid = try makeRoute(id: "1_rapid", shortName: "RapidRide C")
+        let stopWithRoutes = try makeStop(
+            id: "1_routes",
+            code: "201",
+            name: "Market St & Ballard Ave",
+            routes: [route44, routeRapid]
+        )
+        let stopWithFallbackIDs = try makeStop(
+            id: "1_ids",
+            code: "202",
+            name: "Jackson St & 5th Ave",
+            routeIDs: ["ST_550", "ST_554"]
+        )
+        let picker = StopClusterPickerViewController(stops: [stopWithRoutes, stopWithFallbackIDs])
+        picker.loadViewIfNeeded()
+
+        picker.applyFilter(query: "rapidride")
+        try #require(picker.tableView.numberOfRows(inSection: 0) == 1)
+        let cellR = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
+        #expect(cellR.accessibilityLabel?.contains("Market St & Ballard Ave") == true)
+
+        picker.applyFilter(query: "st_550")
+        try #require(picker.tableView.numberOfRows(inSection: 0) == 1)
+        let cellID = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
+        #expect(cellID.accessibilityLabel?.contains("Jackson St & 5th Ave") == true)
+
+        picker.applyFilter(query: "554")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 1)
+    }
+
+    @Test func `Picker filter query with no matches produces empty table view`() throws {
+        let stopA = try makeStop(id: "1_a", code: "301", name: "Fremont Ave & 34th St")
+        let stopB = try makeStop(id: "1_b", code: "302", name: "Fremont Ave & 35th St")
+        let picker = StopClusterPickerViewController(stops: [stopA, stopB])
+        picker.loadViewIfNeeded()
+
+        picker.applyFilter(query: "NonExistentStopQueryXYZ")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 0)
+
+        picker.applyFilter(query: "   ")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 2)
+    }
+
+    // MARK: - StopClusterPickerViewController Cell Configuration & Badges
+
+    @Test func `Cell configuration displays primary route badge and multiple route subtitle joined`() throws {
+        let routeB = try makeRoute(id: "1_b", shortName: "40", colorHex: "0055AA")
+        let routeA = try makeRoute(id: "1_a", shortName: "7", colorHex: "CC0000")
+        let stop = try makeStop(
+            id: "1_stop",
+            code: "401",
+            name: "3rd Ave & Virginia St",
+            direction: "NB",
+            routes: [routeB, routeA]
+        )
+        let picker = StopClusterPickerViewController(stops: [stop])
+        picker.loadViewIfNeeded()
+
+        let cell = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
+        let config = try #require(cell.contentConfiguration as? UIListContentConfiguration)
+
+        #expect(config.text == "3rd Ave & Virginia St")
+        // Subtitle joins direction/code and sorted routes
+        let secondary = try #require(config.secondaryText)
+        #expect(secondary.contains("401"))
+        #expect(secondary.contains("7, 40"))
+        // Image badge is rendered from primary route (alphanumerically sorted first: "7" with #CC0000)
+        let badgeImage = try #require(config.image)
+        func color(at point: CGPoint, in image: UIImage) -> UIColor? {
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let context = CGContext(
+                data: nil,
+                width: 1,
+                height: 1,
+                bitsPerComponent: 8,
+                bytesPerRow: 4,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return nil }
+
+            context.translateBy(x: -point.x, y: -point.y)
+            UIGraphicsPushContext(context)
+            image.draw(at: .zero)
+            UIGraphicsPopContext()
+
+            guard let data = context.data else { return nil }
+            let pixel = data.bindMemory(to: UInt8.self, capacity: 4)
+            return UIColor(
+                red: CGFloat(pixel[0]) / 255.0,
+                green: CGFloat(pixel[1]) / 255.0,
+                blue: CGFloat(pixel[2]) / 255.0,
+                alpha: CGFloat(pixel[3]) / 255.0
+            )
+        }
+
+        // Sample near top-left inside corner radius (e.g. x: 5, y: 5) to verify primary route color (#CC0000)
+        let cornerColor = try #require(color(at: CGPoint(x: 5, y: 5), in: badgeImage))
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        cornerColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+        #expect(r > 0.7, "Primary route badge fill should reflect route 7 color (#CC0000)")
+        #expect(b < 0.2, "Primary route badge fill should not be route 40 blue")
+
+        #expect(cell.accessibilityLabel?.contains("7, 40") == true)
+        #expect(cell.accessibilityTraits == .button)
+    }
+
+    @Test func `Cell configuration falls back to routeIDs when routes are nil or empty`() throws {
+        let stopWithIDsAndNilRoutes = try makeStop(
+            id: "1_stop_ids_nil",
+            code: "501",
+            name: "Stewart St & 7th Ave",
+            routeIDs: ["RouteA", "RouteB"],
+            routes: nil
+        )
+        let stopWithIDsAndEmptyRoutes = try makeStop(
+            id: "1_stop_ids_empty",
+            code: "502",
+            name: "Stewart St & 8th Ave",
+            routeIDs: ["RouteC", "RouteD"],
+            routes: []
+        )
+        let stopWithoutRoutesOrIDs = try makeStop(
+            id: "1_stop_empty",
+            code: "503",
+            name: "Olive Way & 8th Ave",
+            routeIDs: [],
+            routes: []
+        )
+        let picker = StopClusterPickerViewController(stops: [
+            stopWithIDsAndNilRoutes,
+            stopWithIDsAndEmptyRoutes,
+            stopWithoutRoutesOrIDs
+        ])
+        picker.loadViewIfNeeded()
+
+        let cell1 = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
+        let config1 = try #require(cell1.contentConfiguration as? UIListContentConfiguration)
+        #expect(config1.image != nil)
+        let secondary1 = try #require(config1.secondaryText)
+        #expect(secondary1.contains("RouteA, RouteB"))
+
+        let cell2 = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 1, section: 0))
+        let config2 = try #require(cell2.contentConfiguration as? UIListContentConfiguration)
+        #expect(config2.image != nil)
+        let secondary2 = try #require(config2.secondaryText)
+        #expect(secondary2.contains("RouteC, RouteD"))
+
+        let cell3 = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 2, section: 0))
+        let config3 = try #require(cell3.contentConfiguration as? UIListContentConfiguration)
+        #expect(config3.image == nil)
+    }
+
+    @Test func `Cell subtitle formatting handles empty code and missing direction correctly`() throws {
+        let stopEmptyCodeAndDir = try makeStop(
+            id: "1_empty_both",
+            code: "",
+            name: "Hidden Terminal",
+            direction: nil,
+            routeIDs: ["Express"]
+        )
+        let stopDirOnly = try makeStop(
+            id: "1_dir_only",
+            code: "",
+            name: "Boren Ave & Pine St",
+            direction: "S",
+            routeIDs: ["Express"]
+        )
+        let picker = StopClusterPickerViewController(stops: [stopEmptyCodeAndDir, stopDirOnly])
+        picker.loadViewIfNeeded()
+
+        let cell1 = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
+        let config1 = try #require(cell1.contentConfiguration as? UIListContentConfiguration)
+        #expect(config1.secondaryText == nil)
+
+        let cell2 = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: 1, section: 0))
+        let config2 = try #require(cell2.contentConfiguration as? UIListContentConfiguration)
+        let expectedSouth = try #require(Formatters.adjectiveFormOfCardinalDirection(.s))
+        #expect(config2.secondaryText == expectedSouth)
+    }
+
+    // MARK: - Dismissal Callback
+
+    @Test func `Presentation controller did dismiss invokes onCancel callback`() throws {
+        let stop = try makeStop(id: "1_stop", code: "601", name: "Denny Way & 6th Ave")
+        let picker = StopClusterPickerViewController(stops: [stop])
+        picker.loadViewIfNeeded()
+
+        var didCancel = false
+        picker.onCancel = {
+            didCancel = true
+        }
+
+        let dummyNavController = UINavigationController(rootViewController: picker)
+        let presentationController = UIPresentationController(
+            presentedViewController: dummyNavController,
+            presenting: nil
+        )
+        picker.presentationControllerDidDismiss(presentationController)
+
+        #expect(didCancel == true)
+    }
+}
+
+@MainActor
+@Suite(.serialized)
+final class StopClusterPresentationTests: OBATestCase {
+
+    private var application: Application!
+
+    override init() async throws {
+        try await super.init()
+        let queue = OperationQueue()
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
+        dataLoader.mock(data: Fixtures.loadData(file: "pugetsound-weather.json")) { request in
+            request.url?.path.contains("/weather.json") ?? false
+        }
+        application = buildApplication(queue: queue, dataLoader: dataLoader)
+    }
+
+    private func makeCoLocatedStop(index: Int) throws -> Stop {
+        let dict: [String: Any] = [
+            "id": "1_coloc_\(index)",
+            "code": "\(1000 + index)",
+            "name": "Co-located Stop \(index)",
+            "lat": 47.6062,
+            "lon": -122.3321,
+            "direction": index.isMultiple(of: 2) ? "N" : "S",
+            "locationType": 0,
+            "routeIds": ["1_100"]
+        ]
+        return try Fixtures.dictionaryToModel(type: Stop.self, dictionary: dict)
+    }
+
+    private func hostInWindow(_ controller: UIViewController, size: CGSize = CGSize(width: 402, height: 874)) throws -> UIWindow {
+        let window = UIWindow(windowScene: try testWindowScene())
+        window.frame = CGRect(origin: .zero, size: size)
+        window.rootViewController = controller
+        window.isHidden = false
+        controller.loadViewIfNeeded()
+        return window
+    }
+
+    @Test func `Cluster of 5 or fewer stops presents action sheet and not StopClusterPickerViewController`() throws {
+        let stops = try (0 ..< 5).map { try makeCoLocatedStop(index: $0) }
+        let cluster = MKClusterAnnotation(memberAnnotations: stops)
+        let annotationView = StopClusterAnnotationView(annotation: cluster, reuseIdentifier: nil)
+
+        let controller = MapViewController(application: application)
+        let window = try hostInWindow(controller)
+        defer {
+            controller.dismiss(animated: false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        controller.selectStopCluster(cluster, view: annotationView, in: application.mapRegionManager.mapView)
+
+        let presented = try #require(controller.presentedViewController)
+        #expect(presented is UIAlertController)
+        #expect(!(presented is StopClusterPickerViewController))
+        if let nav = presented as? UINavigationController {
+            #expect(!nav.viewControllers.contains { $0 is StopClusterPickerViewController })
+        }
+    }
+
+    @Test func `Cluster with 25 stops presents StopClusterPickerViewController with all 25 rows reachable`() throws {
+        let stops = try (0 ..< 25).map { try makeCoLocatedStop(index: $0) }
+        let cluster = MKClusterAnnotation(memberAnnotations: stops)
+        let annotationView = StopClusterAnnotationView(annotation: cluster, reuseIdentifier: nil)
+
+        let controller = MapViewController(application: application)
+        let window = try hostInWindow(controller)
+        defer {
+            controller.dismiss(animated: false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        controller.selectStopCluster(cluster, view: annotationView, in: application.mapRegionManager.mapView)
+
+        let nav = try #require(controller.presentedViewController as? UINavigationController)
+        let picker = try #require(nav.topViewController as? StopClusterPickerViewController)
+        picker.loadViewIfNeeded()
+
+        #expect(picker.navigationItem.accessibilityLabel == "Select stop — 25 stops nearby")
+        #expect(nav.modalPresentationStyle == StopClusterPickerViewController.modalPresentationStyle(for: UIDevice.current.userInterfaceIdiom))
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
+        for row in 0 ..< 25 {
+            let cell = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: row, section: 0))
+            #expect(cell.accessibilityLabel?.contains("1_100") == true)
+        }
+    }
+
+    @Test func `Cluster with 25 stops presents cleanly on iPhone SE size and selects pageSheet or formSheet by idiom`() throws {
+        // Verify both compact (iPhone) and regular (iPad) presentation styles.
+        // Note: on an iPhone simulator `UIDevice.current.userInterfaceIdiom` is `.phone`,
+        // so the `.pad -> .formSheet` branch is covered via the idiom helper while the
+        // live controller presentation verifies `.pageSheet` on the iPhone SE frame (375x667).
+        #expect(StopClusterPickerViewController.modalPresentationStyle(for: .phone) == .pageSheet)
+        #expect(StopClusterPickerViewController.modalPresentationStyle(for: .pad) == .formSheet)
+        #expect(StopClusterPickerViewController.modalPresentationStyle(for: .tv) == .pageSheet)
+        #expect(StopClusterPickerViewController.modalPresentationStyle(for: .carPlay) == .pageSheet)
+        #expect(StopClusterPickerViewController.modalPresentationStyle(for: .mac) == .pageSheet)
+
+        let stops = try (0 ..< 25).map { try makeCoLocatedStop(index: $0) }
+        let cluster = MKClusterAnnotation(memberAnnotations: stops)
+        let annotationView = StopClusterAnnotationView(annotation: cluster, reuseIdentifier: nil)
+
+        let controller = MapViewController(application: application)
+        let window = try hostInWindow(controller, size: CGSize(width: 375, height: 667))
+        defer {
+            controller.dismiss(animated: false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        controller.selectStopCluster(cluster, view: annotationView, in: application.mapRegionManager.mapView)
+
+        let nav = try #require(controller.presentedViewController as? UINavigationController)
+        #expect(nav.modalPresentationStyle == .pageSheet)
+        let picker = try #require(nav.topViewController as? StopClusterPickerViewController)
+        picker.loadViewIfNeeded()
+        picker.view.layoutIfNeeded()
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
+    }
+
+    @Test func `Selecting a filtered row with active search dismisses the picker before calling onStopSelected`() async throws {
+        let stops = try (0 ..< 8).map { try makeCoLocatedStop(index: $0) }
+        let cluster = MKClusterAnnotation(memberAnnotations: stops)
+        let annotationView = StopClusterAnnotationView(annotation: cluster, reuseIdentifier: nil)
+
+        let controller = MapViewController(application: application)
+        let window = try hostInWindow(controller)
+        defer {
+            controller.dismiss(animated: false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        controller.selectStopCluster(cluster, view: annotationView, in: application.mapRegionManager.mapView)
+
+        let nav = try #require(controller.presentedViewController as? UINavigationController)
+        let picker = try #require(nav.topViewController as? StopClusterPickerViewController)
+        picker.loadViewIfNeeded()
+        picker.view.layoutIfNeeded()
+
+        var selectedStop: Stop?
+        var presenterAtCallback: UIViewController?
+        picker.onStopSelected = { stop in
+            selectedStop = stop
+            presenterAtCallback = controller.presentedViewController
+        }
+
+        let searchController = try #require(picker.navigationItem.searchController)
+        searchController.isActive = true
+        searchController.searchBar.text = "Co-located Stop 7"
+        picker.updateSearchResults(for: searchController)
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 1)
+
+        picker.tableView(picker.tableView, didSelectRowAt: IndexPath(row: 0, section: 0))
+
+        let deadline = ContinuousClock.now + .seconds(3)
+        while selectedStop == nil && ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(25))
+        }
+
+        #expect(selectedStop?.id == "1_coloc_7")
+        #expect(presenterAtCallback == nil)
+        #expect(controller.presentedViewController == nil)
     }
 }
 

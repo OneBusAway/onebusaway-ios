@@ -51,6 +51,11 @@ struct StopPageContent {
     let isDepartureFilterEmpty: Bool
     let attributionText: String
 
+    /// Offline, the stop's saved timetable departures that haven't left,
+    /// soonest first, with hidden routes removed when the filter is on. Empty
+    /// when the page is live, and under the real-time-only filter.
+    let scheduledDepartures: [ScheduledDeparture]
+
     /// A refresh failed while departures from an earlier fetch are still on
     /// screen. Those rows keep counting down as if live, so the list shows
     /// `StopStaleArrivalsNotice` above them. Never set alongside an empty list:
@@ -77,7 +82,8 @@ struct StopPageContent {
         isLoading: Bool,
         hasError: Bool,
         isBrokenBookmark: Bool,
-        stopIsMissing: Bool = false
+        stopIsMissing: Bool = false,
+        scheduledDepartures: [ScheduledDeparture] = []
     ) {
         let visible = isListFiltered ? allDepartures.filter(preferences: preferences) : allDepartures
         // Terminal dedup deliberately runs downstream, after the Departure Type
@@ -130,6 +136,10 @@ struct StopPageContent {
 
         self.showsStaleArrivalsNotice = hasError && hasLoadedArrivals && !listIsEmpty
 
+        self.scheduledDepartures = arrivalDepartureFilter == .estimatedOnly ? [] : scheduledDepartures.filter {
+            $0.minutes >= 0 && !(isListFiltered && preferences.isRouteIDHidden($0.routeID))
+        }
+
         self.fillsPage = stop == nil
         self.attributionText = Self.attribution(for: stop)
     }
@@ -151,17 +161,24 @@ extension StopPageContent {
     /// Convenience for the view layer, which holds the view model.
     @MainActor
     init(viewModel: StopViewModel) {
+        // A saved departure saved with a prediction renders as schedule data
+        // like the rest, and the timetable already skips trips the saved
+        // departures cover. The "Scheduled only" filter would remove it from
+        // the list too, so offline the rider would see neither: bypass it
+        // while saved data stands in for live.
+        let departureFilter: ArrivalDepartureFilter = viewModel.savedArrivals != nil && viewModel.arrivalDepartureFilter == .scheduledOnly ? .all : viewModel.arrivalDepartureFilter
         self.init(
             stop: viewModel.stop,
-            allDepartures: viewModel.stopArrivals?.arrivalsAndDepartures ?? [],
-            hasLoadedArrivals: viewModel.stopArrivals != nil,
+            allDepartures: viewModel.stopArrivals?.arrivalsAndDepartures ?? viewModel.savedArrivals?.arrivals ?? [],
+            hasLoadedArrivals: viewModel.stopArrivals != nil || viewModel.savedArrivals != nil,
             preferences: viewModel.stopPreferences,
             isListFiltered: viewModel.isListFiltered,
-            arrivalDepartureFilter: viewModel.arrivalDepartureFilter,
+            arrivalDepartureFilter: departureFilter,
             isLoading: viewModel.isLoading,
             hasError: viewModel.operationError != nil,
             isBrokenBookmark: viewModel.isBrokenBookmark,
-            stopIsMissing: viewModel.stopIsMissing
+            stopIsMissing: viewModel.stopIsMissing,
+            scheduledDepartures: viewModel.savedArrivals?.scheduledDepartures ?? []
         )
     }
 }

@@ -27,7 +27,7 @@ struct OBAWidgetEntryView: View {
             HStack {
                 // `Text(verbatim:)`: the string is already localized, and an
                 // interpolated literal would be looked up as its own key.
-                Text(verbatim: WidgetStrings.lastUpdated(at: entry.lastUpdatedAt(with: formatters)))
+                Text(verbatim: entry.headerText(with: formatters))
                     // A text style rather than a fixed 13pt, so it follows Dynamic Type.
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -46,7 +46,8 @@ struct OBAWidgetEntryView: View {
                             WidgetRowView(
                                 bookmark: bookmark,
                                 formatters: formatters,
-                                departures: loadArrivalDeparture(with: bookmark)
+                                departures: loadArrivalDeparture(with: bookmark),
+                                scheduledDepartures: loadScheduledDepartures(with: bookmark)
                             )
                         }
                     }
@@ -63,6 +64,12 @@ struct OBAWidgetEntryView: View {
     // MARK: Helper functions
     private func loadArrivalDeparture(with bookmark: Bookmark) -> [ArrivalDeparture]? {
         entry.departures[bookmark.id]
+    }
+
+    /// Offline only, `nil` while live: the saved timetable's departures after
+    /// this entry's date, strictly, as `WidgetTimelinePlanner` keeps live ones.
+    private func loadScheduledDepartures(with bookmark: Bookmark) -> [ScheduledDeparture]? {
+        entry.scheduledDepartures[bookmark.id]?.filter { $0.date > entry.date }
     }
 
     private func constructDeepLink(for bookmark: Bookmark) -> URL {

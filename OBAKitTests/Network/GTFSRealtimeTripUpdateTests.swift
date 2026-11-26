@@ -245,4 +245,130 @@ final class GTFSRealtimeTripUpdateTests {
             #expect(parsed.scheduleRelationship.isCanceledOrDeleted == tc.isCanceled)
         }
     }
+
+    // MARK: - Protobuf Decoding Edge Cases & Duplicated Trip Properties
+
+    @Test func `Duplicated trip extracts replacement tripID and sourceTripID from TripProperties`() {
+        var proto = TransitRealtime_TripUpdate()
+        proto.trip.tripID = "original_trip_123"
+        proto.trip.scheduleRelationship = .duplicated
+        proto.tripProperties.tripID = "clone_trip_456"
+        proto.tripProperties.startDate = "20261125"
+        proto.tripProperties.startTime = "14:30:00"
+
+        let parsed = GTFSRTTripUpdate(protobuf: proto, entityID: "entity_dup")
+
+        #expect(parsed.entityID == "entity_dup")
+        #expect(parsed.tripID == "clone_trip_456")
+        #expect(parsed.sourceTripID == "original_trip_123")
+        #expect(parsed.startDate == "20261125")
+        #expect(parsed.startTime == "14:30:00")
+        #expect(parsed.scheduleRelationship == .duplicated)
+    }
+
+    @Test func `Duplicated trip falls back to trip descriptor startDate when tripProperties dates are absent`() {
+        var proto = TransitRealtime_TripUpdate()
+        proto.trip.tripID = "original_trip_123"
+        proto.trip.startDate = "20261120"
+        proto.trip.startTime = "08:15:00"
+        proto.trip.scheduleRelationship = .duplicated
+        proto.tripProperties.tripID = "clone_trip_456"
+        // tripProperties has no startDate or startTime
+
+        let parsed = GTFSRTTripUpdate(protobuf: proto)
+
+        #expect(parsed.tripID == "clone_trip_456")
+        #expect(parsed.sourceTripID == "original_trip_123")
+        #expect(parsed.startDate == "20261120")
+        #expect(parsed.startTime == "08:15:00")
+    }
+
+    @Test func `StopTimeEvent parses delay time and uncertainty while omitting zero or absent timestamps`() {
+        var proto = TransitRealtime_TripUpdate.StopTimeEvent()
+        proto.delay = 180
+        proto.time = 1_700_000_180
+        proto.uncertainty = 15
+        proto.scheduledTime = 1_700_000_000
+
+        let parsed = GTFSRTStopTimeEvent(protobuf: proto)
+        #expect(parsed.delay == 180)
+        #expect(parsed.time == Date(timeIntervalSince1970: 1_700_000_180))
+        #expect(parsed.uncertainty == 15)
+        #expect(parsed.scheduledTime == Date(timeIntervalSince1970: 1_700_000_000))
+
+        var zeroProto = TransitRealtime_TripUpdate.StopTimeEvent()
+        zeroProto.time = 0
+        zeroProto.scheduledTime = 0
+        let zeroParsed = GTFSRTStopTimeEvent(protobuf: zeroProto)
+        #expect(zeroParsed.delay == nil)
+        #expect(zeroParsed.time == nil)
+        #expect(zeroParsed.uncertainty == nil)
+        #expect(zeroParsed.scheduledTime == nil)
+    }
+
+    @Test func `StopTimeUpdate maps stop headsign from StopTimeProperties and departure occupancy status`() {
+        var proto = TransitRealtime_TripUpdate.StopTimeUpdate()
+        proto.stopSequence = 12
+        proto.stopID = "stop_terminal"
+        proto.departureOccupancyStatus = .manySeatsAvailable
+        proto.stopTimeProperties.stopHeadsign = "Terminal Express"
+
+        let parsed = GTFSRTStopTimeUpdate(protobuf: proto)
+        #expect(parsed.stopSequence == 12)
+        #expect(parsed.stopID == "stop_terminal")
+        #expect(parsed.departureOccupancyStatus == .manySeatsAvailable)
+        #expect(parsed.stopHeadsign == "Terminal Express")
+    }
+
+    @Test func `ArrivalDeparture OccupancyStatus protobuf mapping covers all transit realtime cases`() {
+        let mappings: [(TransitRealtime_VehiclePosition.OccupancyStatus, ArrivalDeparture.OccupancyStatus)] = [
+            (.empty, .empty),
+            (.manySeatsAvailable, .manySeatsAvailable),
+            (.fewSeatsAvailable, .fewSeatsAvailable),
+            (.standingRoomOnly, .standingRoomOnly),
+            (.crushedStandingRoomOnly, .crushedStandingRoomOnly),
+            (.full, .full),
+            (.notAcceptingPassengers, .notAcceptingPassengers),
+            (.noDataAvailable, .noDataAvailable),
+            (.notBoardable, .notBoardable)
+        ]
+
+        for (protoStatus, domainStatus) in mappings {
+            let mapped = ArrivalDeparture.OccupancyStatus(protobuf: protoStatus)
+            #expect(mapped == domainStatus)
+        }
+    }
+
+    @Test func `TripUpdate parser extracts entities skipping non trip update entries`() {
+        let parser = GTFSRealtimeTripUpdateParser.standard
+
+        var entity1 = TransitRealtime_FeedEntity()
+        entity1.id = "ent_1"
+        entity1.tripUpdate.trip.tripID = "trip_alpha"
+        entity1.tripUpdate.delay = 120
+
+        var entity2 = TransitRealtime_FeedEntity()
+        entity2.id = "ent_2"
+        // entity2 is a vehicle position or alert, hasTripUpdate is false
+
+        var entity3 = TransitRealtime_FeedEntity()
+        entity3.id = "ent_3"
+        entity3.tripUpdate.trip.tripID = "trip_beta"
+        entity3.tripUpdate.trip.routeID = "route_99"
+
+        var message = TransitRealtime_FeedMessage()
+        message.header.gtfsRealtimeVersion = "2.0"
+        message.entity = [entity1, entity2, entity3]
+
+        let extracted = parser.extractTripUpdates(from: message)
+
+        #expect(extracted.count == 2)
+        #expect(extracted[0].entityID == "ent_1")
+        #expect(extracted[0].tripID == "trip_alpha")
+        #expect(extracted[0].tripDelay == 120)
+
+        #expect(extracted[1].entityID == "ent_3")
+        #expect(extracted[1].tripID == "trip_beta")
+        #expect(extracted[1].routeID == "route_99")
+    }
 }

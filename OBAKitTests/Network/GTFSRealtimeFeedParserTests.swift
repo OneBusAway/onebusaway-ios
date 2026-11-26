@@ -254,4 +254,49 @@ final class GTFSRealtimeFeedParserTests {
         #expect(GTFSRealtimeError.malformedData(CustomTestError.a) != GTFSRealtimeError.malformedData(CustomTestError.b))
         #expect(GTFSRealtimeError.malformedData(CustomTestError.a) != GTFSRealtimeError.emptyData)
     }
+
+    // MARK: - Header Validation Boundaries & Localized Descriptions
+
+    @Test func `FeedParser error descriptions format user readable messages across all error variants`() {
+        let emptyErr = GTFSRealtimeError.emptyData
+        #expect(emptyErr.errorDescription?.contains("empty") == true)
+
+        let diffErr = GTFSRealtimeError.unsupportedIncrementality(.differential)
+        #expect(diffErr.errorDescription?.contains("differential") == true)
+
+        let testDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let staleErr = GTFSRealtimeError.staleFeed(timestamp: testDate, age: 360.2)
+        #expect(staleErr.errorDescription?.contains("stale") == true)
+        #expect(staleErr.errorDescription?.contains("360s") == true)
+
+        let futureErr = GTFSRealtimeError.futureFeed(timestamp: testDate, aheadBy: 120.8)
+        #expect(futureErr.errorDescription?.contains("future") == true)
+        #expect(futureErr.errorDescription?.contains("121s") == true)
+    }
+
+    @Test func `FeedParser validateHeader rejects timestamp +1s past staleness boundary`() throws {
+        let reference = Date(timeIntervalSince1970: 1_700_001_000)
+        let maxStaleness: TimeInterval = 300.0 // 5 minutes
+        let parser = GTFSRealtimeFeedParser(maxStaleness: maxStaleness)
+
+        var staleHeader = TransitRealtime_FeedHeader()
+        staleHeader.gtfsRealtimeVersion = "2.0"
+        staleHeader.timestamp = 1_700_000_699 // 301s ago (+1s past boundary)
+        #expect(throws: GTFSRealtimeError.staleFeed(timestamp: Date(timeIntervalSince1970: 1_700_000_699), age: 301.0)) {
+            try parser.validateHeader(staleHeader, referenceDate: reference)
+        }
+    }
+
+    @Test func `FeedParser validateHeader rejects timestamp +1s past future tolerance boundary`() throws {
+        let reference = Date(timeIntervalSince1970: 1_700_000_000)
+        let maxFutureTolerance: TimeInterval = 60.0 // 1 minute
+        let parser = GTFSRealtimeFeedParser(maxFutureTolerance: maxFutureTolerance)
+
+        var futureHeader = TransitRealtime_FeedHeader()
+        futureHeader.gtfsRealtimeVersion = "2.0"
+        futureHeader.timestamp = 1_700_000_061 // 61s ahead (+1s past boundary)
+        #expect(throws: GTFSRealtimeError.futureFeed(timestamp: Date(timeIntervalSince1970: 1_700_000_061), aheadBy: 61.0)) {
+            try parser.validateHeader(futureHeader, referenceDate: reference)
+        }
+    }
 }

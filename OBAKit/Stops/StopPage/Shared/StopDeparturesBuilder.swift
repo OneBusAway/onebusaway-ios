@@ -71,7 +71,7 @@ struct StopDeparturesBuilder {
             pastCollapsed: pastCollapsed,
             expandedRouteID: expandedRouteID,
             highlightedTripID: TransferTripHighlight.tripID(from: viewModel.transferContext),
-            statusProvider: { DepartureStatus(arrivalDeparture: $0) },
+            statusProvider: statusProvider,
             alarmLookup: { viewModel.alarm(for: $0) },
             alarmLeadTime: { viewModel.alarmLeadTimeMinutes($0) },
             canAlarm: { viewModel.canCreateAlarm(for: $0) },
@@ -147,6 +147,13 @@ struct StopDeparturesBuilder {
     }
 
     // MARK: - Row plumbing
+
+    /// A saved prediction is no longer live, so offline rows don't get the
+    /// real-time treatment, as on the bookmark cards.
+    var statusProvider: (ArrivalDeparture) -> DepartureStatus {
+        guard viewModel.savedArrivals != nil else { return { DepartureStatus(arrivalDeparture: $0) } }
+        return { _ in DepartureStatus(isRealTime: false, scheduleStatus: .unknown, deviationMinutes: 0) }
+    }
 
     func makeActions(for departure: ArrivalDeparture) -> DepartureRowActions {
         DepartureRowActions(

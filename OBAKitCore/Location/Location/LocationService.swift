@@ -94,6 +94,12 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         self.locationManager.delegate = self
     }
 
+    deinit {
+        for continuation in locationStreamContinuations.values {
+            continuation.finish()
+        }
+    }
+
     // MARK: - User Defaults
 
     private let userDefaults: UserDefaults
@@ -117,6 +123,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         didSet {
             if let currentLocation = currentLocation {
                 notifyDelegatesLocationChanged(currentLocation)
+                notifyStreamSubscribers(currentLocation)
             }
         }
     }
@@ -236,7 +243,13 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         // and the magnetometer powered for the rest of the process.
         if isLocationUseAuthorized {
             if startsUpdatesOnAuthorization {
-                startUpdates()
+                startUpdatingLocation()
+                startUpdatingHeading()
+            } else if !locationStreamContinuations.isEmpty {
+                if !isUpdatingLocation {
+                    streamStartedLocationUpdates = true
+                    performStartUpdatingLocation()
+                }
             }
         } else {
             stopUpdates()
@@ -374,6 +387,12 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     // MARK: - State Management
 
+    /// Whether continuous location updates are actively running on the underlying manager.
+    private(set) var isUpdatingLocation: Bool = false
+
+    /// Whether continuous location updates were initiated by an active stream subscriber.
+    private var streamStartedLocationUpdates: Bool = false
+
     public func startUpdates() {
         startUpdatingLocation()
         startUpdatingHeading()
@@ -387,10 +406,16 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     // MARK: - Location
 
     public func startUpdatingLocation() {
+        streamStartedLocationUpdates = false
+        performStartUpdatingLocation()
+    }
+
+    private func performStartUpdatingLocation() {
         guard isLocationUseAuthorized else {
             return
         }
 
+        isUpdatingLocation = true
         locationManager.startUpdatingLocation()
     }
 
@@ -404,8 +429,52 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// caller that queued up behind them. Revocation, the services-off latch
     /// and external stops all come through here.
     public func stopUpdatingLocation() {
+        isUpdatingLocation = false
+        streamStartedLocationUpdates = false
         failOneShotRequests(with: LocationServiceError.notAuthorized)
+        finishLocationStreamSubscribers()
         locationManager.stopUpdatingLocation()
+    }
+
+    // MARK: - Async Location Stream
+
+    /// Active continuation entries for location streams, keyed by unique subscription ID.
+    private var locationStreamContinuations: [UUID: AsyncStream<CLLocation>.Continuation] = [:]
+
+    /// Count of active location stream subscriptions.
+    var locationStreamSubscriberCount: Int {
+        locationStreamContinuations.count
+    }
+
+    func addLocationStreamSubscriber(id: UUID, continuation: AsyncStream<CLLocation>.Continuation) {
+        let wasEmpty = locationStreamContinuations.isEmpty
+        locationStreamContinuations[id] = continuation
+        if wasEmpty {
+            if !isUpdatingLocation {
+                streamStartedLocationUpdates = true
+                performStartUpdatingLocation()
+            }
+        }
+    }
+
+    func removeLocationStreamSubscriber(id: UUID) {
+        guard locationStreamContinuations.removeValue(forKey: id) != nil else { return }
+        stopStreamUpdatesIfNoSubscribers()
+    }
+
+    private func notifyStreamSubscribers(_ location: CLLocation) {
+        for continuation in locationStreamContinuations.values {
+            continuation.yield(location)
+        }
+    }
+
+    private func finishLocationStreamSubscribers() {
+        let continuations = Array(locationStreamContinuations.values)
+        locationStreamContinuations.removeAll()
+        for continuation in continuations {
+            continuation.finish()
+        }
+        stopStreamUpdatesIfNoSubscribers()
     }
 
     // MARK: - One-shot location
@@ -447,6 +516,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         for waiter in waiters {
             waiter.resume(returning: location)
         }
+        stopStreamUpdatesIfNoSubscribers()
     }
 
     private func failOneShotRequests(with error: Error) {
@@ -454,6 +524,15 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         pendingOneShotRequests.removeAll()
         for waiter in waiters {
             waiter.resume(throwing: error)
+        }
+        stopStreamUpdatesIfNoSubscribers()
+    }
+
+    private func stopStreamUpdatesIfNoSubscribers() {
+        if locationStreamContinuations.isEmpty && streamStartedLocationUpdates && pendingOneShotRequests.isEmpty {
+            streamStartedLocationUpdates = false
+            isUpdatingLocation = false
+            locationManager.stopUpdatingLocation()
         }
     }
 
@@ -641,6 +720,14 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         }
 
         failOneShotRequests(with: error)
+
+        let isTransientError = (error as? CLError).map {
+            $0.code == .locationUnknown || $0.code == .headingFailure
+        } ?? false
+        if !isTransientError {
+            finishLocationStreamSubscribers()
+        }
+
         notifyDelegatesErrorReceived(error)
     }
 }

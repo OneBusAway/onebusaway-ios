@@ -144,7 +144,7 @@ public struct BookmarkArrivalsLoader: Sendable {
     /// reach the server and something was. Any other failure (the server
     /// erred, the stop is gone) is not about the connection, so saved data
     /// would only hide it.
-    private func savedArrivalsFallback(stopID: StopID, error: Error, using apiService: RESTAPIService) -> SavedArrivalsFallback? {
+    public func savedArrivalsFallback(stopID: StopID, error: Error, using apiService: RESTAPIService) -> SavedArrivalsFallback? {
         guard
             let savedArrivals,
             let regionID = apiService.regionIdentifier,
@@ -171,10 +171,24 @@ public struct BookmarkArrivalsLoader: Sendable {
         // Their trips still count for the timetable: one that left ahead of
         // its timetable time must not come back as scheduled.
         let savedTripIDs = Set((liveArrivals ?? []).map(\.tripID))
+        let scheduledDepartures = schedule?.scheduledDepartures ?? []
+
+        // A stop can give its arrivals a headsign of its own ("University
+        // District") where the timetable has the trip's ("University District
+        // Lake City"). The saved trips, found in the timetable, link the two.
+        let timetableHeadsignsByTrip = Dictionary(scheduledDepartures.map { ($0.tripID, $0.tripHeadsign) }) { first, _ in first }
+        var timetableHeadsigns = [TripBookmarkKey: Set<String>]()
+        for arrival in liveArrivals ?? [] {
+            if let headsign = timetableHeadsignsByTrip[arrival.tripID] {
+                timetableHeadsigns[TripBookmarkKey(arrivalDeparture: arrival), default: []].insert(headsign)
+            }
+        }
+
         return SavedArrivalsFallback(
             arrivals: (liveArrivals ?? []).filter { $0.temporalState != .past },
             savedAt: savedAt,
-            scheduledDepartures: (schedule?.scheduledDepartures ?? []).filter { $0.minutes >= 0 && !savedTripIDs.contains($0.tripID) },
+            scheduledDepartures: scheduledDepartures.filter { $0.minutes >= 0 && !savedTripIDs.contains($0.tripID) },
+            timetableHeadsigns: timetableHeadsigns,
             scheduleDate: schedule?.date,
             underlyingError: error
         )
@@ -221,32 +235,6 @@ public struct BookmarkArrivalsLoader: Sendable {
         using apiService: RESTAPIService
     ) async -> [UUID: [ArrivalDeparture]] {
         let requests = bookmarks.map { ($0.id, BookmarkArrivalsRequest(bookmark: $0)) }
-
-        var arrivalsByStop = [StopID: [ArrivalDeparture]]()
-        for await (stopID, result) in arrivals(for: requests.map(\.1), using: apiService) {
-            switch result {
-            case .success(let arrivals):
-                arrivalsByStop[stopID] = arrivals
-            case .failure(let error):
-                Logger.error("BookmarkArrivalsLoader: arrivals failed for stop \(stopID): \(error.localizedDescription)")
-            }
-        }
-
-        var result = [UUID: [ArrivalDeparture]]()
-        for (bookmarkID, request) in requests {
-            if let arrivals = arrivalsByStop[request.stopID] {
-                result[bookmarkID] = request.matching(arrivals)
-            }
-        }
-        return result
-    }
-
-    /// Collects the stream into per-bookmark departures for watch bookmarks.
-    public func departuresByWatchBookmark(
-        for bookmarks: [WatchBookmark],
-        using apiService: RESTAPIService
-    ) async -> [UUID: [ArrivalDeparture]] {
-        let requests = bookmarks.map { ($0.id, BookmarkArrivalsRequest(watchBookmark: $0)) }
 
         var arrivalsByStop = [StopID: [ArrivalDeparture]]()
         for await (stopID, result) in arrivals(for: requests.map(\.1), using: apiService) {

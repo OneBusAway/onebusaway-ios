@@ -271,6 +271,10 @@ struct StopDeparturesSections: View {
             )
         }
 
+        if !content.scheduledDepartures.isEmpty {
+            StopSavedTimetableSection(departures: content.scheduledDepartures)
+        }
+
         if content.hasLoadedArrivals {
             StopPageFooterSection(
                 showLoadMore: !isLoadMoreExhausted,

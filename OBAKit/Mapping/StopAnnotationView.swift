@@ -40,12 +40,21 @@ class StopAnnotationView: MKAnnotationView {
 
     private let kUseDebugColors = false
 
+    enum LabelTypography {
+        static let basePointSize: CGFloat = 14.0
+        static let minimumPointSize: CGFloat = 11.0
+        static let maximumPointSize: CGFloat = 22.0
+        static let widthMultiplier: CGFloat = 3.5
+        static let maxLines: Int = 2
+        static let strokeWidth: CGFloat = -4.0
+    }
+
     // MARK: - Subviews
 
-    private let titleLabel: UILabel = {
+    let titleLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
-        label.numberOfLines = 2
+        label.numberOfLines = LabelTypography.maxLines
         label.lineBreakMode = .byTruncatingTail
         label.adjustsFontSizeToFitWidth = false
         return label
@@ -73,7 +82,7 @@ class StopAnnotationView: MKAnnotationView {
 
         NSLayoutConstraint.activate([
             labelStack.topAnchor.constraint(equalTo: self.bottomAnchor),
-            labelStack.widthAnchor.constraint(lessThanOrEqualTo: self.widthAnchor, multiplier: 3.5),
+            labelStack.widthAnchor.constraint(lessThanOrEqualTo: self.widthAnchor, multiplier: LabelTypography.widthMultiplier),
             labelStack.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor),
             labelStack.centerXAnchor.constraint(equalTo: self.centerXAnchor)
         ])
@@ -91,6 +100,13 @@ class StopAnnotationView: MKAnnotationView {
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
             if self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle {
                 self.rebuildIcon()
+            }
+        }
+
+        // Attributed stroke bakes the font in; rebuild when Dynamic Type changes.
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
+            if self.traitCollection.preferredContentSizeCategory != previousTraitCollection.preferredContentSizeCategory {
+                self.updateTitleLabel()
             }
         }
     }
@@ -131,16 +147,88 @@ class StopAnnotationView: MKAnnotationView {
 
     // MARK: - Annotation Rendering
 
-    private func strokedText(_ text: String) -> NSAttributedString {
-        var attributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont(name: "HelveticaNeue-Bold", size: 14) as Any,
-            .foregroundColor: UIColor.label
+    var maxLabelWidth: CGFloat {
+        let pinWidth = bounds.width > 0 ? bounds.width : ThemeMetrics.defaultMapAnnotationSize
+        return pinWidth * LabelTypography.widthMultiplier
+    }
+
+    func strokedText(_ text: String, compatibleWith traits: UITraitCollection? = nil) -> NSAttributedString {
+        let activeTraits = traits ?? traitCollection
+        let font = scaledLabelFont(for: text, compatibleWith: activeTraits)
+        return NSAttributedString(string: text, attributes: Self.strokedAttributes(font: font))
+    }
+
+    private static func strokedAttributes(font: UIFont) -> [NSAttributedString.Key: Any] {
+        [
+            .font: font,
+            .foregroundColor: UIColor.label,
+            .strokeColor: UIColor.systemBackground,
+            .strokeWidth: LabelTypography.strokeWidth
         ]
+    }
 
-        attributes[.strokeColor] = UIColor.systemBackground
-        attributes[.strokeWidth] = -4.0
+    func scaledLabelFont(for text: String, compatibleWith traits: UITraitCollection) -> UIFont {
+        let baseFont = UIFont.systemFont(ofSize: LabelTypography.basePointSize, weight: .bold)
+        let scaled = UIFontMetrics(forTextStyle: .body).scaledFont(
+            for: baseFont,
+            maximumPointSize: LabelTypography.maximumPointSize,
+            compatibleWith: traits
+        )
+        let clamped = scaled.pointSize < LabelTypography.minimumPointSize
+            ? baseFont.withSize(LabelTypography.minimumPointSize)
+            : scaled
 
-        return NSAttributedString(string: text, attributes: attributes)
+        return fittingFont(
+            for: text,
+            startingFrom: clamped,
+            maxWidth: maxLabelWidth,
+            maxLines: LabelTypography.maxLines
+        )
+    }
+
+    private func fittingFont(for text: String, startingFrom font: UIFont, maxWidth: CGFloat, maxLines: Int) -> UIFont {
+        guard !text.isEmpty, maxWidth > 0, maxLines > 0 else { return font }
+
+        var currentSize = font.pointSize
+        while currentSize > LabelTypography.minimumPointSize {
+            let candidate = font.withSize(currentSize)
+            if Self.textFits(text, font: candidate, maxWidth: maxWidth, maxLines: maxLines) {
+                return candidate
+            }
+            currentSize = max(LabelTypography.minimumPointSize, currentSize - 0.5)
+        }
+        return font.withSize(LabelTypography.minimumPointSize)
+    }
+
+    private static func textFits(_ text: String, font: UIFont, maxWidth: CGFloat, maxLines: Int) -> Bool {
+        let attributed = NSAttributedString(string: text, attributes: strokedAttributes(font: font))
+        let measured = attributed.boundingRect(
+            with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            context: nil
+        )
+        let maxHeight = ceil(font.lineHeight * CGFloat(maxLines)) + 1.0
+        return ceil(measured.width) <= maxWidth && ceil(measured.height) <= maxHeight
+    }
+
+    private func updateTitleLabel() {
+        switch annotation {
+        case let bookmark as Bookmark:
+            titleLabel.attributedText = strokedText(bookmark.name)
+        case let stop as Stop:
+            if let mapTitle = stop.mapTitle {
+                titleLabel.attributedText = strokedText(mapTitle)
+            } else {
+                titleLabel.attributedText = nil
+                titleLabel.text = ""
+            }
+        default:
+            if let text = titleLabel.attributedText?.string, !text.isEmpty {
+                titleLabel.attributedText = strokedText(text)
+            }
+        }
+        titleLabel.invalidateIntrinsicContentSize()
+        setNeedsLayout()
     }
 
     private func prepareForDisplay(bookmark: Bookmark, delegate: StopAnnotationDelegate) {
@@ -160,6 +248,7 @@ class StopAnnotationView: MKAnnotationView {
             titleLabel.attributedText = strokedText(mapTitle)
         }
         else {
+            titleLabel.attributedText = nil
             titleLabel.text = ""
         }
         accessibilityLabel = Self.accessibilityLabel(for: stop)
@@ -246,6 +335,9 @@ class StopAnnotationView: MKAnnotationView {
         set {
             bounds = CGRect(x: 0, y: 0, width: newValue, height: newValue)
             frame = frame.integral
+            if titleLabel.attributedText != nil {
+                updateTitleLabel()
+            }
         }
     }
 

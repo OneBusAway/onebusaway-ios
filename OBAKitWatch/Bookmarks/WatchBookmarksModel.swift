@@ -15,11 +15,21 @@ public struct WatchBookmarkArrival: Identifiable, Equatable {
     public let bookmark: WatchBookmark
     public let nextArrival: ArrivalDeparture?
 
+    /// Offline, once the saved departures have left: the next one in the
+    /// stop's saved timetable.
+    public let nextScheduledDeparture: ScheduledDeparture?
+
+    /// When the departure shown was saved, while the watch can't reach the
+    /// server; `nil` while it's live.
+    public let savedAt: Date?
+
     public var id: UUID { bookmark.id }
 
-    public init(bookmark: WatchBookmark, nextArrival: ArrivalDeparture? = nil) {
+    public init(bookmark: WatchBookmark, nextArrival: ArrivalDeparture? = nil, nextScheduledDeparture: ScheduledDeparture? = nil, savedAt: Date? = nil) {
         self.bookmark = bookmark
         self.nextArrival = nextArrival
+        self.nextScheduledDeparture = nextScheduledDeparture
+        self.savedAt = savedAt
     }
 }
 
@@ -53,7 +63,9 @@ public final class WatchBookmarksModel {
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
     @ObservationIgnored private var autoRefreshTask: Task<Void, Never>?
 
-    public init(host: WatchAppHost, loader: BookmarkArrivalsLoader = BookmarkArrivalsLoader()) {
+    /// The default loader saves each stop's departures on the watch, and shows
+    /// them when the watch can't reach the server.
+    public init(host: WatchAppHost, loader: BookmarkArrivalsLoader = BookmarkArrivalsLoader(savedArrivals: .appDefault)) {
         self.host = host
         self.loader = loader
         self.phase = .loading
@@ -115,39 +127,51 @@ public final class WatchBookmarksModel {
             self.phase = .loading
         }
 
-        let departures = await loader.departuresByWatchBookmark(for: bookmarks, using: apiService)
-        guard !Task.isCancelled else { return }
+        let groups = host.bookmarkStore.groups
+        for await departures in loader.nextDeparturesByWatchBookmark(for: bookmarks, using: apiService) {
+            guard !Task.isCancelled else { return }
+            self.publishSections(bookmarks: bookmarks, groups: groups, departures: departures)
+        }
+    }
 
+    /// Rebuilds the tab's sections from the departures and schedules the next
+    /// refresh from them. Runs once every stop has reported, while the day's
+    /// timetables may still be downloading.
+    private func publishSections(bookmarks: [WatchBookmark], groups: [WatchBookmarkGroup], departures: [UUID: WatchBookmarkDeparture]) {
         var sections: [WatchBookmarkSection] = []
         let now = Date()
-        let groups = host.bookmarkStore.groups
 
         for group in groups {
             let groupBookmarks = bookmarks.filter { $0.groupID == group.id }
             guard !groupBookmarks.isEmpty else { continue }
-            let bookmarkArrivals = Self.bookmarkArrivals(for: groupBookmarks, departures: departures, now: now)
+            let bookmarkArrivals = Self.bookmarkArrivals(for: groupBookmarks, departures: departures)
             sections.append(WatchBookmarkSection(id: group.id, title: group.name, bookmarks: bookmarkArrivals))
         }
 
         let ungrouped = bookmarks.filter { $0.groupID == nil }
         if !ungrouped.isEmpty {
-            let bookmarkArrivals = Self.bookmarkArrivals(for: ungrouped, departures: departures, now: now)
+            let bookmarkArrivals = Self.bookmarkArrivals(for: ungrouped, departures: departures)
             let title = sections.isEmpty ? "" : OBALoc("bookmarks.title", value: "Bookmarks", comment: "Section title for ungrouped bookmarks")
             let sectionID = UUID(uuidString: "00000000-0000-0000-0000-000000000000") ?? UUID()
             sections.append(WatchBookmarkSection(id: sectionID, title: title, bookmarks: bookmarkArrivals))
         }
 
         self.phase = sections.isEmpty ? .empty : .loaded(sections)
-        let upcomingDepartureDates = sections.flatMap(\.bookmarks).compactMap { $0.nextArrival?.arrivalDepartureDate }
+        let upcomingDepartureDates = sections.flatMap(\.bookmarks).compactMap { $0.nextArrival?.arrivalDepartureDate ?? $0.nextScheduledDeparture?.date }
         let nextRefreshDate = upcomingDepartureDates.min() ?? (sections.isEmpty ? nil : now.addingTimeInterval(60.0))
         scheduleAutoRefresh(at: nextRefreshDate)
     }
 
-    /// Pairs each bookmark with its next upcoming arrival.
-    private static func bookmarkArrivals(for bookmarks: [WatchBookmark], departures: [UUID: [ArrivalDeparture]], now: Date = Date()) -> [WatchBookmarkArrival] {
+    /// Pairs each bookmark with its next upcoming departure.
+    private static func bookmarkArrivals(for bookmarks: [WatchBookmark], departures: [UUID: WatchBookmarkDeparture]) -> [WatchBookmarkArrival] {
         bookmarks.map { bookmark in
-            let nextUpcoming = departures[bookmark.id]?.first(where: { $0.arrivalDepartureDate > now })
-            return WatchBookmarkArrival(bookmark: bookmark, nextArrival: nextUpcoming)
+            let departure = departures[bookmark.id]
+            return WatchBookmarkArrival(
+                bookmark: bookmark,
+                nextArrival: departure?.arrival,
+                nextScheduledDeparture: departure?.scheduledDeparture,
+                savedAt: departure?.savedAt
+            )
         }
     }
 

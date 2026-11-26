@@ -27,11 +27,27 @@ struct BookmarkEntry: TimelineEntry {
     /// When `departures` was fetched; nil when nothing was.
     let fetchedAt: Date?
 
-    init(date: Date, bookmarks: [Bookmark], departures: [UUID: [ArrivalDeparture]] = [:], fetchedAt: Date? = nil) {
+    /// Offline only: each saved bookmark's timetable departures, for once its
+    /// saved departures have left. See `SavedBookmarkDepartures`.
+    let scheduledDepartures: [UUID: [ScheduledDeparture]]
+
+    /// When the saved departures shown were saved; nil when all are live.
+    let savedAt: Date?
+
+    init(
+        date: Date,
+        bookmarks: [Bookmark],
+        departures: [UUID: [ArrivalDeparture]] = [:],
+        fetchedAt: Date? = nil,
+        scheduledDepartures: [UUID: [ScheduledDeparture]] = [:],
+        savedAt: Date? = nil
+    ) {
         self.date = date
         self.bookmarks = bookmarks
         self.departures = departures
         self.fetchedAt = fetchedAt
+        self.scheduledDepartures = scheduledDepartures
+        self.savedAt = savedAt
     }
 
     /// How many bookmarks a widget of `family` can show. The one source of
@@ -46,5 +62,14 @@ struct BookmarkEntry: TimelineEntry {
     public func lastUpdatedAt(with formatters: Formatters) -> String {
         guard let fetchedAt, !bookmarks.isEmpty else { return "--" }
         return formatters.timeFormatter.string(from: fetchedAt)
+    }
+
+    /// The header: when the departures were fetched or, offline, when the
+    /// saved ones were saved.
+    func headerText(with formatters: Formatters) -> String {
+        if let savedAt, !bookmarks.isEmpty {
+            return WidgetStrings.offlineSaved(at: formatters.timeFormatter.string(from: savedAt))
+        }
+        return WidgetStrings.lastUpdated(at: lastUpdatedAt(with: formatters))
     }
 }

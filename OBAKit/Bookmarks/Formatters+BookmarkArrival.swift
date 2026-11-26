@@ -66,11 +66,22 @@ extension Formatters {
     /// `nil` while the departures are live.
     func savedArrivalsText(for row: BookmarkRowViewModel) -> String? {
         guard let savedAt = row.savedArrivalsDate else { return nil }
-        if row.isShowingTimetable {
-            return OBALoc("bookmark_card.offline_timetable", value: "Offline, scheduled times", comment: "Shown on a bookmark card when the device is offline, the departures the app saved have all left, and the times shown come from the stop's saved timetable instead.")
+        return savedArrivalsText(savedAt: savedAt, isShowingTimetable: row.isShowingTimetable)
+    }
+
+    /// The same line for any saved departures; the stop page shows it too.
+    func savedArrivalsText(savedAt: Date, isShowingTimetable: Bool) -> String {
+        if isShowingTimetable {
+            return Self.offlineTimetableText
         }
         let format = OBALoc("bookmark_card.offline_saved_fmt", value: "Offline, saved %@", comment: "Shown on a bookmark card when the device is offline and the departures shown are the last ones the app saved. The placeholder is the time they were saved, e.g. 'Offline, saved 8:42 AM'.")
         return String(format: format, savedAtString(savedAt))
+    }
+
+    /// "Offline, scheduled times": the times shown come from the stop's saved
+    /// timetable. Also the stop page's timetable heading.
+    static var offlineTimetableText: String {
+        OBALoc("bookmark_card.offline_timetable", value: "Offline, scheduled times", comment: "Shown on a bookmark card when the device is offline, the departures the app saved have all left, and the times shown come from the stop's saved timetable instead.")
     }
 
     /// The save time, with the date in front when it wasn't today, so

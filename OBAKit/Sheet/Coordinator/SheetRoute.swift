@@ -165,6 +165,13 @@ nonisolated protocol SheetRouteable: Identifiable, Hashable {
     /// What the sheet shows behind its content where its glass doesn't; see
     /// `SheetBackground`. `FloatingSheetContainer` applies it to every sheet.
     var sheetBackground: SheetBackground { get }
+    /// Returns `true` when opening `self` should replace an existing `other`
+    /// entry in the stacked pile rather than stacking a second copy alongside it.
+    func isSameSingletonKind(as other: Self) -> Bool
+}
+
+nonisolated extension SheetRouteable {
+    func isSameSingletonKind(as other: Self) -> Bool { false }
 }
 
 /// A panel sheet's background where its Liquid Glass doesn't show (dark mode, and
@@ -324,11 +331,28 @@ nonisolated extension AppSheetRoute {
     // MARK: Hashable / Equatable
 
     static func == (lhs: AppSheetRoute, rhs: AppSheetRoute) -> Bool {
-        return lhs.id == rhs.id
+        switch (lhs, rhs) {
+        case (.tripPlanner(let lhsRequest), .tripPlanner(let rhsRequest)):
+            // `.tripPlanner`'s `id` intentionally omits coordinates for analytics
+            // privacy, so route equality must compare the full request payload.
+            return lhsRequest == rhsRequest
+        default:
+            return lhs.id == rhs.id
+        }
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        if case .tripPlanner(let request) = self {
+            hasher.combine(request)
+        }
+    }
+
+    func isSameSingletonKind(as other: AppSheetRoute) -> Bool {
+        if case .tripPlanner = self, case .tripPlanner = other {
+            return true
+        }
+        return false
     }
 }
 

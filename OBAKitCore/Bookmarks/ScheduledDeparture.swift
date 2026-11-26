@@ -33,15 +33,22 @@ public struct ScheduledDeparture: Hashable, @unchecked Sendable {
         self.date = date
     }
 
-    /// Minutes from now, counted the way `ArrivalDeparture.arrivalDepartureMinutes`
+    /// Minutes from `date`, counted the way `ArrivalDeparture.arrivalDepartureMinutes`
     /// counts them, so a timetable row and a live row read the same.
-    public var minutes: Int {
-        Int(date.timeIntervalSinceNow / 60.0)
+    public func minutes(from date: Date) -> Int {
+        Int(self.date.timeIntervalSince(date) / 60.0)
     }
 
-    /// Whether this departure is for the trips `key` bookmarks.
-    func matches(_ key: TripBookmarkKey) -> Bool {
-        routeID == key.routeID && tripHeadsign == key.tripHeadsign
+    /// Minutes from now.
+    public var minutes: Int {
+        minutes(from: .now)
+    }
+
+    /// Whether this departure is for the trips `key` bookmarks. The
+    /// timetable can name them by `timetableHeadsigns` instead of the
+    /// bookmark's headsign.
+    func matches(_ key: TripBookmarkKey, timetableHeadsigns: Set<String> = []) -> Bool {
+        routeID == key.routeID && (tripHeadsign == key.tripHeadsign || timetableHeadsigns.contains(tripHeadsign))
     }
 }
 
