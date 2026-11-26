@@ -66,8 +66,7 @@ struct OBAWidgetEntryView: View {
     }
 
     private func constructDeepLink(for bookmark: Bookmark) -> URL {
-        let router = URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
-        return router.encodeViewStop(stopID: bookmark.stopID, regionID: bookmark.regionIdentifier)
+        BookmarkEntry.deepLinkURL(stopID: bookmark.stopID, regionIdentifier: bookmark.regionIdentifier)
     }
 
     // MARK: Empty state view
