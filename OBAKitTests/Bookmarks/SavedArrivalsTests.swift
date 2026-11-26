@@ -171,6 +171,12 @@ final class SavedArrivalsTests: OBATestCase {
         let loaded = try #require(store.load(stopID: stopID, regionID: 1))
         #expect(loaded.body == body)
         #expect(abs(loaded.savedAt.timeIntervalSince(savedAt)) < 1)
+
+        // Independent kinds (.arrivals and .schedule) load separately for the same stop and region
+        let scheduleBody = Data("{\"schedule\":true}".utf8)
+        store.save(scheduleBody, kind: .schedule, stopID: stopID, regionID: 1)
+        #expect(store.load(kind: .schedule, stopID: stopID, regionID: 1)?.body == scheduleBody)
+        #expect(store.load(kind: .arrivals, stopID: stopID, regionID: 1)?.body == body)
     }
 
     @Test func `A later save replaces the earlier one`() throws {
@@ -883,5 +889,154 @@ final class SavedArrivalsTests: OBATestCase {
 
         #expect(online.upcomingArrivalDepartures.map(\.tripID) == ["left", "coming"])
         #expect(offline.upcomingArrivalDepartures.map(\.tripID) == ["coming"])
+    }
+
+    // MARK: - SavedArrivalsStore & ScheduledDeparture Edge Conditions
+
+    @Test
+    func `Distinct raw stop IDs with delimiters map to different files and load back separately`() throws {
+        let idColon = "agency:100"
+        let idSlash = "agency/100"
+        let colonData = Data("colon".utf8)
+        let slashData = Data("slash".utf8)
+
+        let colonURL = store.fileURL(kind: .arrivals, stopID: idColon, regionID: 1)
+        let slashURL = store.fileURL(kind: .arrivals, stopID: idSlash, regionID: 1)
+        #expect(colonURL != slashURL)
+        #expect(colonURL.lastPathComponent != slashURL.lastPathComponent)
+
+        store.save(colonData, kind: .arrivals, stopID: idColon, regionID: 1)
+        store.save(slashData, kind: .arrivals, stopID: idSlash, regionID: 1)
+
+        let loadedColon = try #require(store.load(kind: .arrivals, stopID: idColon, regionID: 1))
+        let loadedSlash = try #require(store.load(kind: .arrivals, stopID: idSlash, regionID: 1))
+        #expect(loadedColon.body == colonData)
+        #expect(loadedSlash.body == slashData)
+    }
+
+    @Test
+    func `ScheduledDeparture matches key on exact routeID and headsign and rejects partial or case mismatches`() {
+        let departure = ScheduledDeparture(
+            tripID: "trip_101",
+            routeID: "Route_44",
+            tripHeadsign: "Downtown Seattle",
+            route: nil,
+            date: Date()
+        )
+
+        let matchingKey = TripBookmarkKey(stopID: "stop_1", routeShortName: "44", routeID: "Route_44", tripHeadsign: "Downtown Seattle")
+        let wrongRouteKey = TripBookmarkKey(stopID: "stop_1", routeShortName: "45", routeID: "Route_45", tripHeadsign: "Downtown Seattle")
+        let wrongHeadsignKey = TripBookmarkKey(stopID: "stop_1", routeShortName: "44", routeID: "Route_44", tripHeadsign: "U-District")
+        let caseMismatchRoute = TripBookmarkKey(stopID: "stop_1", routeShortName: "44", routeID: "route_44", tripHeadsign: "Downtown Seattle")
+        let caseMismatchHeadsign = TripBookmarkKey(stopID: "stop_1", routeShortName: "44", routeID: "Route_44", tripHeadsign: "downtown seattle")
+
+        #expect(departure.matches(matchingKey))
+        #expect(!departure.matches(wrongRouteKey))
+        #expect(!departure.matches(wrongHeadsignKey))
+        #expect(!departure.matches(caseMismatchRoute))
+        #expect(!departure.matches(caseMismatchHeadsign))
+    }
+
+    @Test
+    func `ScheduledDeparture minutes truncates toward zero and pins negative interval boundary`() {
+        let now = Date()
+        let departure59SecAgo = ScheduledDeparture(tripID: "t1", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(-59))
+        let departure61SecAgo = ScheduledDeparture(tripID: "t2", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(-61))
+
+        #expect(departure59SecAgo.minutes == 0)
+        #expect(departure61SecAgo.minutes == -1)
+    }
+
+    @Test
+    func `ScheduleForStop scheduledDepartures prefers arrivalDate when departure is disabled and arrival is enabled`() throws {
+        var root = try #require(try JSONSerialization.jsonObject(with: Fixtures.loadData(file: scheduleFixture)) as? [String: Any])
+        var data = try #require(root["data"] as? [String: Any])
+        var entry = try #require(data["entry"] as? [String: Any])
+        var routes = try #require(entry["stopRouteSchedules"] as? [[String: Any]])
+
+        let arrivalEpochMs: Int64 = 1_700_000_600_000 // T + 600s
+        let departureEpochMs: Int64 = 1_700_001_200_000 // T + 1200s
+
+        // Construct a single route, single direction with drop-off only stop time (departureEnabled: false, arrivalEnabled: true)
+        let stopTimeDict: [String: Any] = [
+            "tripId": "drop_off_trip",
+            "serviceId": "weekday",
+            "arrivalTime": arrivalEpochMs,
+            "departureTime": departureEpochMs,
+            "arrivalEnabled": true,
+            "departureEnabled": false,
+            "stopHeadsign": "Drop-off Only"
+        ]
+
+        var firstRoute = routes[0]
+        var firstDirections = try #require(firstRoute["stopRouteDirectionSchedules"] as? [[String: Any]])
+        firstDirections[0]["scheduleStopTimes"] = [stopTimeDict]
+        firstRoute["stopRouteDirectionSchedules"] = [firstDirections[0]]
+        entry["stopRouteSchedules"] = [firstRoute]
+        data["entry"] = entry
+        root["data"] = data
+
+        let modifiedJSON = try JSONSerialization.data(withJSONObject: root)
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(RESTAPIResponse<ScheduleForStop>.self, from: modifiedJSON)
+        let schedule = response.entry
+
+        let departures = schedule.scheduledDepartures
+        #expect(departures.count == 1)
+        let departure = try #require(departures.first)
+        #expect(departure.tripID == "drop_off_trip")
+        #expect(departure.date == Date(timeIntervalSince1970: Double(arrivalEpochMs) / 1000.0))
+    }
+
+    @Test
+    func `ScheduleForStop scheduledDepartures sorts multiple routes and directions chronologically`() throws {
+        var root = try #require(try JSONSerialization.jsonObject(with: Fixtures.loadData(file: scheduleFixture)) as? [String: Any])
+        var data = try #require(root["data"] as? [String: Any])
+        var entry = try #require(data["entry"] as? [String: Any])
+        var routes = try #require(entry["stopRouteSchedules"] as? [[String: Any]])
+
+        func makeStopTime(tripID: String, epochSeconds: Double) -> [String: Any] {
+            [
+                "tripId": tripID,
+                "serviceId": "srv",
+                "arrivalTime": Int64(epochSeconds * 1000),
+                "departureTime": Int64(epochSeconds * 1000),
+                "arrivalEnabled": true,
+                "departureEnabled": true,
+                "stopHeadsign": ""
+            ]
+        }
+
+        // Route A with direction 1 (trip @ 300s) and direction 2 (trip @ 100s)
+        var routeA = routes[0]
+        routeA["routeId"] = "Route_A"
+        var dirA1 = try #require((routeA["stopRouteDirectionSchedules"] as? [[String: Any]])?.first)
+        dirA1["tripHeadsign"] = "Northbound"
+        dirA1["scheduleStopTimes"] = [makeStopTime(tripID: "trip_A_300", epochSeconds: 1_700_000_300)]
+
+        var dirA2 = dirA1
+        dirA2["tripHeadsign"] = "Southbound"
+        dirA2["scheduleStopTimes"] = [makeStopTime(tripID: "trip_A_100", epochSeconds: 1_700_000_100)]
+        routeA["stopRouteDirectionSchedules"] = [dirA1, dirA2]
+
+        // Route B with direction 1 (trip @ 200s)
+        var routeB = routes[1]
+        routeB["routeId"] = "Route_B"
+        var dirB = try #require((routeB["stopRouteDirectionSchedules"] as? [[String: Any]])?.first)
+        dirB["tripHeadsign"] = "Eastbound"
+        dirB["scheduleStopTimes"] = [makeStopTime(tripID: "trip_B_200", epochSeconds: 1_700_000_200)]
+        routeB["stopRouteDirectionSchedules"] = [dirB]
+
+        entry["stopRouteSchedules"] = [routeA, routeB]
+        data["entry"] = entry
+        root["data"] = data
+
+        let modifiedJSON = try JSONSerialization.data(withJSONObject: root)
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(RESTAPIResponse<ScheduleForStop>.self, from: modifiedJSON)
+        let schedule = response.entry
+
+        let sortedTripIDs = schedule.scheduledDepartures.map(\.tripID)
+        #expect(sortedTripIDs == ["trip_A_100", "trip_B_200", "trip_A_300"])
     }
 }
