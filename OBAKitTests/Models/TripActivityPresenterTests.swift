@@ -217,4 +217,134 @@ final class TripActivityPresenterTests {
         let label = spokenLabel(arrivals: [arrival(offsetSeconds: 300, status: .unknown, now: now)])
         #expect(label.contains(Strings.scheduledNotRealTime))
     }
+
+    // MARK: - Dynamic Island empty & elapsed fallback
+
+    @Test func `Empty and elapsed arrivals suppress status dot and show fallback status`() {
+        let emptyState = TripAttributes.ContentState(arrivals: [])
+        #expect(!presenter.shouldShowStatusDot(for: emptyState, now: now))
+        #expect(presenter.statusText(for: emptyState, now: now) == presenter.emptyStateStatusText)
+        #expect(presenter.emptyStateStatusText == "No upcoming departures")
+
+        let pastState = TripAttributes.ContentState(arrivals: [
+            arrival(offsetSeconds: -300, now: now),
+            arrival(offsetSeconds: -60, now: now)
+        ])
+        #expect(!presenter.shouldShowStatusDot(for: pastState, now: now))
+        #expect(presenter.statusText(for: pastState, now: now) == presenter.emptyStateStatusText)
+    }
+
+    @Test func `Transition from active arrival to elapsed departures suppresses dot and switches to fallback`() {
+        let first = arrival(offsetSeconds: 120, status: .onTime, deviation: 0, now: now)
+        let second = arrival(offsetSeconds: 300, status: .delayed, deviation: 120, now: now)
+        let state = TripAttributes.ContentState(arrivals: [first, second])
+
+        // Active on first arrival
+        #expect(presenter.shouldShowStatusDot(for: state, now: now))
+        #expect(presenter.statusText(for: state, now: now) != presenter.emptyStateStatusText)
+        #expect(presenter.expandedTrailingState(for: state, now: now) == .countdown(first))
+
+        // First elapsed, second becomes primary (exact boundary departureDate == now stays upcoming)
+        let atSecondDeparture = now.addingTimeInterval(300)
+        #expect(presenter.shouldShowStatusDot(for: state, now: atSecondDeparture))
+        #expect(presenter.expandedTrailingState(for: state, now: atSecondDeparture) == .countdown(second))
+
+        // All departures elapsed
+        let afterAllDeparted = now.addingTimeInterval(301)
+        #expect(!presenter.shouldShowStatusDot(for: state, now: afterAllDeparted))
+        #expect(presenter.statusText(for: state, now: afterAllDeparted) == presenter.emptyStateStatusText)
+        #expect(presenter.primaryColor(for: state, now: afterAllDeparted) == formatters.colorForScheduleStatus(.unknown))
+        #expect(
+            presenter.expandedTrailingState(for: state, now: afterAllDeparted)
+                == .fallback(text: "--", accessibilityLabel: presenter.emptyStateStatusText)
+        )
+    }
+
+    @Test func `Dynamic Island expanded, compact trailing, and minimal states cover active and elapsed departures`() {
+        let upcoming = arrival(offsetSeconds: 300, status: .onTime, deviation: 0, now: now)
+        let activeState = TripAttributes.ContentState(arrivals: [upcoming])
+        let elapsedState = TripAttributes.ContentState(arrivals: [arrival(offsetSeconds: -30, now: now)])
+
+        #expect(presenter.expandedTrailingState(for: activeState, now: now) == .countdown(upcoming))
+        #expect(presenter.compactTrailingState(for: activeState, now: now) == .countdown(upcoming))
+        #expect(presenter.minimalState(for: activeState, isStale: false, now: now) == .countdown(upcoming))
+        #expect(presenter.minimalState(for: activeState, isStale: true, now: now) == .countdown(upcoming))
+        #expect(presenter.minimalCountdownAccessibilityLabel(for: upcoming, isStale: false, now: now) == nil)
+        #expect(
+            presenter.minimalCountdownAccessibilityLabel(for: upcoming, isStale: true, now: now)
+                == "\(LiveActivityStaleChrome.warningText), in 5 minutes"
+        )
+
+        let expectedFallback = TripActivityPresenter.DynamicIslandTrailingState.fallback(
+            text: "--",
+            accessibilityLabel: presenter.emptyStateStatusText
+        )
+        #expect(presenter.expandedTrailingState(for: elapsedState, now: now) == expectedFallback)
+        #expect(presenter.compactTrailingState(for: elapsedState, now: now) == expectedFallback)
+        #expect(presenter.minimalState(for: elapsedState, isStale: false, now: now) == expectedFallback)
+        #expect(
+            presenter.minimalState(for: elapsedState, isStale: true, now: now)
+                == .fallback(
+                    text: "--",
+                    accessibilityLabel: "\(LiveActivityStaleChrome.warningText), \(presenter.emptyStateStatusText)"
+                )
+        )
+    }
+
+    @Test func `Dynamic Island accessibility segments announce fallback when all departures elapse`() {
+        let elapsedState = TripAttributes.ContentState(arrivals: [arrival(offsetSeconds: -60, now: now)])
+
+        let freshSegments = presenter.dynamicIslandAccessibilitySegments(
+            staticData: staticData,
+            contentState: elapsedState,
+            isStale: false,
+            now: now
+        )
+        #expect(freshSegments == [
+            .text("Route 49"),
+            .text("Downtown Seattle"),
+            .text(presenter.emptyStateStatusText)
+        ])
+        #expect(
+            TripActivityPresenter.spokenString(freshSegments, now: now)
+                == "Route 49, Downtown Seattle, No upcoming departures"
+        )
+
+        let staleSegments = presenter.dynamicIslandAccessibilitySegments(
+            staticData: staticData,
+            contentState: elapsedState,
+            isStale: true,
+            now: now
+        )
+        #expect(staleSegments == freshSegments + [.text(LiveActivityStaleChrome.warningText)])
+        #expect(
+            TripActivityPresenter.spokenString(staleSegments, now: now)
+                == "Route 49, Downtown Seattle, No upcoming departures, \(LiveActivityStaleChrome.warningText)"
+        )
+
+        let emptySegments = presenter.dynamicIslandAccessibilitySegments(
+            staticData: staticData,
+            contentState: TripAttributes.ContentState(arrivals: []),
+            isStale: false,
+            now: now
+        )
+        #expect(emptySegments == freshSegments)
+    }
+
+    @Test func `Dynamic Island accessibility segments preserve active countdown and later departures`() {
+        let state = TripAttributes.ContentState(arrivals: [
+            arrival(offsetSeconds: 300, status: .onTime, deviation: 0, now: now),
+            arrival(offsetSeconds: 900, status: .onTime, deviation: 0, now: now)
+        ])
+        let segments = presenter.dynamicIslandAccessibilitySegments(
+            staticData: staticData,
+            contentState: state,
+            isStale: false,
+            now: now
+        )
+        let spoken = TripActivityPresenter.spokenString(segments, now: now)
+        #expect(!spoken.contains(presenter.emptyStateStatusText))
+        #expect(spoken.contains("in 5 minutes"))
+        #expect(spoken.contains("later departures, in 15 minutes"))
+    }
 }

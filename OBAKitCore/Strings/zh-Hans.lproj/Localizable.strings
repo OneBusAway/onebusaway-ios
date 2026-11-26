@@ -436,6 +436,9 @@
 /* Shown under the arrivals on a rider's first Live Activity on the Lock Screen, explaining how to remove it. The direction is the Lock Screen's swipe; in right-to-left languages it is mirrored. */
 "live_activity.dismiss_hint" = "向左轻扫即可关闭";
 
+/* Shown on a Live Activity Dynamic Island when all tracked departures have passed and no upcoming departure is available yet. */
+"live_activity.no_upcoming_departures" = "暂无即将发车的班次";
+
 /* Error shown when a location request is made without authorization */
 "location_service.error.not_authorized" = "未获得位置访问授权。";
 
