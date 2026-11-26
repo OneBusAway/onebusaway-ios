@@ -100,6 +100,274 @@ final class RootInterfaceSwapTests: OBATestCase {
         #expect(rootAtCompletion === newRoot)
     }
 
+    // MARK: - Back-to-back reloads
+
+    @Test func `Back-to-back reloads coalesce to the latest root and fire every completion`() {
+        let testWindow = UIWindow(frame: .zero)
+        let oldRoot = DeferredDismissViewController()
+        testWindow.rootViewController = oldRoot
+
+        var built: [String] = []
+        var completed: [String] = []
+        let firstRoot = UIViewController()
+        let secondRoot = UIViewController()
+        let thirdRoot = UIViewController()
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            built.append("first")
+            return firstRoot
+        }, completion: {
+            completed.append("first")
+        })
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            built.append("second")
+            return secondRoot
+        }, completion: {
+            completed.append("second")
+        })
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            built.append("third")
+            return thirdRoot
+        }, completion: {
+            completed.append("third")
+        })
+
+        #expect(oldRoot.dismissCallCount == 1)
+        #expect(built.isEmpty)
+        #expect(completed.isEmpty)
+        #expect(testWindow.rootViewController === oldRoot)
+
+        oldRoot.finishDismissal()
+
+        #expect(testWindow.rootViewController === thirdRoot)
+        #expect(built == ["third"])
+        #expect(completed == ["first", "second", "third"])
+
+        // State for this window is cleared once the dismissal finishes, so a later swap works normally.
+        let fourthRoot = UIViewController()
+        var fourthCompleted = false
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: { fourthRoot }, completion: { fourthCompleted = true })
+        #expect(testWindow.rootViewController === fourthRoot)
+        #expect(fourthCompleted)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func `Back-to-back reloads on a real presentation chain install the latest root`() async throws {
+        let oldRoot = UIViewController()
+        install(oldRoot)
+        await present(UIViewController(), from: oldRoot)
+        try #require(oldRoot.presentedViewController != nil)
+
+        var built: [String] = []
+        var completed: [String] = []
+        let firstRoot = UIViewController()
+        let secondRoot = UIViewController()
+
+        await withCheckedContinuation { continuation in
+            RootInterfaceSwap.replaceRoot(of: window, with: {
+                built.append("first")
+                return firstRoot
+            }, completion: {
+                completed.append("first")
+            })
+            RootInterfaceSwap.replaceRoot(of: window, with: {
+                built.append("second")
+                return secondRoot
+            }, completion: {
+                completed.append("second")
+                continuation.resume()
+            })
+        }
+
+        #expect(oldRoot.presentedViewController == nil)
+        #expect(window.rootViewController === secondRoot)
+        // UIKit normally invokes `dismiss`'s completion asynchronously (so only
+        // "second" builds), but synchronous completion is also a valid schedule.
+        #expect(built == ["second"] || built == ["first", "second"])
+        #expect(completed == ["first", "second"])
+    }
+
+    @Test func `A reload triggered from a completion runs cleanly`() {
+        let testWindow = UIWindow(frame: .zero)
+        let oldRoot = DeferredDismissViewController()
+        testWindow.rootViewController = oldRoot
+
+        let firstRoot = UIViewController()
+        let followUpRoot = UIViewController()
+        var events: [String] = []
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            events.append("build-first")
+            return firstRoot
+        }, completion: {
+            events.append("complete-first")
+            RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+                events.append("build-followup")
+                return followUpRoot
+            }, completion: {
+                events.append("complete-followup")
+            })
+        })
+
+        oldRoot.finishDismissal()
+
+        #expect(testWindow.rootViewController === followUpRoot)
+        #expect(events == ["build-first", "complete-first", "build-followup", "complete-followup"])
+    }
+
+    @Test func `Coalesced completions finish in FIFO order before a re-entrant reload runs`() {
+        let testWindow = UIWindow(frame: .zero)
+        let oldRoot = DeferredDismissViewController()
+        testWindow.rootViewController = oldRoot
+
+        let rootA = UIViewController()
+        let rootB = UIViewController()
+        let rootC = UIViewController()
+        var events: [String] = []
+        var rootSeenByB: UIViewController?
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            events.append("build-A")
+            return rootA
+        }, completion: {
+            events.append("complete-A")
+            RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+                events.append("build-C")
+                return rootC
+            }, completion: {
+                events.append("complete-C")
+            })
+        })
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            events.append("build-B")
+            return rootB
+        }, completion: {
+            rootSeenByB = testWindow.rootViewController
+            events.append("complete-B")
+        })
+
+        oldRoot.finishDismissal()
+
+        #expect(rootSeenByB === rootB)
+        #expect(testWindow.rootViewController === rootC)
+        #expect(events == ["build-B", "complete-A", "complete-B", "build-C", "complete-C"])
+    }
+
+    @Test func `An in-flight dismissal on one window does not block another window`() {
+        let firstWindow = UIWindow(frame: .zero)
+        let oldRoot = DeferredDismissViewController()
+        firstWindow.rootViewController = oldRoot
+
+        let otherWindow = UIWindow(frame: .zero)
+        otherWindow.rootViewController = UIViewController()
+
+        let firstWindowNextRoot = UIViewController()
+        let otherWindowNextRoot = UIViewController()
+        var firstCompleted = false
+        var otherCompleted = false
+
+        RootInterfaceSwap.replaceRoot(of: firstWindow, with: { firstWindowNextRoot }, completion: { firstCompleted = true })
+        RootInterfaceSwap.replaceRoot(of: otherWindow, with: { otherWindowNextRoot }, completion: { otherCompleted = true })
+
+        #expect(otherWindow.rootViewController === otherWindowNextRoot)
+        #expect(otherCompleted)
+        #expect(!firstCompleted)
+        #expect(firstWindow.rootViewController === oldRoot)
+
+        oldRoot.finishDismissal()
+
+        #expect(firstWindow.rootViewController === firstWindowNextRoot)
+        #expect(firstCompleted)
+    }
+
+    @Test func `A dropped dismissal completion does not wedge later swaps`() {
+        let testWindow = UIWindow(frame: .zero)
+        let oldRoot = DeferredDismissViewController()
+        testWindow.rootViewController = oldRoot
+
+        var completed: [String] = []
+        let firstRoot = UIViewController()
+        let recoveryRoot = UIViewController()
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: { firstRoot }, completion: { completed.append("first") })
+        #expect(oldRoot.dismissCallCount == 1)
+
+        // Simulate UIKit completing the dismissal without invoking the completion block.
+        oldRoot.dropDismissal()
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: { recoveryRoot }, completion: { completed.append("recovery") })
+
+        #expect(testWindow.rootViewController === recoveryRoot)
+        #expect(completed == ["first", "recovery"])
+    }
+
+    @Test func `A dropped dismissal followed by a new presentation does not wedge later swaps`() {
+        let testWindow = UIWindow(frame: .zero)
+        let oldRoot = DeferredDismissViewController()
+        testWindow.rootViewController = oldRoot
+
+        var completed: [String] = []
+        let firstRoot = UIViewController()
+        let secondRoot = UIViewController()
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: { firstRoot }, completion: { completed.append("first") })
+        #expect(oldRoot.dismissCallCount == 1)
+
+        // Simulate UIKit dropping the first dismissal and the root presenting a new modal.
+        oldRoot.replacePresentedController()
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: { secondRoot }, completion: { completed.append("second") })
+        #expect(oldRoot.dismissCallCount == 2)
+
+        oldRoot.finishDismissal()
+
+        #expect(testWindow.rootViewController === secondRoot)
+        #expect(completed == ["first", "second"])
+    }
+
+    @Test func `A late completion from an evicted dismissal does not finish a newer swap`() {
+        let testWindow = UIWindow(frame: .zero)
+        let firstOldRoot = DeferredDismissViewController()
+        let secondOldRoot = DeferredDismissViewController()
+        testWindow.rootViewController = firstOldRoot
+
+        let firstNextRoot = UIViewController()
+        let secondNextRoot = UIViewController()
+        var built: [String] = []
+        var completed: [String] = []
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            built.append("first")
+            return firstNextRoot
+        }, completion: {
+            completed.append("first")
+        })
+
+        // Simulate an external direct root assignment before the first dismissal finishes.
+        testWindow.rootViewController = secondOldRoot
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            built.append("second")
+            return secondNextRoot
+        }, completion: {
+            completed.append("second")
+        })
+
+        // Late completion from the first dismissal must not touch the second swap.
+        firstOldRoot.finishDismissal()
+
+        #expect(testWindow.rootViewController === secondOldRoot)
+        #expect(built.isEmpty)
+        #expect(completed.isEmpty)
+
+        // Only the second dismissal installs the second root and runs the carried completions.
+        secondOldRoot.finishDismissal()
+
+        #expect(testWindow.rootViewController === secondNextRoot)
+        #expect(built == ["second"])
+        #expect(completed == ["first", "second"])
+    }
+
     // MARK: - Teardown
 
     /// Panel to classic: the old panel root, its SwiftUI host and its sheet coordinator are freed.
@@ -277,6 +545,40 @@ final class RootInterfaceSwapTests: OBATestCase {
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
         }
+    }
+}
+
+/// A root controller that holds its `dismiss(animated:completion:)` completion
+/// until the test triggers it, making in-flight overlap deterministic.
+private final class DeferredDismissViewController: UIViewController {
+    private var fakePresented: UIViewController? = UIViewController()
+    private(set) var dismissCallCount = 0
+    private var pendingDismissCompletion: (() -> Void)?
+
+    override var presentedViewController: UIViewController? {
+        fakePresented
+    }
+
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        dismissCallCount += 1
+        pendingDismissCompletion = completion
+    }
+
+    func finishDismissal() {
+        fakePresented = nil
+        let completion = pendingDismissCompletion
+        pendingDismissCompletion = nil
+        completion?()
+    }
+
+    func dropDismissal() {
+        fakePresented = nil
+        pendingDismissCompletion = nil
+    }
+
+    func replacePresentedController() {
+        fakePresented = UIViewController()
+        pendingDismissCompletion = nil
     }
 }
 
