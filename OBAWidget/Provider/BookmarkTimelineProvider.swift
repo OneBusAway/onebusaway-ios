@@ -36,8 +36,7 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
             scheduledDepartures: content.scheduledDepartures,
             savedAt: content.savedAt,
             currentPage: content.currentPage,
-            totalPages: content.totalPages,
-            totalBookmarkCount: content.totalBookmarkCount
+            totalPages: content.totalPages
         )
     }
 
@@ -73,8 +72,7 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
                 scheduledDepartures: content.scheduledDepartures,
                 savedAt: content.savedAt,
                 currentPage: content.currentPage,
-                totalPages: content.totalPages,
-                totalBookmarkCount: content.totalBookmarkCount
+                totalPages: content.totalPages
             )
         }
 

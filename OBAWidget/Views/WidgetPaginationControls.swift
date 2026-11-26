@@ -24,11 +24,11 @@ struct WidgetPaginationControls: View {
     }
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 4) {
             Button(intent: PreviousBookmarkPageIntent()) {
                 Image(systemName: "chevron.left")
                     .font(.caption.weight(.semibold))
-                    .frame(minWidth: 20, minHeight: 20)
+                    .frame(minWidth: 32, minHeight: 32)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -43,14 +43,13 @@ struct WidgetPaginationControls: View {
             Button(intent: NextBookmarkPageIntent()) {
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .frame(minWidth: 20, minHeight: 20)
+                    .frame(minWidth: 32, minHeight: 32)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text(verbatim: WidgetStrings.nextPage))
         }
         .padding(.horizontal, 4)
-        .padding(.vertical, 2)
         .background(backgroundShape)
         .invalidatableContent()
     }

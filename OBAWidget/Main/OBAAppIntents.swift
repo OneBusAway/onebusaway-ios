@@ -76,8 +76,7 @@ private func performBookmarkPageStep(delta: Int) {
     let dataProvider = WidgetDataProvider.shared
     let bookmarkCount = dataProvider.currentRegionBookmarkCount()
     let paginator = WidgetBookmarkPaginator(userDefaults: dataProvider.userDefaults)
-    let result = paginator.step(by: delta, bookmarkCount: bookmarkCount)
-    if result.shouldReloadTimeline {
-        WidgetCenter.shared.reloadAllTimelines()
-    }
+    // Returning from a `Button(intent:)`'s `perform()` already causes WidgetKit
+    // to reload this widget's timeline, without forcing unrelated large widgets to refetch.
+    paginator.step(by: delta, bookmarkCount: bookmarkCount)
 }

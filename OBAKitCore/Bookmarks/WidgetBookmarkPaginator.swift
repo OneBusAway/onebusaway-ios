@@ -10,21 +10,16 @@
 import Foundation
 import Synchronization
 
-/// Manages persistent page state, bounds clamping, wrap-around navigation,
-/// and rapid-tap reload coalescing for the `.systemMedium` bookmarks widget.
+/// Manages persistent page state, bounds clamping, and wrap-around navigation
+/// for the `.systemMedium` bookmarks widget.
 ///
 /// Pure Foundation logic so `OBAKitTests` (which links `OBAKitCore` rather
-/// than `OBAWidget`) can exercise pagination and coalescing directly.
+/// than `OBAWidget`) can exercise pagination directly.
 public final class WidgetBookmarkPaginator: Sendable {
     /// Number of bookmarks shown per page in `.systemMedium` widgets.
     public static let mediumPageSize = 2
 
-    /// Minimum interval between explicit widget timeline reloads when rapid
-    /// pagination taps occur in succession.
-    public static let defaultCoalesceInterval: TimeInterval = 0.25
-
     public static let currentPageDefaultsKey = "widgetBookmarkCurrentPage"
-    public static let lastReloadTimestampDefaultsKey = "widgetBookmarkLastReloadTimestamp"
 
     /// Result of applying a pagination step.
     public struct StepResult: Equatable, Sendable {
@@ -32,30 +27,24 @@ public final class WidgetBookmarkPaginator: Sendable {
         public let currentPage: Int
         public let totalPages: Int
         public let didChangePage: Bool
-        public let shouldReloadTimeline: Bool
     }
 
     private struct State {
-        // UserDefaults is thread-safe, and holding it in Mutex serializes
-        // read-clamp-write sequences across rapid concurrent taps.
+        // `performBookmarkPageStep` runs on `@MainActor`, which serializes
+        // consecutive widget button taps; `Mutex` simply satisfies `Sendable`
+        // for `userDefaults` if an instance is shared across threads.
         nonisolated(unsafe) let userDefaults: UserDefaults
     }
 
     private let state: Mutex<State>
     public let pageSize: Int
-    public let coalesceInterval: TimeInterval
-    private let onReload: (@Sendable () -> Void)?
 
     public init(
         userDefaults: UserDefaults,
-        pageSize: Int = WidgetBookmarkPaginator.mediumPageSize,
-        coalesceInterval: TimeInterval = WidgetBookmarkPaginator.defaultCoalesceInterval,
-        onReload: (@Sendable () -> Void)? = nil
+        pageSize: Int = WidgetBookmarkPaginator.mediumPageSize
     ) {
         self.state = Mutex(State(userDefaults: userDefaults))
         self.pageSize = max(1, pageSize)
-        self.coalesceInterval = max(0, coalesceInterval)
-        self.onReload = onReload
     }
 
     /// Computes total pages needed to display `bookmarkCount` items at `pageSize` per page.
@@ -103,42 +92,22 @@ public final class WidgetBookmarkPaginator: Sendable {
         }
     }
 
-    /// Returns whether a timeline reload at `now` falls outside the rapid-tap coalescing window.
-    public func shouldReloadTimeline(now: Date = Date()) -> Bool {
-        state.withLock { state in
-            Self.isOutsideCoalesceWindow(
-                now: now,
-                userDefaults: state.userDefaults,
-                coalesceInterval: coalesceInterval
-            )
-        }
-    }
-
     /// Advances to the next page, wrapping from the last page back to `0`.
     @discardableResult
-    public func nextPage(bookmarkCount: Int, now: Date = Date()) -> StepResult {
-        step(by: 1, bookmarkCount: bookmarkCount, now: now)
+    public func nextPage(bookmarkCount: Int) -> StepResult {
+        step(by: 1, bookmarkCount: bookmarkCount)
     }
 
     /// Moves to the previous page, wrapping from `0` back to the last page.
     @discardableResult
-    public func previousPage(bookmarkCount: Int, now: Date = Date()) -> StepResult {
-        step(by: -1, bookmarkCount: bookmarkCount, now: now)
+    public func previousPage(bookmarkCount: Int) -> StepResult {
+        step(by: -1, bookmarkCount: bookmarkCount)
     }
 
-    /// Coalesces a burst of consecutive step deltas (e.g. `[1, 1, -1]`) into a
-    /// single deterministic page update and at most one reload trigger.
+    /// Steps the current page by `delta` with wrap-around, clamping first if `bookmarkCount` shrunk.
     @discardableResult
-    public func applyCoalescedSteps(_ deltas: [Int], bookmarkCount: Int, now: Date = Date()) -> StepResult {
-        let netDelta = deltas.reduce(0, +)
-        return step(by: netDelta, bookmarkCount: bookmarkCount, now: now)
-    }
-
-    /// Steps the current page by `delta` with wrap-around, clamping first if `bookmarkCount`
-    /// shrunk, and coalesces duplicate rapid timeline reload triggers within `coalesceInterval`.
-    @discardableResult
-    public func step(by delta: Int, bookmarkCount: Int, now: Date = Date()) -> StepResult {
-        let result = state.withLock { state -> StepResult in
+    public func step(by delta: Int, bookmarkCount: Int) -> StepResult {
+        state.withLock { state -> StepResult in
             let total = Self.totalPages(bookmarkCount: bookmarkCount, pageSize: pageSize)
             let rawStored = state.userDefaults.integer(forKey: Self.currentPageDefaultsKey)
             let current = Self.clampedPage(rawStored, bookmarkCount: bookmarkCount, pageSize: pageSize)
@@ -151,57 +120,19 @@ public final class WidgetBookmarkPaginator: Sendable {
                     previousPage: current,
                     currentPage: 0,
                     totalPages: total,
-                    didChangePage: false,
-                    shouldReloadTimeline: false
+                    didChangePage: false
                 )
             }
 
             let next = ((current + delta) % total + total) % total
             state.userDefaults.set(next, forKey: Self.currentPageDefaultsKey)
 
-            let didChange = next != current
-            let shouldReload: Bool
-            if didChange {
-                shouldReload = Self.isOutsideCoalesceWindow(
-                    now: now,
-                    userDefaults: state.userDefaults,
-                    coalesceInterval: coalesceInterval
-                )
-                if shouldReload {
-                    state.userDefaults.set(
-                        now.timeIntervalSinceReferenceDate,
-                        forKey: Self.lastReloadTimestampDefaultsKey
-                    )
-                }
-            } else {
-                shouldReload = false
-            }
-
             return StepResult(
                 previousPage: current,
                 currentPage: next,
                 totalPages: total,
-                didChangePage: didChange,
-                shouldReloadTimeline: shouldReload
+                didChangePage: next != current
             )
         }
-
-        if result.shouldReloadTimeline {
-            onReload?()
-        }
-        return result
-    }
-
-    private static func isOutsideCoalesceWindow(
-        now: Date,
-        userDefaults: UserDefaults,
-        coalesceInterval: TimeInterval
-    ) -> Bool {
-        guard coalesceInterval > 0 else { return true }
-        guard let lastTimestamp = userDefaults.object(forKey: lastReloadTimestampDefaultsKey) as? Double else {
-            return true
-        }
-        let elapsed = now.timeIntervalSinceReferenceDate - lastTimestamp
-        return elapsed >= coalesceInterval || elapsed < 0
     }
 }

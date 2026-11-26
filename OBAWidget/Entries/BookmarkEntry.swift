@@ -40,9 +40,6 @@ struct BookmarkEntry: TimelineEntry {
     /// Total number of bookmark pages available for the widget family.
     let totalPages: Int
 
-    /// Total number of favorited bookmarks in the resolved region.
-    let totalBookmarkCount: Int
-
     init(
         date: Date,
         bookmarks: [Bookmark],
@@ -51,8 +48,7 @@ struct BookmarkEntry: TimelineEntry {
         scheduledDepartures: [UUID: [ScheduledDeparture]] = [:],
         savedAt: Date? = nil,
         currentPage: Int = 0,
-        totalPages: Int? = nil,
-        totalBookmarkCount: Int? = nil
+        totalPages: Int? = nil
     ) {
         self.date = date
         self.bookmarks = bookmarks
@@ -61,7 +57,6 @@ struct BookmarkEntry: TimelineEntry {
         self.scheduledDepartures = scheduledDepartures
         self.savedAt = savedAt
         self.currentPage = currentPage
-        self.totalBookmarkCount = totalBookmarkCount ?? bookmarks.count
         self.totalPages = totalPages ?? (bookmarks.isEmpty ? 0 : 1)
     }
 
