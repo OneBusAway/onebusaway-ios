@@ -24,7 +24,7 @@ class ScheduleForStopViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var error: Error?
 
-    /// Bumped when `formatters.timeZone` changes so date controls stay aligned.
+    /// Bumped when `formatters.timeZone` changes so date controls and departure times stay aligned.
     @Published private(set) var formattersTimeZoneGeneration = 0
 
     private var formattersTimeZoneCancellable: AnyCancellable?
@@ -166,5 +166,10 @@ class ScheduleForStopViewModel: ObservableObject {
     /// Select a specific route
     func selectRoute(_ routeID: RouteID) {
         selectedRouteID = routeID
+    }
+
+    /// Formats a departure time using the application's configured time zone.
+    func formatTime(_ date: Date) -> String {
+        application.formatters.timeFormatter.string(from: date)
     }
 }

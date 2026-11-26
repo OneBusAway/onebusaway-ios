@@ -204,7 +204,7 @@ struct ScheduleForStopView: View {
             List(departures) { departure in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(departure.time.formatted(date: .omitted, time: .shortened))
+                        Text(stopViewModel.formatTime(departure.time))
                             .font(.headline)
                         Spacer()
                     }
@@ -217,6 +217,7 @@ struct ScheduleForStopView: View {
                 .padding(.vertical, 4)
             }
             .listStyle(.plain)
+            .id(stopViewModel.formattersTimeZoneGeneration)
         }
     }
 
