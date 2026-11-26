@@ -33,6 +33,8 @@ EXPECTED = {
         # OBAWidget
         "ConfigurationAppIntent",
         "RefreshWidgetIntent",
+        "NextBookmarkPageIntent",
+        "PreviousBookmarkPageIntent",
     },
     "entities": {"BookmarkEntity", "StopEntity"},
     "queries": {"BookmarkEntityQuery", "StopEntityQuery"},

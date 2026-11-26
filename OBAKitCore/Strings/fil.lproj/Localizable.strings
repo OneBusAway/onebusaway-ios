@@ -616,6 +616,15 @@
 /* Home screen widget header when the device is offline and the departures shown are the last ones the widget saved. The placeholder is the time they were saved, e.g. 'Offline, saved 8:42 AM'. */
 "widget.offline_saved_fmt" = "Offline, na-save nang %@";
 
+/* VoiceOver accessibility label for the button that shows the next page of bookmarks in the home screen widget. */
+"widget.pagination.next_page" = "Susunod na pahina";
+
+/* VoiceOver accessibility label for the current bookmark page in the home screen widget, e.g. 'Page 1 of 3'. */
+"widget.pagination.page_indicator_fmt" = "Pahina %d ng %d";
+
+/* VoiceOver accessibility label for the button that shows the previous page of bookmarks in the home screen widget. */
+"widget.pagination.previous_page" = "Nakaraang pahina";
+
 /* Widget row subtitle when departures for a bookmark are not loaded yet. Tapping opens the stop in the app. */
 "widget.tap_for_more_information" = "I-tap para sa higit pang impormasyon";
 

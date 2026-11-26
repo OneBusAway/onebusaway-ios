@@ -61,6 +61,22 @@ public enum WidgetStrings {
         let fmt = OBALoc("widget.last_updated_fmt", value: "Last updated at %@", comment: "Widget header showing when departures were last fetched. %@ is a clock time such as 9:41 AM.")
         return String(format: fmt, time)
     }
+
+    /// VoiceOver accessibility label for the widget pagination previous-page button.
+    public static var previousPage: String {
+        OBALoc("widget.pagination.previous_page", value: "Previous page", comment: "VoiceOver accessibility label for the button that shows the previous page of bookmarks in the home screen widget.")
+    }
+
+    /// VoiceOver accessibility label for the widget pagination next-page button.
+    public static var nextPage: String {
+        OBALoc("widget.pagination.next_page", value: "Next page", comment: "VoiceOver accessibility label for the button that shows the next page of bookmarks in the home screen widget.")
+    }
+
+    /// VoiceOver accessibility label for the widget pagination page indicator.
+    public static func pageIndicator(current: Int, total: Int) -> String {
+        let fmt = OBALoc("widget.pagination.page_indicator_fmt", value: "Page %d of %d", comment: "VoiceOver accessibility label for the current bookmark page in the home screen widget, e.g. 'Page 1 of 3'.")
+        return String(format: fmt, locale: .current, current, total)
+    }
 }
 
 #endif // os(iOS)

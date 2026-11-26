@@ -12,3 +12,9 @@
 
 /* App Intents: description of the bookmarks widget configuration. */
 "widget_configuration_intent.description" = "Consultez les prochains départs de vos favoris.";
+
+/* App Intents: name of the widget action that shows the next page of bookmarks. */
+"next_bookmark_page_intent.title" = "Page suivante des favoris";
+
+/* App Intents: name of the widget action that shows the previous page of bookmarks. */
+"previous_bookmark_page_intent.title" = "Page précédente des favoris";

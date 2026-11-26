@@ -12,3 +12,9 @@
 
 /* App Intents: description of the bookmarks widget configuration. */
 "widget_configuration_intent.description" = "Ближайшие отправления по вашим закладкам.";
+
+/* App Intents: name of the widget action that shows the next page of bookmarks. */
+"next_bookmark_page_intent.title" = "Следующая страница закладок";
+
+/* App Intents: name of the widget action that shows the previous page of bookmarks. */
+"previous_bookmark_page_intent.title" = "Предыдущая страница закладок";

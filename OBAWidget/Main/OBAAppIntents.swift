@@ -36,3 +36,48 @@ struct RefreshWidgetIntent: AppIntent {
         return .result()
     }
 }
+
+// MARK: - Pagination Intents
+
+/// Advances `.systemMedium` widget bookmarks to the next page (wrapping to the first page).
+struct NextBookmarkPageIntent: AppIntent {
+    static let title = LocalizedStringResource(
+        "next_bookmark_page_intent.title",
+        defaultValue: "Next Bookmarks Page",
+        table: "AppIntents",
+        bundle: #bundle
+    )
+    static let isDiscoverable = false
+
+    func perform() async throws -> some IntentResult {
+        await performBookmarkPageStep(delta: 1)
+        return .result()
+    }
+}
+
+/// Moves `.systemMedium` widget bookmarks to the previous page (wrapping to the last page).
+struct PreviousBookmarkPageIntent: AppIntent {
+    static let title = LocalizedStringResource(
+        "previous_bookmark_page_intent.title",
+        defaultValue: "Previous Bookmarks Page",
+        table: "AppIntents",
+        bundle: #bundle
+    )
+    static let isDiscoverable = false
+
+    func perform() async throws -> some IntentResult {
+        await performBookmarkPageStep(delta: -1)
+        return .result()
+    }
+}
+
+@MainActor
+private func performBookmarkPageStep(delta: Int) {
+    let dataProvider = WidgetDataProvider.shared
+    let bookmarkCount = dataProvider.currentRegionBookmarkCount()
+    let paginator = WidgetBookmarkPaginator(userDefaults: dataProvider.userDefaults)
+    let result = paginator.step(by: delta, bookmarkCount: bookmarkCount)
+    if result.shouldReloadTimeline {
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+}

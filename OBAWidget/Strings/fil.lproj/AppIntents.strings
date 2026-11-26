@@ -12,3 +12,9 @@
 
 /* App Intents: description of the bookmarks widget configuration. */
 "widget_configuration_intent.description" = "Tingnan ang mga paparating na pag-alis para sa iyong mga bookmark.";
+
+/* App Intents: name of the widget action that shows the next page of bookmarks. */
+"next_bookmark_page_intent.title" = "Susunod na Pahina ng Mga Bookmark";
+
+/* App Intents: name of the widget action that shows the previous page of bookmarks. */
+"previous_bookmark_page_intent.title" = "Nakaraang Pahina ng Mga Bookmark";
