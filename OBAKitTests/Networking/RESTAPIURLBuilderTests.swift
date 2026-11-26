@@ -72,6 +72,67 @@ final class RESTAPIURLBuilderTests {
         #expect(urlComponents?.queryItems?.contains(URLQueryItem(name: "key", value: "TEST")) == true)
     }
 
+    @Test func `testScheduleDateFormatter pins en_US_POSIX locale and Gregorian calendar`() throws {
+        let gmt = try #require(TimeZone(secondsFromGMT: 0))
+        let formatter = RESTAPIURLBuilder.scheduleDateFormatter(timeZone: gmt)
+
+        #expect(formatter.locale.identifier == "en_US_POSIX")
+        #expect(formatter.calendar.identifier == .gregorian)
+        #expect(formatter.timeZone == gmt)
+        #expect(formatter.dateFormat == "yyyy-MM-dd")
+    }
+
+    @Test func `testGetScheduleFormatsGregorianYearAcrossNonGregorianCalendars`() throws {
+        let gmt = try #require(TimeZone(secondsFromGMT: 0))
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = gmt
+        let date = try #require(gregorian.date(from: DateComponents(year: 2026, month: 11, day: 26, hour: 12)))
+
+        // Confirm an unpinned formatter produces non-Gregorian era years under Thai Buddhist
+        // and Japanese calendars (2569 and 0008 for 2026), while the URL builder outputs 2026-11-26.
+        let unpinnedBuddhist = DateFormatter()
+        unpinnedBuddhist.locale = Locale(identifier: "th_TH")
+        unpinnedBuddhist.calendar = Calendar(identifier: .buddhist)
+        unpinnedBuddhist.timeZone = gmt
+        unpinnedBuddhist.dateFormat = "yyyy-MM-dd"
+        #expect(unpinnedBuddhist.string(from: date) == "2569-11-26")
+
+        let unpinnedJapanese = DateFormatter()
+        unpinnedJapanese.locale = Locale(identifier: "ja_JP@calendar=japanese")
+        unpinnedJapanese.calendar = Calendar(identifier: .japanese)
+        unpinnedJapanese.timeZone = gmt
+        unpinnedJapanese.dateFormat = "yyyy-MM-dd"
+        #expect(unpinnedJapanese.string(from: date) == "0008-11-26")
+
+        let routeURL = builder.getScheduleForRoute(id: "1_100", date: date, timeZone: gmt)
+        let stopURL = builder.getScheduleForStop(id: "1_10020", date: date, timeZone: gmt)
+        #expect(queryValue(routeURL, "date") == "2026-11-26")
+        #expect(queryValue(stopURL, "date") == "2026-11-26")
+    }
+
+    @Test func `testGetScheduleRespectsTimeZoneNearMidnight`() throws {
+        let gmt = try #require(TimeZone(secondsFromGMT: 0))
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        let tokyo = try #require(TimeZone(identifier: "Asia/Tokyo"))
+        let auckland = try #require(TimeZone(identifier: "Pacific/Auckland"))
+
+        var utcCal = Calendar(identifier: .gregorian)
+        utcCal.timeZone = gmt
+
+        // 2026-11-26 04:00 UTC → 2026-11-25 20:00 PST (previous day) vs 2026-11-26 13:00 JST.
+        let westMidnightInstant = try #require(utcCal.date(from: DateComponents(year: 2026, month: 11, day: 26, hour: 4)))
+        #expect(queryValue(builder.getScheduleForRoute(id: "1_100", date: westMidnightInstant, timeZone: losAngeles), "date") == "2026-11-25")
+        #expect(queryValue(builder.getScheduleForStop(id: "1_10020", date: westMidnightInstant, timeZone: losAngeles), "date") == "2026-11-25")
+        #expect(queryValue(builder.getScheduleForRoute(id: "1_100", date: westMidnightInstant, timeZone: tokyo), "date") == "2026-11-26")
+        #expect(queryValue(builder.getScheduleForStop(id: "1_10020", date: westMidnightInstant, timeZone: tokyo), "date") == "2026-11-26")
+
+        // 2026-11-26 16:00 UTC → 2026-11-26 08:00 PST vs 2026-11-27 05:00 NZDT (next day).
+        let eastMidnightInstant = try #require(utcCal.date(from: DateComponents(year: 2026, month: 11, day: 26, hour: 16)))
+        #expect(queryValue(builder.getScheduleForRoute(id: "1_100", date: eastMidnightInstant, timeZone: losAngeles), "date") == "2026-11-26")
+        #expect(queryValue(builder.getScheduleForRoute(id: "1_100", date: eastMidnightInstant, timeZone: auckland), "date") == "2026-11-27")
+        #expect(queryValue(builder.getScheduleForStop(id: "1_10020", date: eastMidnightInstant, timeZone: auckland), "date") == "2026-11-27")
+    }
+
     @Test func testGetRESTRegionalAlerts() {
         let url = builder.getRESTRegionalAlerts(agencyID: "1")
         #expect(url.absoluteString == "https://api.pugetsound.onebusaway.org/api/gtfs_realtime/alerts-for-agency/1.pb?key=TEST")

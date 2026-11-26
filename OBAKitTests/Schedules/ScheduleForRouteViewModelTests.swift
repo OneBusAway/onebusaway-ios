@@ -406,4 +406,25 @@ final class ScheduleForRouteViewModelTests: OBATestCase {
             return
         }
     }
+
+    @Test @MainActor
+    func `Fetch schedule formats date parameter in formatters timeZone`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "schedule-for-route_1_100223.json")) { [routeID] request in
+            request.url?.path.contains("/schedule-for-route/\(routeID).json") ?? false
+        }
+        let app = createApplication(dataLoader: dataLoader)
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        app.formatters.timeZone = losAngeles
+
+        // 2025-12-06 04:00:00 UTC → 2025-12-05 20:00:00 PST (previous calendar day in LA vs UTC).
+        let instant = Date(timeIntervalSince1970: 1_764_993_600)
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app, initialDate: instant)
+
+        await viewModel.fetchSchedule()
+
+        let requestURL = try #require(dataLoader.recordedRequestURLs.last { $0.path.contains("/schedule-for-route/\(routeID).json") })
+        let dateParam = URLComponents(url: requestURL, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "date" }?.value
+        #expect(dateParam == "2025-12-05")
+    }
 }

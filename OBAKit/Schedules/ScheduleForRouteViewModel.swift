@@ -200,7 +200,11 @@ class ScheduleForRouteViewModel: ObservableObject {
         error = nil
 
         do {
-            let response = try await apiService.getScheduleForRoute(routeID: routeID, date: selectedDate)
+            let response = try await apiService.getScheduleForRoute(
+                routeID: routeID,
+                date: selectedDate,
+                timeZone: application.formatters.timeZone
+            )
             guard generation == fetchGeneration, !Task.isCancelled else { return }
             scheduleData = response.entry
             isLoading = false
