@@ -58,7 +58,7 @@ extension BookmarkArrivalsLoader {
             } else if let fallback = fallbacksByStop[request.stopID] {
                 departures[bookmarkID] = request.matching(fallback.arrivals)
                 scheduledDepartures[bookmarkID] = request.tripKey.map { key in
-                    fallback.scheduledDepartures.filter { $0.matches(key) }
+                    fallback.scheduledDepartures.filter { $0.matches(key, timetableHeadsigns: fallback.timetableHeadsigns[key] ?? []) }
                 } ?? fallback.scheduledDepartures
             }
         }

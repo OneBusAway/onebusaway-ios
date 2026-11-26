@@ -92,7 +92,9 @@ extension BookmarkArrivalsLoader {
                 return WatchBookmarkDeparture(arrival: arrival, savedAt: fallback.savedAt)
             }
             let scheduled = fallback.scheduledDepartures.first { departure in
-                departure.date > now && request.tripKey.map { departure.matches($0) } ?? true
+                departure.date > now && request.tripKey.map {
+                    departure.matches($0, timetableHeadsigns: fallback.timetableHeadsigns[$0] ?? [])
+                } ?? true
             }
             return WatchBookmarkDeparture(scheduledDeparture: scheduled, savedAt: fallback.savedAt)
         case .failure(let error):
