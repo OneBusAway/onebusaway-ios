@@ -340,4 +340,36 @@ final class ScheduleForStopViewModelTests: OBATestCase {
         try await Task.sleep(for: .milliseconds(100))
         #expect(viewModel.formattersTimeZoneGeneration == 1)
     }
+
+    @Test @MainActor
+    func `Format time uses formatters timeZone and updates when zone changes`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForStop(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        app.formatters.timeFormatter.locale = Locale(identifier: "en_US")
+
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        let newYork = try #require(TimeZone(identifier: "America/New_York"))
+        let utc = try #require(TimeZone(identifier: "UTC"))
+
+        let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
+
+        // 2025-12-05 16:00:00 UTC → 8:00 AM PST / 11:00 AM EST / 4:00 PM UTC
+        let morningUTC = Date(timeIntervalSince1970: 1_764_950_400)
+        // 2025-12-06 05:30:00 UTC → 9:30 PM PST / 12:30 AM EST (crosses midnight between zones)
+        let eveningPST = Date(timeIntervalSince1970: 1_764_999_000)
+
+        let normalize: (String) -> String = { $0.replacingOccurrences(of: "\u{202F}", with: " ") }
+
+        app.formatters.timeZone = losAngeles
+        #expect(normalize(viewModel.formatTime(morningUTC)) == "8:00 AM")
+        #expect(normalize(viewModel.formatTime(eveningPST)) == "9:30 PM")
+
+        app.formatters.timeZone = newYork
+        #expect(normalize(viewModel.formatTime(morningUTC)) == "11:00 AM")
+        #expect(normalize(viewModel.formatTime(eveningPST)) == "12:30 AM")
+
+        app.formatters.timeZone = utc
+        #expect(normalize(viewModel.formatTime(morningUTC)) == "4:00 PM")
+    }
 }
