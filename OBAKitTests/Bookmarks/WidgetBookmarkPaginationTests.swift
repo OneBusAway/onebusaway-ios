@@ -8,14 +8,11 @@
 //
 
 import Foundation
-import Synchronization
 import Testing
 @testable import OBAKitCore
 
-@Suite
+@Suite(.serialized)
 struct WidgetBookmarkPaginationTests {
-    private let baseDate = Date(timeIntervalSinceReferenceDate: 700_000_000)
-
     private func makeIsolatedDefaults() throws -> (UserDefaults, String) {
         let suiteName = "WidgetBookmarkPaginationTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -54,22 +51,22 @@ struct WidgetBookmarkPaginationTests {
         let (defaults, suiteName) = try makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let paginator = WidgetBookmarkPaginator(userDefaults: defaults, coalesceInterval: 0)
+        let paginator = WidgetBookmarkPaginator(userDefaults: defaults)
 
         #expect(paginator.currentPage(bookmarkCount: 6) == 0)
 
-        let step1 = paginator.nextPage(bookmarkCount: 6, now: baseDate)
+        let step1 = paginator.nextPage(bookmarkCount: 6)
         #expect(step1.previousPage == 0)
         #expect(step1.currentPage == 1)
         #expect(step1.totalPages == 3)
         #expect(step1.didChangePage)
 
-        let step2 = paginator.nextPage(bookmarkCount: 6, now: baseDate)
+        let step2 = paginator.nextPage(bookmarkCount: 6)
         #expect(step2.previousPage == 1)
         #expect(step2.currentPage == 2)
         #expect(step2.didChangePage)
 
-        let back = paginator.previousPage(bookmarkCount: 6, now: baseDate)
+        let back = paginator.previousPage(bookmarkCount: 6)
         #expect(back.previousPage == 2)
         #expect(back.currentPage == 1)
         #expect(back.didChangePage)
@@ -80,15 +77,15 @@ struct WidgetBookmarkPaginationTests {
         let (defaults, suiteName) = try makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let paginator = WidgetBookmarkPaginator(userDefaults: defaults, coalesceInterval: 0)
+        let paginator = WidgetBookmarkPaginator(userDefaults: defaults)
 
-        let wrapBack = paginator.previousPage(bookmarkCount: 5, now: baseDate)
+        let wrapBack = paginator.previousPage(bookmarkCount: 5)
         #expect(wrapBack.previousPage == 0)
         #expect(wrapBack.currentPage == 2)
         #expect(wrapBack.totalPages == 3)
         #expect(wrapBack.didChangePage)
 
-        let wrapForward = paginator.nextPage(bookmarkCount: 5, now: baseDate)
+        let wrapForward = paginator.nextPage(bookmarkCount: 5)
         #expect(wrapForward.previousPage == 2)
         #expect(wrapForward.currentPage == 0)
         #expect(wrapForward.didChangePage)
@@ -100,7 +97,7 @@ struct WidgetBookmarkPaginationTests {
         let (defaults, suiteName) = try makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let paginator = WidgetBookmarkPaginator(userDefaults: defaults, coalesceInterval: 0)
+        let paginator = WidgetBookmarkPaginator(userDefaults: defaults)
         paginator.setCurrentPage(2, bookmarkCount: 6)
         #expect(paginator.currentPage(bookmarkCount: 6) == 2)
 
@@ -115,119 +112,34 @@ struct WidgetBookmarkPaginationTests {
         #expect(paginator.currentPage(bookmarkCount: 0) == 0)
     }
 
-    @Test func `Single page and empty bookmark sets do not change page or trigger reloads`() throws {
+    @Test func `Single page and empty bookmark sets do not change page`() throws {
         let (defaults, suiteName) = try makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let reloadInvocations = Mutex(0)
-        let paginator = WidgetBookmarkPaginator(
-            userDefaults: defaults,
-            coalesceInterval: 0.25,
-            onReload: { reloadInvocations.withLock { $0 += 1 } }
-        )
+        let paginator = WidgetBookmarkPaginator(userDefaults: defaults)
 
         for count in [0, 1, 2] {
-            let nextResult = paginator.nextPage(bookmarkCount: count, now: baseDate)
+            let nextResult = paginator.nextPage(bookmarkCount: count)
             #expect(nextResult.currentPage == 0)
             #expect(!nextResult.didChangePage)
-            #expect(!nextResult.shouldReloadTimeline)
 
-            let prevResult = paginator.previousPage(bookmarkCount: count, now: baseDate)
+            let prevResult = paginator.previousPage(bookmarkCount: count)
             #expect(prevResult.currentPage == 0)
             #expect(!prevResult.didChangePage)
-            #expect(!prevResult.shouldReloadTimeline)
         }
-
-        #expect(reloadInvocations.withLock { $0 } == 0)
     }
 
-    // MARK: - Rapid Tap Coalescing & Reload Callbacks
-
-    @Test func `Rapid consecutive taps advance page deterministically while coalescing reload triggers`() throws {
+    @Test func `Separate paginator instances share the page through shared UserDefaults`() throws {
         let (defaults, suiteName) = try makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let reloadInvocations = Mutex(0)
-        let paginator = WidgetBookmarkPaginator(
-            userDefaults: defaults,
-            coalesceInterval: 0.25,
-            onReload: { reloadInvocations.withLock { $0 += 1 } }
-        )
+        // Each widget tap builds its own paginator, so the page has to carry over.
+        let first = WidgetBookmarkPaginator(userDefaults: defaults)
+        #expect(first.nextPage(bookmarkCount: 6).currentPage == 1)
 
-        // First tap at t = 0.00 triggers reload.
-        let r1 = paginator.nextPage(bookmarkCount: 6, now: baseDate)
-        #expect(r1.currentPage == 1)
-        #expect(r1.shouldReloadTimeline)
-
-        // Rapid taps at t = 0.05 and t = 0.12 update page deterministically, reload throttled.
-        let r2 = paginator.nextPage(bookmarkCount: 6, now: baseDate.addingTimeInterval(0.05))
-        #expect(r2.currentPage == 2)
-        #expect(!r2.shouldReloadTimeline)
-
-        let r3 = paginator.nextPage(bookmarkCount: 6, now: baseDate.addingTimeInterval(0.12))
-        #expect(r3.currentPage == 0)
-        #expect(!r3.shouldReloadTimeline)
-
-        #expect(reloadInvocations.withLock { $0 } == 1)
-        #expect(!paginator.shouldReloadTimeline(now: baseDate.addingTimeInterval(0.20)))
-
-        // Tap after coalesceInterval elapsed triggers a second reload.
-        let r4 = paginator.nextPage(bookmarkCount: 6, now: baseDate.addingTimeInterval(0.30))
-        #expect(r4.currentPage == 1)
-        #expect(r4.shouldReloadTimeline)
-        #expect(reloadInvocations.withLock { $0 } == 2)
-    }
-
-    @Test func `Separate paginator instances share coalesce state across shared UserDefaults`() throws {
-        let (defaults, suiteName) = try makeIsolatedDefaults()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let reloadInvocations = Mutex(0)
-        let first = WidgetBookmarkPaginator(
-            userDefaults: defaults,
-            coalesceInterval: 0.25,
-            onReload: { reloadInvocations.withLock { $0 += 1 } }
-        )
-        let second = WidgetBookmarkPaginator(
-            userDefaults: defaults,
-            coalesceInterval: 0.25,
-            onReload: { reloadInvocations.withLock { $0 += 1 } }
-        )
-
-        let firstResult = first.nextPage(bookmarkCount: 6, now: baseDate)
-        #expect(firstResult.currentPage == 1)
-        #expect(firstResult.shouldReloadTimeline)
-
-        let secondResult = second.nextPage(bookmarkCount: 6, now: baseDate.addingTimeInterval(0.05))
-        #expect(secondResult.currentPage == 2)
-        #expect(!secondResult.shouldReloadTimeline)
-        #expect(reloadInvocations.withLock { $0 } == 1)
-    }
-
-    @Test func `Coalesced step batch applies net delta atomically and invokes reload once`() throws {
-        let (defaults, suiteName) = try makeIsolatedDefaults()
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let reloadInvocations = Mutex(0)
-        let paginator = WidgetBookmarkPaginator(
-            userDefaults: defaults,
-            coalesceInterval: 0.25,
-            onReload: { reloadInvocations.withLock { $0 += 1 } }
-        )
-
-        let result = paginator.applyCoalescedSteps([1, 1, -1, 1], bookmarkCount: 6, now: baseDate)
-        #expect(result.previousPage == 0)
-        #expect(result.currentPage == 2)
-        #expect(result.didChangePage)
-        #expect(result.shouldReloadTimeline)
-        #expect(reloadInvocations.withLock { $0 } == 1)
-
-        // Net-zero burst does not trigger a reload.
-        let noopResult = paginator.applyCoalescedSteps([1, -1], bookmarkCount: 6, now: baseDate.addingTimeInterval(1.0))
-        #expect(noopResult.currentPage == 2)
-        #expect(!noopResult.didChangePage)
-        #expect(!noopResult.shouldReloadTimeline)
-        #expect(reloadInvocations.withLock { $0 } == 1)
+        let second = WidgetBookmarkPaginator(userDefaults: defaults)
+        #expect(second.currentPage(bookmarkCount: 6) == 1)
+        #expect(second.nextPage(bookmarkCount: 6).currentPage == 2)
     }
 
     // MARK: - Localization Helpers
