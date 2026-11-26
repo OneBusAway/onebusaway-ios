@@ -95,6 +95,7 @@ struct RouteScheduleContentView: View {
                         displayedComponents: [.date]
                     )
                     .labelsHidden()
+                    .environment(\.timeZone, viewModel.application.formatters.timeZone)
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)

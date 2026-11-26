@@ -287,4 +287,23 @@ final class ScheduleForStopViewModelTests: OBATestCase {
             return
         }
     }
+
+    @Test @MainActor
+    func `Fetch schedule formats date parameter in formatters timeZone`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForStop(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        app.formatters.timeZone = losAngeles
+
+        // 2025-12-06 04:00:00 UTC → 2025-12-05 20:00:00 PST (previous calendar day in LA vs UTC).
+        let instant = Date(timeIntervalSince1970: 1_764_993_600)
+        let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app, initialDate: instant)
+
+        await viewModel.fetchSchedule()
+
+        let requestURL = try #require(dataLoader.recordedRequestURLs.last { $0.path.contains("/schedule-for-stop/\(stopID).json") })
+        let dateParam = URLComponents(url: requestURL, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "date" }?.value
+        #expect(dateParam == "2025-12-05")
+    }
 }

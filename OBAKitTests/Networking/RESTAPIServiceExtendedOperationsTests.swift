@@ -128,6 +128,30 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
         #expect(response.entry.routeID == routeID)
     }
 
+    @Test func `getScheduleForStop and getScheduleForRoute format date in explicit timeZone`() async throws {
+        let stopID = "1_75403"
+        let routeID = "1_100223"
+        // 2020-09-13 04:00:00 UTC → 2020-09-12 21:00:00 PDT in America/Los_Angeles.
+        let date = Date(timeIntervalSince1970: 1_599_969_600)
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+
+        dataLoader.mock(data: Fixtures.loadData(file: "schedule-for-stop_1_75403.json")) { request in
+            guard let url = request.url else { return false }
+            return url.path.contains("/api/where/schedule-for-stop/\(stopID).json") &&
+                url.containsQueryParams(["date": "2020-09-12"])
+        }
+        dataLoader.mock(data: Fixtures.loadData(file: "schedule-for-route_1_100223.json")) { request in
+            guard let url = request.url else { return false }
+            return url.path.contains("/api/where/schedule-for-route/\(routeID).json") &&
+                url.containsQueryParams(["date": "2020-09-12"])
+        }
+
+        let stopResponse = try await restService.getScheduleForStop(stopID: stopID, date: date, timeZone: losAngeles)
+        let routeResponse = try await restService.getScheduleForRoute(routeID: routeID, date: date, timeZone: losAngeles)
+        #expect(stopResponse.entry.stopID == stopID)
+        #expect(routeResponse.entry.routeID == routeID)
+    }
+
     // MARK: - HTTP Error Handling
 
     @Test func `RESTAPIService throws APIError on HTTP 404 response`() async throws {

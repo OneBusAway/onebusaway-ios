@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import Combine
 import SwiftUI
 import OBAKitCore
 
@@ -22,6 +23,11 @@ class ScheduleForStopViewModel: ObservableObject {
     @Published var selectedDate: Date
     @Published var isLoading: Bool = false
     @Published var error: Error?
+
+    /// Bumped when `formatters.timeZone` changes so date controls stay aligned.
+    @Published private(set) var formattersTimeZoneGeneration = 0
+
+    private var formattersTimeZoneCancellable: AnyCancellable?
 
     // MARK: - Public Properties
 
@@ -109,6 +115,13 @@ class ScheduleForStopViewModel: ObservableObject {
         self.selectedRouteID = routeID
         self.application = application
         self.selectedDate = initialDate
+
+        formattersTimeZoneCancellable = NotificationCenter.default
+            .publisher(for: .formattersTimeZoneDidChange, object: application.formatters)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.formattersTimeZoneGeneration += 1
+            }
     }
 
     // MARK: - Public Methods
@@ -126,7 +139,11 @@ class ScheduleForStopViewModel: ObservableObject {
         error = nil
 
         do {
-            let response = try await apiService.getScheduleForStop(stopID: stopID, date: selectedDate)
+            let response = try await apiService.getScheduleForStop(
+                stopID: stopID,
+                date: selectedDate,
+                timeZone: application.formatters.timeZone
+            )
             guard generation == fetchGeneration, !Task.isCancelled else { return }
             scheduleData = response.entry
 

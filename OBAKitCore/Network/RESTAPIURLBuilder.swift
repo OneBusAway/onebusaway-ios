@@ -381,6 +381,26 @@ extension RESTAPIURLBuilder {
 
     // MARK: - Schedules
 
+    /// Creates a `DateFormatter` pinned to `en_US_POSIX` and the Gregorian calendar
+    /// so schedule `yyyy-MM-dd` query parameters never emit non-Gregorian years
+    /// (e.g. Thai Buddhist or Japanese era) or non-ASCII digits.
+    static func scheduleDateFormatter(timeZone: TimeZone) -> DateFormatter {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = calendar
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }
+
+    private static func scheduleQueryParams(for date: Date?, timeZone: TimeZone) -> [String: Any]? {
+        guard let date else { return nil }
+        return ["date": scheduleDateFormatter(timeZone: timeZone).string(from: date)]
+    }
+
     /// Creates a full URL for the `getScheduleForRoute` API call, including query params.
     ///
     /// - API Endpoint: `/api/where/schedule-for-route/{id}.json`
@@ -388,21 +408,15 @@ extension RESTAPIURLBuilder {
     /// - Parameters:
     ///   - id: The route ID.
     ///   - date: Optional date for which to retrieve the schedule. Defaults to current date.
+    ///   - timeZone: Time zone used to resolve the civil day for `date`. Defaults to `.current`.
     /// - Returns: A URL suitable for making a request to retrieve schedule information.
-    func getScheduleForRoute(id: RouteID, date: Date? = nil) -> URL {
-        var params: [String: Any] = [:]
-        if let date = date {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            params["date"] = formatter.string(from: date)
-        }
-
+    func getScheduleForRoute(id: RouteID, date: Date? = nil, timeZone: TimeZone = .current) -> URL {
         return generateURL(
             path: String(
                 format: "/api/where/schedule-for-route/%@.json",
                 NetworkHelpers.escapePathVariable(id)
             ),
-            params: params.isEmpty ? nil : params
+            params: Self.scheduleQueryParams(for: date, timeZone: timeZone)
         )
     }
 
@@ -413,21 +427,15 @@ extension RESTAPIURLBuilder {
     /// - Parameters:
     ///   - id: The stop ID.
     ///   - date: Optional date for which to retrieve the schedule. Defaults to current date.
+    ///   - timeZone: Time zone used to resolve the civil day for `date`. Defaults to `.current`.
     /// - Returns: A URL suitable for making a request to retrieve schedule information.
-    func getScheduleForStop(id: StopID, date: Date? = nil) -> URL {
-        var params: [String: Any] = [:]
-        if let date = date {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            params["date"] = formatter.string(from: date)
-        }
-
+    func getScheduleForStop(id: StopID, date: Date? = nil, timeZone: TimeZone = .current) -> URL {
         return generateURL(
             path: String(
                 format: "/api/where/schedule-for-stop/%@.json",
                 NetworkHelpers.escapePathVariable(id)
             ),
-            params: params.isEmpty ? nil : params
+            params: Self.scheduleQueryParams(for: date, timeZone: timeZone)
         )
     }
 

@@ -454,11 +454,16 @@ extension RESTAPIService {
     /// - Parameters:
     ///   - routeID: The route ID.
     ///   - date: Optional date for which to retrieve the schedule. Defaults to current date.
+    ///   - timeZone: Time zone used to resolve the civil day for `date`. Defaults to `.current`.
     /// - throws: ``APIError`` or other errors.
     /// - returns: The ``RESTAPIResponse`` for ``ScheduleForRoute``.
-    public nonisolated func getScheduleForRoute(routeID: RouteID, date: Date? = nil) async throws -> RESTAPIResponse<ScheduleForRoute> {
+    public nonisolated func getScheduleForRoute(
+        routeID: RouteID,
+        date: Date? = nil,
+        timeZone: TimeZone = .current
+    ) async throws -> RESTAPIResponse<ScheduleForRoute> {
         return try await getData(
-            for: urlBuilder.getScheduleForRoute(id: routeID, date: date),
+            for: urlBuilder.getScheduleForRoute(id: routeID, date: date, timeZone: timeZone),
             decodeRESTAPIResponseAs: ScheduleForRoute.self
         )
     }
@@ -471,11 +476,16 @@ extension RESTAPIService {
     /// - Parameters:
     ///   - stopID: The stop ID.
     ///   - date: Optional date for which to retrieve the schedule. Defaults to current date.
+    ///   - timeZone: Time zone used to resolve the civil day for `date`. Defaults to `.current`.
     /// - throws: ``APIError`` or other errors.
     /// - returns: The ``RESTAPIResponse`` for ``ScheduleForStop``.
-    public nonisolated func getScheduleForStop(stopID: StopID, date: Date? = nil) async throws -> RESTAPIResponse<ScheduleForStop> {
+    public nonisolated func getScheduleForStop(
+        stopID: StopID,
+        date: Date? = nil,
+        timeZone: TimeZone = .current
+    ) async throws -> RESTAPIResponse<ScheduleForStop> {
         return try await getData(
-            for: urlBuilder.getScheduleForStop(id: stopID, date: date),
+            for: urlBuilder.getScheduleForStop(id: stopID, date: date, timeZone: timeZone),
             decodeRESTAPIResponseAs: ScheduleForStop.self
         )
     }

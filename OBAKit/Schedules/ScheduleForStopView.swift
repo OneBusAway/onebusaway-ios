@@ -132,6 +132,7 @@ struct ScheduleForStopView: View {
                     displayedComponents: [.date]
                 )
                 .labelsHidden()
+                .environment(\.timeZone, application.formatters.timeZone)
             }
             .padding(.horizontal)
 
