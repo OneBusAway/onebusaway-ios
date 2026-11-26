@@ -35,3 +35,14 @@ enum ScheduleContentState {
         }
     }
 }
+
+/// Identity for a schedule fetch: the selected date and the formatter time
+/// zone generation. Both schedule views use it as their `.task(id:)`
+/// identity, so a zone change refetches the schedule in the new zone (#1978).
+///
+/// A named struct rather than a `(Date, Int)` tuple: tuples cannot satisfy
+/// the `Equatable` requirement of `.task(id:)` in Swift 6.2.
+struct ScheduleFetchIdentity: Equatable {
+    var selectedDate: Date
+    var formattersTimeZoneGeneration: Int
+}

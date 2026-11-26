@@ -306,4 +306,38 @@ final class ScheduleForStopViewModelTests: OBATestCase {
         let dateParam = URLComponents(url: requestURL, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "date" }?.value
         #expect(dateParam == "2025-12-05")
     }
+
+    // MARK: - Formatter Time Zone Tests
+
+    /// Changing the formatter time zone bumps `formattersTimeZoneGeneration`,
+    /// which the schedule views include in the `.task(id:)` identity so the
+    /// schedule refetches in the new zone (#1978).
+    @Test @MainActor
+    func `Formatter time zone change bumps the generation`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForStop(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
+
+        #expect(viewModel.formattersTimeZoneGeneration == 0)
+
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        let newYork = try #require(TimeZone(identifier: "America/New_York"))
+        let newZone = app.formatters.timeZone == losAngeles ? newYork : losAngeles
+        app.formatters.timeZone = newZone
+
+        // The time-zone sink receives on the main queue, so the bump lands
+        // asynchronously; wait for it instead of asserting immediately.
+        let deadline = Date().addingTimeInterval(2)
+        while viewModel.formattersTimeZoneGeneration == 0 && Date() < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(viewModel.formattersTimeZoneGeneration == 1)
+
+        // Assigning the same zone again must not bump it.
+        app.formatters.timeZone = newZone
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(viewModel.formattersTimeZoneGeneration == 1)
+    }
 }

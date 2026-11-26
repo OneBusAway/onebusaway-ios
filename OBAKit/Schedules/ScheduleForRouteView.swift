@@ -44,7 +44,9 @@ struct RouteScheduleContentView: View {
 
     var body: some View {
         content
-            .task(id: viewModel.selectedDate) {
+            // The generation is part of the identity so a formatter time
+            // zone change refetches the schedule in the new zone (#1978).
+            .task(id: ScheduleFetchIdentity(selectedDate: viewModel.selectedDate, formattersTimeZoneGeneration: viewModel.formattersTimeZoneGeneration)) {
                 await viewModel.fetchSchedule()
             }
     }

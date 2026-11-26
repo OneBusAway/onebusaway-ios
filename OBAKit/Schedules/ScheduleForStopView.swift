@@ -58,7 +58,9 @@ struct ScheduleForStopView: View {
                         }
                     }
                 }
-                .task(id: stopViewModel.selectedDate) {
+                // The generation is part of the identity so a formatter time
+                // zone change refetches the schedule in the new zone (#1978).
+                .task(id: ScheduleFetchIdentity(selectedDate: stopViewModel.selectedDate, formattersTimeZoneGeneration: stopViewModel.formattersTimeZoneGeneration)) {
                     await stopViewModel.fetchSchedule()
                     if routeViewModel?.routeID != stopViewModel.selectedRouteID {
                         updateRouteViewModel(for: stopViewModel.selectedRouteID)
