@@ -18,7 +18,6 @@ struct WidgetContent {
     var savedAt: Date?
     var currentPage: Int = 0
     var totalPages: Int = 0
-    var totalBookmarkCount: Int = 0
 
     static let empty = WidgetContent(bookmarks: [], departures: [:], fetchedAt: nil)
 }
@@ -97,7 +96,6 @@ final class WidgetDataProvider {
             return .empty
         }
 
-        let totalBookmarkCount = allBookmarks.count
         let slice = visibleBookmarkSlice(from: allBookmarks, for: family)
 
         guard let apiKey = Bundle.main.restServerAPIKey else {
@@ -107,8 +105,7 @@ final class WidgetDataProvider {
                 departures: [:],
                 fetchedAt: nil,
                 currentPage: slice.currentPage,
-                totalPages: slice.totalPages,
-                totalBookmarkCount: totalBookmarkCount
+                totalPages: slice.totalPages
             )
         }
 
@@ -135,8 +132,7 @@ final class WidgetDataProvider {
             scheduledDepartures: loaded.scheduledDepartures,
             savedAt: loaded.savedAt,
             currentPage: slice.currentPage,
-            totalPages: slice.totalPages,
-            totalBookmarkCount: totalBookmarkCount
+            totalPages: slice.totalPages
         )
     }
 }

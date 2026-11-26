@@ -28,7 +28,9 @@ struct WidgetPaginationControls: View {
             Button(intent: PreviousBookmarkPageIntent()) {
                 Image(systemName: "chevron.left")
                     .font(.caption.weight(.semibold))
-                    .frame(minWidth: 20, minHeight: 20)
+                    // Wider than the glyph so it's easier to hit. 24 tall
+                    // matches the refresh button next to it.
+                    .frame(minWidth: 28, minHeight: 24)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -43,14 +45,13 @@ struct WidgetPaginationControls: View {
             Button(intent: NextBookmarkPageIntent()) {
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .frame(minWidth: 20, minHeight: 20)
+                    .frame(minWidth: 28, minHeight: 24)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text(verbatim: WidgetStrings.nextPage))
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 2)
+        .padding(.horizontal, 2)
         .background(backgroundShape)
         .invalidatableContent()
     }
