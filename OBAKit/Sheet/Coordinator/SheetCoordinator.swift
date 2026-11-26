@@ -141,18 +141,22 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Back returns to `source`. A `source` that is no longer in the pile changes
     /// nothing below, and `route` is pushed on top.
     func open(_ route: Route, from source: Route) {
+        if stackedRoutes.last == route {
+            return
+        }
         lastChangeWasPopToRoot = false
         if let existing = stackedEntries.lastIndex(where: { $0.route == route }) {
             let closingDepth = existing + 1
-            // Already on top: nothing closes, so there is no dismissal to claim this.
-            if closingDepth < stackedEntries.count {
-                unwindFocusDepth = closingDepth
-            }
+            unwindFocusDepth = closingDepth
             truncateStacked(toDepth: closingDepth)
             return
         }
-        if let sourceDepth = stackedEntries.lastIndex(where: { $0.route == source }) {
-            truncateStacked(toDepth: sourceDepth + 1)
+        var targetDepth = stackedEntries.lastIndex(where: { $0.route == source }).map { $0 + 1 }
+        if let singletonDepth = stackedEntries.lastIndex(where: { route.isSameSingletonKind(as: $0.route) }) {
+            targetDepth = targetDepth.map { min($0, singletonDepth) } ?? singletonDepth
+        }
+        if let targetDepth {
+            truncateStacked(toDepth: targetDepth)
         }
         push(route)
     }
@@ -167,18 +171,6 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// over the current sheet, consolidating map-selection and panel navigation paths.
     func restoreRoute(_ route: Route) {
         if route.prefersStacking {
-            if stackedRoutes.last == route {
-                return
-            }
-            lastChangeWasPopToRoot = false
-            if let existing = stackedEntries.lastIndex(where: { $0.route == route }) {
-                let closingDepth = existing + 1
-                if closingDepth < stackedEntries.count {
-                    unwindFocusDepth = closingDepth
-                }
-                truncateStacked(toDepth: closingDepth)
-                return
-            }
             if let current = stackedRoutes.last {
                 open(route, from: current)
             } else {
