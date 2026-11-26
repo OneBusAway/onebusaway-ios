@@ -27,14 +27,17 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
             return BookmarkEntry(date: .now, bookmarks: [])
         }
 
-        let content = await dataProvider.load(maximumBookmarks: BookmarkEntry.maximumBookmarks(for: context.family))
+        let content = await dataProvider.load(for: context.family)
         return BookmarkEntry(
             date: .now,
             bookmarks: content.bookmarks,
             departures: content.departures,
             fetchedAt: content.fetchedAt,
             scheduledDepartures: content.scheduledDepartures,
-            savedAt: content.savedAt
+            savedAt: content.savedAt,
+            currentPage: content.currentPage,
+            totalPages: content.totalPages,
+            totalBookmarkCount: content.totalBookmarkCount
         )
     }
 
@@ -46,7 +49,7 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
     /// reload 30 minutes out (60 when nothing is coming). Never reload on the
     /// next departure: WidgetKit budgets 40–70 reloads a day.
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<BookmarkEntry> {
-        let content = await dataProvider.load(maximumBookmarks: BookmarkEntry.maximumBookmarks(for: context.family))
+        let content = await dataProvider.load(for: context.family)
         let now = Date()
 
         let plan = WidgetTimelinePlanner().plan(
@@ -68,7 +71,10 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
                 },
                 fetchedAt: content.fetchedAt,
                 scheduledDepartures: content.scheduledDepartures,
-                savedAt: content.savedAt
+                savedAt: content.savedAt,
+                currentPage: content.currentPage,
+                totalPages: content.totalPages,
+                totalBookmarkCount: content.totalBookmarkCount
             )
         }
 

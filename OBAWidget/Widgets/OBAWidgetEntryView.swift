@@ -24,7 +24,7 @@ struct OBAWidgetEntryView: View {
     var body: some View {
         VStack(alignment: .leading) {
             // MARK: Header View
-            HStack {
+            HStack(spacing: 6) {
                 // `Text(verbatim:)`: the string is already localized, and an
                 // interpolated literal would be looked up as its own key.
                 Text(verbatim: entry.headerText(with: formatters))
@@ -32,8 +32,18 @@ struct OBAWidgetEntryView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fontWeight(.medium)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
-                Spacer()
+                Spacer(minLength: 4)
+
+                if widgetFamily == .systemMedium, entry.totalPages > 1 {
+                    WidgetPaginationControls(
+                        currentPage: entry.currentPage,
+                        totalPages: entry.totalPages
+                    )
+                }
+
                 RefreshButton().invalidatableContent()
             }
             .padding(.bottom, 5)

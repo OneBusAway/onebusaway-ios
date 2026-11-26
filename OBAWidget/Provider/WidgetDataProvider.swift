@@ -6,6 +6,7 @@
 
 import Foundation
 import OBAKitCore
+import WidgetKit
 
 /// What one fetch produced, ready to be sliced into timeline entries.
 struct WidgetContent {
@@ -15,6 +16,9 @@ struct WidgetContent {
     /// Offline only: see `SavedBookmarkDepartures`.
     var scheduledDepartures: [UUID: [ScheduledDeparture]] = [:]
     var savedAt: Date?
+    var currentPage: Int = 0
+    var totalPages: Int = 0
+    var totalBookmarkCount: Int = 0
 
     static let empty = WidgetContent(bookmarks: [], departures: [:], fetchedAt: nil)
 }
@@ -31,7 +35,7 @@ struct WidgetContent {
 final class WidgetDataProvider {
     static let shared = WidgetDataProvider()
 
-    private let userDefaults = UserDefaults(suiteName: Bundle.main.appGroup!)!
+    let userDefaults = UserDefaults(suiteName: Bundle.main.appGroup!)!
 
     /// Formatters for localization and styling.
     let formatters = Formatters(
@@ -46,25 +50,66 @@ final class WidgetDataProvider {
             .filter { $0.regionIdentifier == region.regionIdentifier }
     }
 
-    /// - Parameter maximumBookmarks: How many bookmarks the widget can show
-    ///   (`BookmarkEntry.maximumBookmarks(for:)`). Fetching more is wasted
-    ///   network on every reload, and reloads now run up to 48 times a day.
-    func load(maximumBookmarks: Int) async -> WidgetContent {
+    /// Total favorited bookmarks in the currently resolved region.
+    func currentRegionBookmarkCount() -> Int {
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        guard let region = store.region(bundledRegionsFilePath: Bundle.main.path(forResource: "regions", ofType: "json")) else {
+            return 0
+        }
+        return bookmarks(in: region).count
+    }
+
+    private struct BookmarkSlice {
+        let bookmarks: [Bookmark]
+        let currentPage: Int
+        let totalPages: Int
+    }
+
+    private func visibleBookmarkSlice(
+        from allBookmarks: [Bookmark],
+        for family: WidgetFamily
+    ) -> BookmarkSlice {
+        if family == .systemMedium {
+            let paginator = WidgetBookmarkPaginator(userDefaults: userDefaults)
+            let totalPages = WidgetBookmarkPaginator.totalPages(bookmarkCount: allBookmarks.count)
+            let currentPage = paginator.currentPage(bookmarkCount: allBookmarks.count)
+            let visible = WidgetBookmarkPaginator.pageSlice(bookmarks: allBookmarks, pageIndex: currentPage)
+            return BookmarkSlice(bookmarks: visible, currentPage: currentPage, totalPages: totalPages)
+        }
+
+        let visible = Array(allBookmarks.prefix(BookmarkEntry.maximumBookmarks(for: family)))
+        return BookmarkSlice(bookmarks: visible, currentPage: 0, totalPages: 1)
+    }
+
+    /// Loads visible bookmarks for `family` (paginated for `.systemMedium`, capped
+    /// at `maximumBookmarks` for `.systemLarge`) and fetches departures only for
+    /// the visible rows so off-page stops never cost extra network requests.
+    func load(for family: WidgetFamily) async -> WidgetContent {
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         guard let region = store.region(bundledRegionsFilePath: Bundle.main.path(forResource: "regions", ofType: "json")) else {
             Logger.error("Widget: no region available.")
             return .empty
         }
 
-        let bookmarks = Array(bookmarks(in: region).prefix(maximumBookmarks))
-        guard !bookmarks.isEmpty else {
+        let allBookmarks = bookmarks(in: region)
+        guard !allBookmarks.isEmpty else {
             Logger.info("Widget: no bookmarks to load data for.")
             return .empty
         }
 
+        let totalBookmarkCount = allBookmarks.count
+        let slice = visibleBookmarkSlice(from: allBookmarks, for: family)
+
         guard let apiKey = Bundle.main.restServerAPIKey else {
             Logger.error("Widget: no REST API key in the extension's Info.plist.")
-            return WidgetContent(bookmarks: bookmarks, departures: [:], fetchedAt: nil)
+            return WidgetContent(
+                bookmarks: slice.bookmarks,
+                departures: [:],
+                fetchedAt: nil,
+                currentPage: slice.currentPage,
+                totalPages: slice.totalPages,
+                totalBookmarkCount: totalBookmarkCount
+            )
         }
 
         let service = RESTAPIService.standalone(
@@ -82,13 +127,16 @@ final class WidgetDataProvider {
         // which an extension can't read. So the widget keeps its own copy,
         // saved on its own fetches, and shows it when it can't reach the server.
         let loaded = await BookmarkArrivalsLoader(minutesAfter: 90, savedArrivals: .appDefault)
-            .departuresByBookmarkKeepingSaved(for: bookmarks, using: service)
+            .departuresByBookmarkKeepingSaved(for: slice.bookmarks, using: service)
         return WidgetContent(
-            bookmarks: bookmarks,
+            bookmarks: slice.bookmarks,
             departures: loaded.departures,
             fetchedAt: loaded.departures.isEmpty ? nil : Date(),
             scheduledDepartures: loaded.scheduledDepartures,
-            savedAt: loaded.savedAt
+            savedAt: loaded.savedAt,
+            currentPage: slice.currentPage,
+            totalPages: slice.totalPages,
+            totalBookmarkCount: totalBookmarkCount
         )
     }
 }

@@ -34,13 +34,25 @@ struct BookmarkEntry: TimelineEntry {
     /// When the saved departures shown were saved; nil when all are live.
     let savedAt: Date?
 
+    /// Zero-based index of the displayed bookmark page (`.systemMedium` only).
+    let currentPage: Int
+
+    /// Total number of bookmark pages available for the widget family.
+    let totalPages: Int
+
+    /// Total number of favorited bookmarks in the resolved region.
+    let totalBookmarkCount: Int
+
     init(
         date: Date,
         bookmarks: [Bookmark],
         departures: [UUID: [ArrivalDeparture]] = [:],
         fetchedAt: Date? = nil,
         scheduledDepartures: [UUID: [ScheduledDeparture]] = [:],
-        savedAt: Date? = nil
+        savedAt: Date? = nil,
+        currentPage: Int = 0,
+        totalPages: Int? = nil,
+        totalBookmarkCount: Int? = nil
     ) {
         self.date = date
         self.bookmarks = bookmarks
@@ -48,6 +60,9 @@ struct BookmarkEntry: TimelineEntry {
         self.fetchedAt = fetchedAt
         self.scheduledDepartures = scheduledDepartures
         self.savedAt = savedAt
+        self.currentPage = currentPage
+        self.totalBookmarkCount = totalBookmarkCount ?? bookmarks.count
+        self.totalPages = totalPages ?? (bookmarks.isEmpty ? 0 : 1)
     }
 
     /// How many bookmarks a widget of `family` can show. The one source of
@@ -55,7 +70,7 @@ struct BookmarkEntry: TimelineEntry {
     /// arrivals for exactly this many bookmarks, so a reload never pays for a
     /// stop nobody will see.
     static func maximumBookmarks(for family: WidgetFamily) -> Int {
-        family == .systemLarge ? 7 : 2
+        family == .systemLarge ? 7 : WidgetBookmarkPaginator.mediumPageSize
     }
 
     /// Returns a formatted string representing the last updated time.

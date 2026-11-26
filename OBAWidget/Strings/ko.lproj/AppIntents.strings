@@ -12,3 +12,9 @@
 
 /* App Intents: description of the bookmarks widget configuration. */
 "widget_configuration_intent.description" = "즐겨찾기의 다가오는 출발 시간을 확인하세요.";
+
+/* App Intents: name of the widget action that shows the next page of bookmarks. */
+"next_bookmark_page_intent.title" = "다음 즐겨찾기 페이지";
+
+/* App Intents: name of the widget action that shows the previous page of bookmarks. */
+"previous_bookmark_page_intent.title" = "이전 즐겨찾기 페이지";
