@@ -215,6 +215,44 @@ final class RootInterfaceSwapTests: OBATestCase {
         #expect(events == ["build-first", "complete-first", "build-followup", "complete-followup"])
     }
 
+    @Test func `Coalesced completions finish in FIFO order before a re-entrant reload runs`() {
+        let testWindow = UIWindow(frame: .zero)
+        let oldRoot = DeferredDismissViewController()
+        testWindow.rootViewController = oldRoot
+
+        let rootA = UIViewController()
+        let rootB = UIViewController()
+        let rootC = UIViewController()
+        var events: [String] = []
+        var rootSeenByB: UIViewController?
+
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            events.append("build-A")
+            return rootA
+        }, completion: {
+            events.append("complete-A")
+            RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+                events.append("build-C")
+                return rootC
+            }, completion: {
+                events.append("complete-C")
+            })
+        })
+        RootInterfaceSwap.replaceRoot(of: testWindow, with: {
+            events.append("build-B")
+            return rootB
+        }, completion: {
+            rootSeenByB = testWindow.rootViewController
+            events.append("complete-B")
+        })
+
+        oldRoot.finishDismissal()
+
+        #expect(rootSeenByB === rootB)
+        #expect(testWindow.rootViewController === rootC)
+        #expect(events == ["build-B", "complete-A", "complete-B", "build-C", "complete-C"])
+    }
+
     @Test func `An in-flight dismissal on one window does not block another window`() {
         let firstWindow = UIWindow(frame: .zero)
         let oldRoot = DeferredDismissViewController()
