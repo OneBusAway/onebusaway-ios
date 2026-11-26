@@ -2076,6 +2076,8 @@
 "trip_page.stops_loading" = "正在加载本次车程的车站……";
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "本次车程的车站列表当前不可用。";
+/* Identifies a trip by its public short name on the trip page, such as a commuter rail train number, e.g. 'Trip 1519'. */
+"trip_page.trip_short_name_fmt" = "车次 %@";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "车辆 %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */
