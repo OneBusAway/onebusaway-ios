@@ -572,7 +572,7 @@ public struct ErrorReport: Sendable {
             switch apiError {
             case .requestFailure(let response), .requestNotFound(let response):
                 return response.url
-            case .networkFailure(let inner?), .tlsError(_, let inner?):
+            case .networkFailure(let inner?), .serverUnavailable(_, _, let inner?), .tlsError(_, let inner?):
                 return requestURL(from: inner)
             default:
                 return nil
