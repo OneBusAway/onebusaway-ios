@@ -11,32 +11,43 @@ import OBAKitCore
 
 struct DepartureTimeBadgeView: View {
 
-    let arrivalDeparture: ArrivalDeparture
+    let displayText: String
+    let accessibilityLabel: String
+    let scheduleStatus: ScheduleStatus
     let formatters: Formatters
 
-    private var displayText: String {
-        formatters.shortFormattedTime(
-            untilMinutes: arrivalDeparture.arrivalDepartureMinutes,
-            temporalState: arrivalDeparture.temporalState
+    init(arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
+        self.init(
+            displayText: formatters.shortFormattedTime(
+                untilMinutes: arrivalDeparture.arrivalDepartureMinutes,
+                temporalState: arrivalDeparture.temporalState
+            ),
+            accessibilityLabel: formatters.explanationForArrivalDeparture(
+                tempuraState: arrivalDeparture.temporalState,
+                arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
+                arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes
+            ),
+            scheduleStatus: arrivalDeparture.scheduleStatus,
+            formatters: formatters
         )
     }
 
-    private var accessibilityLabel: String {
-        formatters.explanationForArrivalDeparture(
-            tempuraState: arrivalDeparture.temporalState,
-            arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
-            arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes
-        )
+    /// For a badge that isn't an `ArrivalDeparture`, such as an offline timetable time.
+    init(displayText: String, accessibilityLabel: String, scheduleStatus: ScheduleStatus, formatters: Formatters) {
+        self.displayText = displayText
+        self.accessibilityLabel = accessibilityLabel
+        self.scheduleStatus = scheduleStatus
+        self.formatters = formatters
     }
 
     /// The schedule-status color, except that on-time badges use
     /// `departureOnTimeFill`: in dark mode the on-time color is systemGreen,
     /// which white text only reaches 2.0:1 against.
     private var fillColor: UIColor {
-        if arrivalDeparture.scheduleStatus == .onTime {
+        if scheduleStatus == .onTime {
             return ThemeColors.shared.departureOnTimeFill
         }
-        return formatters.backgroundColorForScheduleStatus(arrivalDeparture.scheduleStatus)
+        return formatters.backgroundColorForScheduleStatus(scheduleStatus)
     }
 
     @Environment(\.colorScheme) private var colorScheme
