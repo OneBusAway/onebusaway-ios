@@ -53,6 +53,26 @@ final class SavedTimetableHeadsignTests: OBATestCase {
         return try JSONSerialization.data(withJSONObject: shift(try JSONSerialization.jsonObject(with: body)))
     }
 
+    /// Saves stop 1_75403's arrivals and timetable, moved in time so every
+    /// saved departure left 10 minutes ago, and bookmarks the trip on
+    /// `routeShortName`. Returns the bookmark and the saved timetable.
+    private func saveOfflineFixtures(forRoute routeShortName: String, regionID: Int) throws -> (bookmark: Bookmark, timetable: [ScheduledDeparture]) {
+        let arrivals = try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: arrivalsFixture).arrivalsAndDepartures
+        let lastDeparture = try #require(arrivals.map { max($0.scheduledDeparture, $0.predictedDeparture ?? $0.scheduledDeparture) }.max())
+        let shift = Int64(Date().addingTimeInterval(-600).timeIntervalSince(lastDeparture) * 1000)
+        let arrivalsBody = try shifted(Fixtures.loadData(file: arrivalsFixture), by: shift)
+        let scheduleBody = try shifted(Fixtures.loadData(file: scheduleFixture), by: shift)
+
+        let arrivalDeparture = try #require(arrivals.first { $0.routeShortName == routeShortName })
+        let bookmark = Bookmark(name: routeShortName, regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDeparture)
+
+        store.save(arrivalsBody, stopID: bookmark.stopID, regionID: regionID)
+        store.save(scheduleBody, kind: .schedule, stopID: bookmark.stopID, regionID: regionID)
+
+        let timetable = try buildRESTService().decodeKeptBody(ScheduleForStop.self, from: scheduleBody).entry.scheduledDepartures
+        return (bookmark, timetable)
+    }
+
     /// Offline at stop 1_75403, with its arrivals and timetable saved and moved
     /// in time so every saved departure left 10 minutes ago: the timetable
     /// departures each route's bookmark gets.
@@ -62,19 +82,10 @@ final class SavedTimetableHeadsignTests: OBATestCase {
         let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
         let regionID = try #require(application.apiService?.regionIdentifier)
 
-        let arrivals = try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: arrivalsFixture).arrivalsAndDepartures
-        let lastDeparture = try #require(arrivals.map { max($0.scheduledDeparture, $0.predictedDeparture ?? $0.scheduledDeparture) }.max())
-        let shift = Int64(Date().addingTimeInterval(-600).timeIntervalSince(lastDeparture) * 1000)
-        let arrivalsBody = try shifted(Fixtures.loadData(file: arrivalsFixture), by: shift)
-        let scheduleBody = try shifted(Fixtures.loadData(file: scheduleFixture), by: shift)
-
-        let arrivalDeparture = try #require(arrivals.first { $0.routeShortName == routeShortName })
-        let bookmark = Bookmark(name: routeShortName, regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDeparture)
+        let (bookmark, timetable) = try saveOfflineFixtures(forRoute: routeShortName, regionID: regionID)
         application.userDataStore.add(bookmark, to: nil)
         let key = try #require(TripBookmarkKey(bookmark: bookmark))
 
-        store.save(arrivalsBody, stopID: bookmark.stopID, regionID: regionID)
-        store.save(scheduleBody, kind: .schedule, stopID: bookmark.stopID, regionID: regionID)
         dataLoader.mock(response: MockDataResponse(data: nil, urlResponse: nil, error: URLError(.notConnectedToInternet)) { request in
             request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
         })
@@ -83,8 +94,13 @@ final class SavedTimetableHeadsignTests: OBATestCase {
         await loader.loadDataAndWait()
         #expect(loader.dataForKey(key).isEmpty)
 
-        let timetable = try #require(try application.apiService?.decodeKeptBody(ScheduleForStop.self, from: scheduleBody).entry.scheduledDepartures)
         return (key, loader.scheduledDepartures(for: key), timetable)
+    }
+
+    private func offlineService() -> RESTAPIService {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(response: MockDataResponse(data: nil, urlResponse: nil, error: URLError(.notConnectedToInternet)) { _ in true })
+        return buildRESTService(dataLoader: dataLoader)
     }
 
     @Test @MainActor
@@ -105,5 +121,35 @@ final class SavedTimetableHeadsignTests: OBATestCase {
         let expected = timetable.filter { $0.routeID == key.routeID && $0.minutes >= 0 }
         #expect(expected.isEmpty == false)
         #expect(departures.map(\.tripID) == expected.map(\.tripID))
+    }
+
+    @Test
+    func `Offline, the widget gets the timetable for a route with the stop's own headsign`() async throws {
+        let (bookmark, timetable) = try saveOfflineFixtures(forRoute: "72", regionID: pugetSoundRegionIdentifier)
+        #expect(bookmark.tripHeadsign == "University District")
+
+        let result = await BookmarkArrivalsLoader(savedArrivals: store)
+            .departuresByBookmarkKeepingSaved(for: [bookmark], using: offlineService())
+
+        let expected = timetable.filter { $0.routeID == bookmark.routeID && $0.minutes >= 0 }
+        #expect(expected.isEmpty == false)
+        #expect(try #require(result.scheduledDepartures[bookmark.id]).map(\.tripID) == expected.map(\.tripID))
+    }
+
+    @Test
+    func `Offline, the watch gets the next timetable trip for a route with the stop's own headsign`() async throws {
+        let (bookmark, timetable) = try saveOfflineFixtures(forRoute: "72", regionID: pugetSoundRegionIdentifier)
+        let watchBookmark = WatchBookmark(bookmark: bookmark)
+
+        var result = [UUID: WatchBookmarkDeparture]()
+        for await departures in BookmarkArrivalsLoader(savedArrivals: store)
+            .nextDeparturesByWatchBookmark(for: [watchBookmark], using: offlineService()) {
+            result = departures
+        }
+
+        let expected = try #require(timetable.first { $0.routeID == bookmark.routeID && $0.date > Date() })
+        let departure = try #require(result[watchBookmark.id])
+        #expect(departure.arrival == nil)
+        #expect(departure.scheduledDeparture?.tripID == expected.tripID)
     }
 }
