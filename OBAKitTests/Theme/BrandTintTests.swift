@@ -186,4 +186,28 @@ final class BrandTintTests: OBATestCase {
         #expect(lightRatio >= 7.0, "departureOnTimeFill HC light: \(lightRatio):1 (need ≥7.0)")
         #expect(darkRatio >= 7.0, "departureOnTimeFill HC dark: \(darkRatio):1 (need ≥7.0)")
     }
+
+    @Test func `departureOnTimeBackground meets WCAG AAA with white label in high contrast modes`() {
+        let color = ThemeColors.shared.departureOnTimeBackground
+        let lightRatio = contrastRatio(color, .white, traits: Self.highContrastLight)
+        let darkRatio = contrastRatio(color, .white, traits: Self.highContrastDark)
+        #expect(lightRatio >= 7.0, "departureOnTimeBackground HC light: \(lightRatio):1 (need ≥7.0)")
+        #expect(darkRatio >= 7.0, "departureOnTimeBackground HC dark: \(darkRatio):1 (need ≥7.0)")
+    }
+
+    @Test func `departureEarlyBackground meets WCAG AAA with white label in high contrast modes`() {
+        let color = ThemeColors.shared.departureEarlyBackground
+        let lightRatio = contrastRatio(color, .white, traits: Self.highContrastLight)
+        let darkRatio = contrastRatio(color, .white, traits: Self.highContrastDark)
+        #expect(lightRatio >= 7.0, "departureEarlyBackground HC light: \(lightRatio):1 (need ≥7.0)")
+        #expect(darkRatio >= 7.0, "departureEarlyBackground HC dark: \(darkRatio):1 (need ≥7.0)")
+    }
+
+    @Test func `departureLateBackground meets WCAG AAA with white label in high contrast modes`() {
+        let color = ThemeColors.shared.departureLateBackground
+        let lightRatio = contrastRatio(color, .white, traits: Self.highContrastLight)
+        let darkRatio = contrastRatio(color, .white, traits: Self.highContrastDark)
+        #expect(lightRatio >= 7.0, "departureLateBackground HC light: \(lightRatio):1 (need ≥7.0)")
+        #expect(darkRatio >= 7.0, "departureLateBackground HC dark: \(darkRatio):1 (need ≥7.0)")
+    }
 }

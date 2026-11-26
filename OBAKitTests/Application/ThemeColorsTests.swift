@@ -22,9 +22,7 @@ import Testing
 
         for traits in [normalLight, normalDark] {
             #expect(colors.departureEarly.resolvedColor(with: traits) == UIColor.systemRed.resolvedColor(with: traits))
-            #expect(colors.departureEarlyBackground.resolvedColor(with: traits) == UIColor.systemRed.resolvedColor(with: traits))
             #expect(colors.departureLate.resolvedColor(with: traits) == UIColor.systemBlue.resolvedColor(with: traits))
-            #expect(colors.departureLateBackground.resolvedColor(with: traits) == UIColor.systemBlue.resolvedColor(with: traits))
             #expect(colors.blue.resolvedColor(with: traits) == UIColor.systemBlue.resolvedColor(with: traits))
             #expect(colors.stopArrowFillColor.resolvedColor(with: traits) == UIColor.systemRed.resolvedColor(with: traits))
             #expect(colors.errorColor.resolvedColor(with: traits) == UIColor.systemRed.resolvedColor(with: traits))
@@ -56,7 +54,7 @@ import Testing
 
         #expect(light == UIColor(red: 0.00, green: 0.45, blue: 0.00, alpha: 1.00))
         #expect(dark == UIColor.systemGreen.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark)))
-        #expect(colors.departureOnTimeBackground == colors.departureOnTime)
+        #expect(colors.departureOnTimeBackground == colors.departureOnTimeFill)
     }
 
     /// White text and glyphs sit on this fill (walk chip, set alarm, Live
@@ -66,6 +64,23 @@ import Testing
     func `On time fill carries white text at AA contrast`(style: UIUserInterfaceStyle) {
         let fill = ThemeColors().departureOnTimeFill.resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
         #expect(UIColor.white.wcagContrastRatio(against: fill) >= 4.5)
+    }
+
+    /// Departure badges (`DepartureTimeBadge` and the widget's
+    /// `DepartureTimeBadgeView`) render white text over
+    /// `backgroundColorForScheduleStatus`, so every real-time fill must clear
+    /// WCAG AA contrast under white in both appearances.
+    @Test(arguments: [UIUserInterfaceStyle.light, .dark])
+    func `Departure badge backgrounds carry white text at AA contrast`(style: UIUserInterfaceStyle) {
+        let traits = UITraitCollection(userInterfaceStyle: style)
+        let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors())
+
+        for status in [ScheduleStatus.onTime, .early, .delayed] {
+            let fill = formatters.backgroundColorForScheduleStatus(status).resolvedColor(with: traits)
+            let ratio = UIColor.white.wcagContrastRatio(against: fill)
+            #expect(ratio >= 4.5, "\(status) in \(style == .dark ? "dark" : "light") mode: \(ratio):1")
+            #expect(!fill.isLightColor, "\(status) in \(style == .dark ? "dark" : "light") mode should keep white badge text")
+        }
     }
 
     /// Warning text (service alerts, a stale Live Activity) on the page
@@ -81,6 +96,8 @@ import Testing
     @Test func `Watch fill and warning colors clear AA on their backgrounds`() {
         let palette = ThemeColors.Palette.watch
         #expect(UIColor.white.wcagContrastRatio(against: palette.onTimeFill) >= 4.5)
+        #expect(UIColor.white.wcagContrastRatio(against: palette.earlyFill) >= 4.5)
+        #expect(UIColor.white.wcagContrastRatio(against: palette.lateFill) >= 4.5)
         #expect(palette.warningText.wcagContrastRatio(against: palette.background) >= 4.5)
     }
 
@@ -159,7 +176,8 @@ import Testing
         let light = UITraitCollection(userInterfaceStyle: .light)
         let dark = UITraitCollection(userInterfaceStyle: .dark)
 
-        for color in [palette.red, palette.blue, palette.green, palette.onTime, palette.onTimeFill, palette.gray,
+        for color in [palette.red, palette.blue, palette.green, palette.onTime, palette.onTimeFill,
+                      palette.earlyFill, palette.lateFill, palette.gray,
                       palette.yellow, palette.warningText,
                       palette.label, palette.secondaryLabel, palette.separator, palette.fill,
                       palette.background, palette.secondaryBackground, palette.groupedBackground, palette.gray6,
