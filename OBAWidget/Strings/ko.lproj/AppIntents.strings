@@ -18,3 +18,12 @@
 
 /* App Intents: name of the widget action that shows the previous page of bookmarks. */
 "previous_bookmark_page_intent.title" = "이전 즐겨찾기 페이지";
+
+/* App Intents: name of the Live Activity action that refreshes arrivals. */
+"refresh_live_activity_intent.title" = "실시간 현황 새로 고침";
+
+/* App Intents: name of the Live Activity action that ends and dismisses the Live Activity. */
+"end_live_activity_intent.title" = "실시간 현황 종료";
+
+/* App Intents: parameter title for the Live Activity identifier. */
+"live_activity_intent.activity_id_parameter_title" = "활동 ID";

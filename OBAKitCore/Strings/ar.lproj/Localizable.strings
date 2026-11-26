@@ -786,3 +786,12 @@
 
 /* An error shown when an SSL/TLS handshake or secure connection fails. */
 "api_error.tls_handshake_failed" = "تعذّر إنشاء اتصال آمن بالخادم. يرجى التحقق من اتصال الشبكة، وتعطيل أي VPN أو بروكسي نشط، ثم المحاولة مرة أخرى.";
+
+/* Button on a Live Activity Lock Screen card that stops tracking and dismisses the Live Activity. */
+"live_activity.end" = "إنهاء";
+
+/* VoiceOver accessibility label for the Refresh button on a Live Activity card. */
+"live_activity.a11y_refresh" = "تحديث أوقات الوصول";
+
+/* VoiceOver accessibility label for the End button on a Live Activity card. */
+"live_activity.a11y_end" = "إنهاء النشاط المباشر";

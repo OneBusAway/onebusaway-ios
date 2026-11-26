@@ -786,3 +786,12 @@
 
 /* An error shown when an SSL/TLS handshake or secure connection fails. */
 "api_error.tls_handshake_failed" = "서버와의 보안 연결을 설정할 수 없습니다. 네트워크 연결을 확인하고 활성화된 VPN이나 프록시를 끈 후 다시 시도해 주세요.";
+
+/* Button on a Live Activity Lock Screen card that stops tracking and dismisses the Live Activity. */
+"live_activity.end" = "종료";
+
+/* VoiceOver accessibility label for the Refresh button on a Live Activity card. */
+"live_activity.a11y_refresh" = "도착 정보 새로 고침";
+
+/* VoiceOver accessibility label for the End button on a Live Activity card. */
+"live_activity.a11y_end" = "실시간 현황 종료";

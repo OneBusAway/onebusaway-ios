@@ -786,3 +786,12 @@
 
 /* An error shown when an SSL/TLS handshake or secure connection fails. */
 "api_error.tls_handshake_failed" = "无法与服务器建立安全连接。请检查您的网络连接，关闭所有已启用的 VPN 或代理后重试。";
+
+/* Button on a Live Activity Lock Screen card that stops tracking and dismisses the Live Activity. */
+"live_activity.end" = "结束";
+
+/* VoiceOver accessibility label for the Refresh button on a Live Activity card. */
+"live_activity.a11y_refresh" = "刷新到站时间";
+
+/* VoiceOver accessibility label for the End button on a Live Activity card. */
+"live_activity.a11y_end" = "结束实时活动";

@@ -786,3 +786,12 @@
 
 /* An error shown when an SSL/TLS handshake or secure connection fails. */
 "api_error.tls_handshake_failed" = "Une connexion sécurisée n'a pas pu être établie avec le serveur. Veuillez vérifier votre connexion réseau, désactiver tout VPN ou proxy actif et réessayer.";
+
+/* Button on a Live Activity Lock Screen card that stops tracking and dismisses the Live Activity. */
+"live_activity.end" = "Terminer";
+
+/* VoiceOver accessibility label for the Refresh button on a Live Activity card. */
+"live_activity.a11y_refresh" = "Actualiser les arrivées";
+
+/* VoiceOver accessibility label for the End button on a Live Activity card. */
+"live_activity.a11y_end" = "Terminer l’activité en direct";

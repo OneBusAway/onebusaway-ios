@@ -786,3 +786,12 @@
 
 /* An error shown when an SSL/TLS handshake or secure connection fails. */
 "api_error.tls_handshake_failed" = "Không thể thiết lập kết nối an toàn với máy chủ. Vui lòng kiểm tra kết nối mạng, tắt mọi VPN hoặc proxy đang hoạt động và thử lại.";
+
+/* Button on a Live Activity Lock Screen card that stops tracking and dismisses the Live Activity. */
+"live_activity.end" = "Kết thúc";
+
+/* VoiceOver accessibility label for the Refresh button on a Live Activity card. */
+"live_activity.a11y_refresh" = "Làm mới giờ đến";
+
+/* VoiceOver accessibility label for the End button on a Live Activity card. */
+"live_activity.a11y_end" = "Kết thúc Hoạt động trực tiếp";
