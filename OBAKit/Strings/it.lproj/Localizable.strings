@@ -107,7 +107,7 @@
 "bookmarks_controller.groups_button_title" = "Modifica";
 
 /* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
-"bookmarks_controller.no_upcoming_departures" = "Nessuna partenza in arrivo";
+"bookmarks_controller.no_upcoming_departures" = "Nessuna partenza imminente";
 
 /* VoiceOver suffix announcing that a bookmark row is pinned. */
 "bookmarks_controller.pinned.a11y_label" = "Fissato";
