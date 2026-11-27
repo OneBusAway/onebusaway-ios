@@ -285,10 +285,16 @@ public class Formatters: NSObject {
     /// Creates a string that explains when the `ArrivalDeparture` arrives or departs.
     /// For example, it might generate a string that says "Arrived 3 min ago", "Departing now", or "Departs in 8 min".
     ///
-    /// - Parameter arrivalDeparture: The ArrivalDeparture object representing the string
+    /// - Parameters:
+    ///   - arrivalDeparture: The ArrivalDeparture object representing the string.
+    ///   - now: The reference date to compute minutes and temporal state against. Defaults to `Date()`.
     /// - Returns: A localized string explaining the arrival/departure status.
-    public func explanation(from arrivalDeparture: ArrivalDeparture) -> String {
-        return explanationForArrivalDeparture(tempuraState: arrivalDeparture.temporalState, arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus, arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes)
+    public func explanation(from arrivalDeparture: ArrivalDeparture, now: Date = Date()) -> String {
+        return explanationForArrivalDeparture(
+            tempuraState: arrivalDeparture.temporalState(at: now),
+            arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
+            arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes(from: now)
+        )
     }
 
     /// Creates a string that explains when the `ArrivalDeparture` arrives or departs.
@@ -353,10 +359,10 @@ public class Formatters: NSObject {
     /// "on time" when no vehicle has reported at all. Mirrors the gate
     /// `TripActivityPresenter.deviationLabel(for:now:)` applies for Live
     /// Activity content states.
-    public func deviationLabel(for arrivalDeparture: ArrivalDeparture) -> String {
+    public func deviationLabel(for arrivalDeparture: ArrivalDeparture, now: Date = Date()) -> String {
         deviationLabel(
             scheduleStatus: arrivalDeparture.scheduleStatus,
-            temporalState: arrivalDeparture.temporalState,
+            temporalState: arrivalDeparture.temporalState(at: now),
             arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
             scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes)
     }
@@ -459,10 +465,15 @@ public class Formatters: NSObject {
     /// For example, if the `ArrivalDeparture` happens 7 minutes in the future, this will return the string `"7m"`.
     /// 7 minutes in the past: `"-7m"`. If the `ArrivalDeparture` event occurs now, then this will return `"NOW"`.
     ///
-    /// - Parameter arrivalDeparture: The event for which a formatted time distance is to be calculated.
+    /// - Parameters:
+    ///   - arrivalDeparture: The event for which a formatted time distance is to be calculated.
+    ///   - now: The reference date to compute minutes and temporal state against. Defaults to `Date()`.
     /// - Returns: The short formatted string representing the time until the `arrivalDeparture` event occurs.
-    public func shortFormattedTime(until arrivalDeparture: ArrivalDeparture) -> String {
-        return shortFormattedTime(untilMinutes: arrivalDeparture.arrivalDepartureMinutes, temporalState: arrivalDeparture.temporalState)
+    public func shortFormattedTime(until arrivalDeparture: ArrivalDeparture, now: Date = Date()) -> String {
+        return shortFormattedTime(
+            untilMinutes: arrivalDeparture.arrivalDepartureMinutes(from: now),
+            temporalState: arrivalDeparture.temporalState(at: now)
+        )
     }
 
     /// Creates a formatted string from the `ArrivalDeparture` object that shows the short formatted time until this event occurs.

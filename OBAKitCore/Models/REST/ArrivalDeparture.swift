@@ -347,18 +347,24 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         }
     }
 
-    /// Number of minutes until/after `arrivalDepartureDate`, rounded down to the
-    /// minute containing the departure: the minute still in progress is 0, and
-    /// any elapsed time after the departure is negative, so the `.past`
-    /// boundary in `temporalState` lands on the departure itself instead of a
-    /// minute after it.
-    public var arrivalDepartureMinutes: Int {
-        return Int(floor(arrivalDepartureDate.timeIntervalSinceNow / 60.0))
+    /// Number of minutes until/after `arrivalDepartureDate` relative to `date`, rounded down to the
+    /// minute containing the departure: the minute still in progress is 0, and any elapsed time
+    /// after the departure is negative, so the `.past` boundary in `temporalState(at:)` lands on
+    /// the departure itself instead of a minute after it.
+    public func arrivalDepartureMinutes(from date: Date) -> Int {
+        Int(floor(arrivalDepartureDate.timeIntervalSince(date) / 60.0))
     }
 
-    /// Whether `arrivalDepartureDate` occurred in the past, is occurring now, or is occurring in the future.
-    public var temporalState: TemporalState {
-        let minutes = arrivalDepartureMinutes
+    /// Number of minutes until/after `arrivalDepartureDate`, rounded down to the
+    /// minute containing the departure.
+    public var arrivalDepartureMinutes: Int {
+        arrivalDepartureMinutes(from: Date())
+    }
+
+    /// Whether `arrivalDepartureDate` occurred in the past, is occurring now, or is occurring in the
+    /// future relative to `date`.
+    public func temporalState(at date: Date) -> TemporalState {
+        let minutes = arrivalDepartureMinutes(from: date)
         if minutes < 0 {
             // Arrived/Departed abs(minutes) min ago
             return .past
@@ -371,6 +377,11 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
             // Arrives/Departs in (minutes) min
             return .future
         }
+    }
+
+    /// Whether `arrivalDepartureDate` occurred in the past, is occurring now, or is occurring in the future.
+    public var temporalState: TemporalState {
+        temporalState(at: Date())
     }
 
     /// This is the number of minutes that the predicted arrival/departure time deviates
