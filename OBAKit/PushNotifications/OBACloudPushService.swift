@@ -124,7 +124,8 @@ public class OBACloudPushService: NSObject, PushServicePushIDErrorReporting {
         // before touching state or UIApplication.
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, error in
             Task { @MainActor in
-                self?.handleAuthorizationResult(granted: granted, error: error)
+                guard let self else { return }
+                self.handleAuthorizationResult(granted: granted, error: error)
             }
         }
     }
