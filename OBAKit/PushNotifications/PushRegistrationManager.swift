@@ -92,9 +92,9 @@ public final class PushRegistrationManager {
     ///   - testDeviceDescriptionProvider: Human-readable name identifying this test device to
     ///     OBACloud admins. The server requires it for `test_device=true` registrations;
     ///     without one the device registers as a regular device.
-    ///   - currentRegionIdentifierProvider: The user's current region. Guards against the
-    ///     stale-`obacoService` case: switching to a region without a sidecar leaves the old
-    ///     region's service in place, and we must never register against a region the user left.
+    ///   - currentRegionIdentifierProvider: The user's current region. Defense in depth
+    ///     confirming the resolved `obacoService` matches the current region before
+    ///     registering.
     ///   - authorizationStatusProvider: Injectable for tests; defaults to the real
     ///     notification-center authorization status.
     ///   - localeProvider: Injectable for tests; defaults to the device's BCP-47 identifier.
@@ -176,9 +176,8 @@ public final class PushRegistrationManager {
     private func performRegistrationIfNeeded() async {
         guard let deviceToken, let obacoService = obacoServiceProvider() else { return }
 
-        // Switching to a region without a sidecar leaves the previous region's service in
-        // place (CoreApplication.refreshObacoService early-returns) — never register
-        // against a region the user left.
+        // Defense in depth: confirm the resolved Obaco service matches the current region
+        // before proceeding with registration.
         guard obacoService.regionID == currentRegionIdentifierProvider() else {
             Logger.info("Skipping push registration: service region \(obacoService.regionID) is not the current region.")
             return
