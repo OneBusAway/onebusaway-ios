@@ -47,25 +47,24 @@ struct TripLiveActivity: Widget {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.orange)
-                                .accessibilityLabel(LiveActivityStaleChrome.warningText)
                         } else {
                             Image(systemName: "bus.fill")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(primaryColor)
-                                .accessibilityHidden(true) // decorative; the route name follows
                         }
                         Text(context.attributes.staticData.routeShortName)
                             .font(.system(.title3, design: .rounded))
                             .fontWeight(.heavy)
                             .foregroundColor(.white)
                             .opacity(staleOpacity)
-                            .accessibilityLabel(routeLabel(context.attributes.staticData))
                     }
                     .padding(.leading, 6)
+                    // Spoken by the bottom region's combined label.
+                    .accessibilityHidden(true)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     Group {
-                        switch presenter.expandedTrailingState(for: context.state, now: now) {
+                        switch presenter.trailingState(for: context.state, now: now) {
                         case .countdown(let primary):
                             TickingCountdownText(
                                 departure: primary.departureDate,
@@ -73,15 +72,16 @@ struct TripLiveActivity: Widget {
                                 color: Color(presenter.color(for: primary)),
                                 opacity: staleOpacity
                             )
-                        case .fallback(let text, let accessibilityLabel):
+                        case .fallback(let text, _):
                             Text(verbatim: text)
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
                                 .foregroundColor(primaryColor)
                                 .opacity(staleOpacity)
-                                .accessibilityLabel(accessibilityLabel)
                         }
                     }
                     .padding(.trailing, 6)
+                    // Spoken by the bottom region's combined label.
+                    .accessibilityHidden(true)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(spacing: 0) {
@@ -144,6 +144,7 @@ struct TripLiveActivity: Widget {
                                 .padding(.top, 4)
                         }
                     }
+                    .modifier(ExpandedIslandAccessibility(context: context, presenter: presenter, now: now))
                 }
             } compactLeading: {
                 // MARK: - COMPACT LEADING
@@ -164,7 +165,7 @@ struct TripLiveActivity: Widget {
                 }
                 .padding(.leading, 4)
             } compactTrailing: {
-                switch presenter.compactTrailingState(for: context.state, now: now) {
+                switch presenter.trailingState(for: context.state, now: now) {
                 case .countdown(let primary):
                     TickingCountdownText(
                         departure: primary.departureDate,
@@ -211,6 +212,32 @@ struct TripLiveActivity: Widget {
         // Without `.small`, the Watch Smart Stack and CarPlay fall back to the
         // compact Island pair: a bare route and minutes.
         .supplementalActivityFamilies([.small])
+    }
+}
+
+/// The expanded Island as one VoiceOver element, read in the same order as the
+/// Lock Screen card. Read region by region it was the route, then the bare
+/// minutes, then the headsign, with nothing tying them together.
+private struct ExpandedIslandAccessibility: ViewModifier {
+    let context: ActivityViewContext<TripAttributes>
+    let presenter: TripActivityPresenter
+    let now: Date
+
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
+
+    func body(content: Content) -> some View {
+        content
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(TripActivityPresenter.spokenText(
+                presenter.dynamicIslandAccessibilitySegments(
+                    staticData: context.attributes.staticData,
+                    contentState: context.state,
+                    isStale: context.isStale,
+                    now: now
+                ),
+                isLuminanceReduced: isLuminanceReduced
+            ))
+            .accessibilityAddTraits(.updatesFrequently)
     }
 }
 

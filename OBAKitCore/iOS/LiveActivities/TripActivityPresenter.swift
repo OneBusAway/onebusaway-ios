@@ -144,17 +144,13 @@ public struct TripActivityPresenter {
         return statusText(for: primary, now: now)
     }
 
-    /// Presentation state for `DynamicIslandExpandedRegion(.trailing)`.
-    public func expandedTrailingState(for state: TripAttributes.ContentState, now: Date = Date()) -> DynamicIslandTrailingState {
+    /// Presentation state for the Dynamic Island's trailing countdown, in both
+    /// `DynamicIslandExpandedRegion(.trailing)` and `compactTrailing`.
+    public func trailingState(for state: TripAttributes.ContentState, now: Date = Date()) -> DynamicIslandTrailingState {
         if let primary = state.upcomingArrivals(now: now).first {
             return .countdown(primary)
         }
         return .fallback(text: countdownFallbackText, accessibilityLabel: emptyStateStatusText)
-    }
-
-    /// Presentation state for Dynamic Island `compactTrailing`.
-    public func compactTrailingState(for state: TripAttributes.ContentState, now: Date = Date()) -> DynamicIslandTrailingState {
-        expandedTrailingState(for: state, now: now)
     }
 
     /// Presentation state for Dynamic Island `minimal`.

@@ -242,12 +242,12 @@ final class TripActivityPresenterTests {
         // Active on first arrival
         #expect(presenter.shouldShowStatusDot(for: state, now: now))
         #expect(presenter.statusText(for: state, now: now) != presenter.emptyStateStatusText)
-        #expect(presenter.expandedTrailingState(for: state, now: now) == .countdown(first))
+        #expect(presenter.trailingState(for: state, now: now) == .countdown(first))
 
         // First elapsed, second becomes primary (exact boundary departureDate == now stays upcoming)
         let atSecondDeparture = now.addingTimeInterval(300)
         #expect(presenter.shouldShowStatusDot(for: state, now: atSecondDeparture))
-        #expect(presenter.expandedTrailingState(for: state, now: atSecondDeparture) == .countdown(second))
+        #expect(presenter.trailingState(for: state, now: atSecondDeparture) == .countdown(second))
 
         // All departures elapsed
         let afterAllDeparted = now.addingTimeInterval(301)
@@ -255,18 +255,17 @@ final class TripActivityPresenterTests {
         #expect(presenter.statusText(for: state, now: afterAllDeparted) == presenter.emptyStateStatusText)
         #expect(presenter.primaryColor(for: state, now: afterAllDeparted) == formatters.colorForScheduleStatus(.unknown))
         #expect(
-            presenter.expandedTrailingState(for: state, now: afterAllDeparted)
+            presenter.trailingState(for: state, now: afterAllDeparted)
                 == .fallback(text: "--", accessibilityLabel: presenter.emptyStateStatusText)
         )
     }
 
-    @Test func `Dynamic Island expanded, compact trailing, and minimal states cover active and elapsed departures`() {
+    @Test func `Dynamic Island trailing and minimal states cover active and elapsed departures`() {
         let upcoming = arrival(offsetSeconds: 300, status: .onTime, deviation: 0, now: now)
         let activeState = TripAttributes.ContentState(arrivals: [upcoming])
         let elapsedState = TripAttributes.ContentState(arrivals: [arrival(offsetSeconds: -30, now: now)])
 
-        #expect(presenter.expandedTrailingState(for: activeState, now: now) == .countdown(upcoming))
-        #expect(presenter.compactTrailingState(for: activeState, now: now) == .countdown(upcoming))
+        #expect(presenter.trailingState(for: activeState, now: now) == .countdown(upcoming))
         #expect(presenter.minimalState(for: activeState, isStale: false, now: now) == .countdown(upcoming))
         #expect(presenter.minimalState(for: activeState, isStale: true, now: now) == .countdown(upcoming))
         #expect(presenter.minimalCountdownAccessibilityLabel(for: upcoming, isStale: false, now: now) == nil)
@@ -279,8 +278,7 @@ final class TripActivityPresenterTests {
             text: "--",
             accessibilityLabel: presenter.emptyStateStatusText
         )
-        #expect(presenter.expandedTrailingState(for: elapsedState, now: now) == expectedFallback)
-        #expect(presenter.compactTrailingState(for: elapsedState, now: now) == expectedFallback)
+        #expect(presenter.trailingState(for: elapsedState, now: now) == expectedFallback)
         #expect(presenter.minimalState(for: elapsedState, isStale: false, now: now) == expectedFallback)
         #expect(
             presenter.minimalState(for: elapsedState, isStale: true, now: now)

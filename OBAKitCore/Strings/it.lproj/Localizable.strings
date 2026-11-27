@@ -437,7 +437,7 @@
 "live_activity.dismiss_hint" = "Scorri a sinistra per chiudere";
 
 /* Shown on a Live Activity Dynamic Island when all tracked departures have passed and no upcoming departure is available yet. */
-"live_activity.no_upcoming_departures" = "Nessuna partenza in arrivo";
+"live_activity.no_upcoming_departures" = "Nessuna partenza imminente";
 
 /* Error shown when a location request is made without authorization */
 "location_service.error.not_authorized" = "L'accesso alla posizione non è autorizzato.";
