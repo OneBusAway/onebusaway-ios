@@ -96,9 +96,6 @@ public class OBACloudPushService: NSObject, PushServicePushIDErrorReporting {
     /// for remote notifications, and all pending callbacks are invoked when the token arrives via
     /// ``didRegisterForRemoteNotifications(withDeviceToken:)``.
     ///
-    /// If authorization is denied or fails, or APNs registration fails, the
-    /// queued callbacks are discarded and their error callbacks are invoked.
-    ///
     /// - Parameter callback: A closure invoked with the hex-encoded device token string.
     public func requestPushID(_ callback: @escaping PushManagerUserIDCallback) {
         // The success-only API cannot report failure. The failure paths still
@@ -107,6 +104,9 @@ public class OBACloudPushService: NSObject, PushServicePushIDErrorReporting {
         requestPushID(callback, onError: { _ in })
     }
 
+    /// If authorization is denied or fails, or APNs registration fails, the
+    /// queued requests are discarded and their `onError` callbacks are invoked.
+    ///
     /// - Parameter callback: A closure invoked with the hex-encoded device token string.
     /// - Parameter onError: A closure invoked if the token cannot be produced.
     public func requestPushID(
