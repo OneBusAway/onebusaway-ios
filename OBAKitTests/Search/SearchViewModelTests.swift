@@ -9,6 +9,7 @@
 
 import MapKit
 import Foundation
+import os
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -245,23 +246,35 @@ final class SearchViewModelTests: OBATestCase {
 
     // MARK: - selectVehicle / concurrent-call guard
 
+    /// The first request is held open, so the second call is sure to arrive while the
+    /// first is still in flight. Only the first request is gated: if the guard ever
+    /// lets a second one through, it passes straight to the mock and the count shows
+    /// it, instead of the test hanging on a gate nobody releases.
     @Test @MainActor
     func `Select vehicle guard prevents concurrent calls`() async {
-        let mockLoader = makeSuccessLoader()
-        let countingLoader = CountingDataLoader(mockLoader)
+        let requestCount = OSAllocatedUnfairLock(initialState: 0)
+        let loader = GatedDataLoader(makeSuccessLoader(), gating: { _ in
+            requestCount.withLock { count in
+                count += 1
+                return count == 1
+            }
+        })
         let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier, surveyBaseURL: surveyBaseURL)
-        let service = RESTAPIService(config, dataLoader: countingLoader)
         let vm = SearchViewModel(
             searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
-            apiService: service
+            apiService: RESTAPIService(config, dataLoader: loader)
         )
 
-        async let first: Void = vm.selectVehicle(vehicleID: vehicleID)
-        async let second: Void = vm.selectVehicle(vehicleID: vehicleID)
-        await first
-        await second
+        let first = Task { await vm.selectVehicle(vehicleID: vehicleID) }
+        await loader.waitForRequest()
 
-        #expect(countingLoader.callCount == 1)
+        await vm.selectVehicle(vehicleID: vehicleID)
+        #expect(requestCount.withLock { $0 } == 1)
+
+        loader.releaseRequest()
+        await first.value
+
+        #expect(requestCount.withLock { $0 } == 1)
         #expect(vm.vehicleSearchResponse != nil)
     }
 
