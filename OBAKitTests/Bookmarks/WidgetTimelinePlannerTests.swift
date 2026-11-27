@@ -406,4 +406,63 @@ import Testing
         let latePlan = normalPlanner.plan(departureDates: [minutes(28), minutes(29)], now: now)
         #expect(latePlan.reloadDate > latePlan.entryDates.last!)
     }
+
+    /// Regression test for #1993: WidgetKit archives future timeline entries at `T0`,
+    /// so countdowns, VoiceOver explanations, and deviation phrases must evaluate
+    /// against `entry.date`, not `Date.now`.
+    @Test @MainActor
+    func `Future timeline entries format countdowns and labels relative to entry date`() throws {
+        let formatters = Formatters(
+            locale: Locale(identifier: "en_US"),
+            calendar: Calendar(identifier: .gregorian),
+            themeColors: ThemeColors.shared
+        )
+
+        let busA = try departure(at: upcoming(10), tripID: "trip_10")
+        let busImminent = try departure(at: upcoming(10).addingTimeInterval(30), tripID: "trip_10_30s")
+        let busBScheduled = Int(upcoming(23).timeIntervalSinceReferenceDate)
+        let busBPredicted = Int(upcoming(25).timeIntervalSinceReferenceDate)
+        let busB = try Fixtures.arrivalDeparture(
+            predicted: true,
+            scheduledArrival: busBScheduled,
+            predictedArrival: busBPredicted,
+            scheduledDeparture: busBScheduled,
+            predictedDeparture: busBPredicted,
+            stopSequence: 5,
+            tripID: "trip_25_late"
+        )
+
+        let departures = [busA, busImminent, busB]
+        let plan = WidgetTimelinePlanner().plan(
+            departureDates: departures.map(\.arrivalDepartureDate),
+            now: upcomingNow
+        )
+
+        // Entry 0 (T0): all three are visible with countdowns relative to T0.
+        let entry0 = plan.entryDates[0]
+        #expect(formatters.shortFormattedTime(until: busB, now: entry0) == "25m")
+        #expect(formatters.explanation(from: busB, now: entry0) == "Arrives in 25 min")
+        #expect(formatters.deviationLabel(for: busB, now: entry0) == "arrives 2 min late")
+        #expect(formatters.shortFormattedTime(until: busImminent, now: entry0) == "10m")
+
+        // Entry 1 (T0 + 10m): busA drops off; busB counts down to 15m and busImminent becomes NOW.
+        let entry1 = plan.entryDates[1]
+        #expect(entry1 == upcoming(10))
+        #expect(WidgetTimelinePlanner.departures(departures, visibleAt: entry1).map(\.tripID) == ["trip_10_30s", "trip_25_late"])
+        #expect(formatters.shortFormattedTime(until: busB, now: entry1) == "15m")
+        #expect(formatters.explanation(from: busB, now: entry1) == "Arrives in 15 min")
+        #expect(formatters.shortFormattedTime(until: busImminent, now: entry1) == "NOW")
+        #expect(formatters.explanation(from: busImminent, now: entry1) == "Arriving now")
+
+        // After busB passes (T0 + 26m): deviation flips to past tense.
+        let afterBusB = upcoming(26)
+        #expect(formatters.deviationLabel(for: busB, now: afterBusB) == "arrived 2 min late")
+
+        // Offline timetable departures also advance cleanly against entry.date.
+        let scheduledB = ScheduledDeparture(tripID: "sched_b", routeID: "r1", tripHeadsign: "Downtown", route: nil, date: upcoming(25))
+        let scheduledImminent = ScheduledDeparture(tripID: "sched_now", routeID: "r1", tripHeadsign: "Downtown", route: nil, date: upcoming(10).addingTimeInterval(30))
+        #expect(scheduledB.minutes(from: entry0) == 25)
+        #expect(scheduledB.minutes(from: entry1) == 15)
+        #expect(scheduledImminent.minutes(from: entry1) == 0)
+    }
 }

@@ -75,6 +75,34 @@ final class ArrivalDepartureTimeTests {
         #expect(try departure(remaining: 30, tripID: "trip_c").arrivalDepartureMinutes == 0)
     }
 
+    @Test func `Reference-date arrivalDepartureMinutes and temporalState evaluate against the given date`() throws {
+        // Fixed departure timestamp; nothing in this test depends on wall-clock Date.now.
+        let base = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let depSeconds = Int(base.addingTimeInterval(25 * 60).timeIntervalSinceReferenceDate)
+        let dep = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: depSeconds,
+            scheduledDeparture: depSeconds,
+            stopSequence: 1,
+            tripID: "trip_ref_date"
+        )
+
+        #expect(dep.arrivalDepartureMinutes(from: base) == 25)
+        #expect(dep.temporalState(at: base) == .future)
+
+        let tenMinutesLater = base.addingTimeInterval(10 * 60)
+        #expect(dep.arrivalDepartureMinutes(from: tenMinutesLater) == 15)
+        #expect(dep.temporalState(at: tenMinutesLater) == .future)
+
+        let thirtySecondsBefore = base.addingTimeInterval(24 * 60 + 30)
+        #expect(dep.arrivalDepartureMinutes(from: thirtySecondsBefore) == 0)
+        #expect(dep.temporalState(at: thirtySecondsBefore) == .present)
+
+        let thirtySecondsAfter = base.addingTimeInterval(25 * 60 + 30)
+        #expect(dep.arrivalDepartureMinutes(from: thirtySecondsAfter) == -1)
+        #expect(dep.temporalState(at: thirtySecondsAfter) == .past)
+    }
+
     // MARK: - BookmarkArrivalsRequest.matching
 
     @Test func `BookmarkArrivalsRequest excludes a departure that happened within the last minute`() throws {

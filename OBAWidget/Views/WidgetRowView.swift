@@ -27,6 +27,12 @@ struct WidgetRowView: View {
     /// departures, shown once the saved real-time ones have all left.
     var scheduledDepartures: [ScheduledDeparture]?
 
+    /// The timeline entry date this row is rendered for. Countdowns and
+    /// accessibility strings are computed relative to `entryDate` rather than
+    /// `Date.now` so future archived timeline entries reflect the time when
+    /// WidgetKit displays them (#1993).
+    var entryDate: Date = .now
+
     /// The stop rows' countdown tint is otherwise their only adherence cue.
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
@@ -112,14 +118,14 @@ struct WidgetRowView: View {
                                     .imageScale(.small)
                                     .accessibilityHidden(true)
                             }
-                            Text(formatters.shortFormattedTime(until: departure))
+                            Text(formatters.shortFormattedTime(until: departure, now: entryDate))
                         }
                         .font(.footnote.weight(.bold))
                         .foregroundStyle(Color(formatters.colorForScheduleStatus(departure.scheduleStatus)))
                     }
                     .accessibilityElement(children: .ignore)
                     // The countdown's tint is inaudible: say the adherence too.
-                    .accessibilityLabel("\(departure.routeAndHeadsign), \(formatters.explanation(from: departure)), \(formatters.deviationLabel(for: departure))")
+                    .accessibilityLabel("\(departure.routeAndHeadsign), \(formatters.explanation(from: departure, now: entryDate)), \(formatters.deviationLabel(for: departure, now: entryDate))")
                 }
             } else if !timetable.isEmpty {
                 ForEach(timetable.prefix(Constants.maxStopDeparturesToShow), id: \.self) { departure in
@@ -130,12 +136,12 @@ struct WidgetRowView: View {
                             .lineLimit(1)
                             .truncationMode(.tail)
                         Spacer()
-                        Text(Self.shortTime(departure, formatters: formatters))
+                        Text(Self.shortTime(departure, formatters: formatters, now: entryDate))
                             .font(.footnote.weight(.bold))
                             .foregroundStyle(Color(formatters.colorForScheduleStatus(.unknown)))
                     }
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(Self.routeAndHeadsign(departure)), \(Self.explanation(departure, formatters: formatters)), \(Strings.scheduledNotRealTime)")
+                    .accessibilityLabel("\(Self.routeAndHeadsign(departure)), \(Self.explanation(departure, formatters: formatters, now: entryDate)), \(Strings.scheduledNotRealTime)")
                 }
             } else {
                 Text(fallbackLabel)
@@ -166,7 +172,7 @@ struct WidgetRowView: View {
             // time" with a concrete clock time reads as a real-time claim the
             // data can't back. Schedule-only trips say "Scheduled/not real-time".
             let display = DepartureTimeDisplay(arrivalDeparture: first, formatters: formatters)
-            let deviation = formatters.deviationLabel(for: first)
+            let deviation = formatters.deviationLabel(for: first, now: entryDate)
 
             (DepartureTimeText.text(for: display)
                 + Text(" · ").foregroundStyle(.tertiary)
@@ -207,19 +213,27 @@ struct WidgetRowView: View {
             .joined(separator: " - ")
     }
 
-    private static func temporalState(_ departure: ScheduledDeparture) -> TemporalState {
-        departure.minutes == 0 ? .present : .future
+    private static func temporalState(forMinutes minutes: Int) -> TemporalState {
+        if minutes < 0 {
+            return .past
+        } else if minutes == 0 {
+            return .present
+        } else {
+            return .future
+        }
     }
 
-    static func shortTime(_ departure: ScheduledDeparture, formatters: Formatters) -> String {
-        formatters.shortFormattedTime(untilMinutes: departure.minutes, temporalState: temporalState(departure))
+    static func shortTime(_ departure: ScheduledDeparture, formatters: Formatters, now: Date = .now) -> String {
+        let minutes = departure.minutes(from: now)
+        return formatters.shortFormattedTime(untilMinutes: minutes, temporalState: temporalState(forMinutes: minutes))
     }
 
-    static func explanation(_ departure: ScheduledDeparture, formatters: Formatters) -> String {
-        formatters.explanationForArrivalDeparture(
-            tempuraState: temporalState(departure),
+    static func explanation(_ departure: ScheduledDeparture, formatters: Formatters, now: Date = .now) -> String {
+        let minutes = departure.minutes(from: now)
+        return formatters.explanationForArrivalDeparture(
+            tempuraState: temporalState(forMinutes: minutes),
             arrivalDepartureStatus: .departing,
-            arrivalDepartureMinutes: departure.minutes
+            arrivalDepartureMinutes: minutes
         )
     }
 
@@ -229,8 +243,8 @@ struct WidgetRowView: View {
         HStack(spacing: 5) {
             ForEach(timetable.prefix(Constants.maxDeparturesToShow), id: \.self) { departure in
                 DepartureTimeBadgeView(
-                    displayText: Self.shortTime(departure, formatters: formatters),
-                    accessibilityLabel: Self.explanation(departure, formatters: formatters),
+                    displayText: Self.shortTime(departure, formatters: formatters, now: entryDate),
+                    accessibilityLabel: Self.explanation(departure, formatters: formatters, now: entryDate),
                     scheduleStatus: .unknown,
                     formatters: formatters
                 )
@@ -245,7 +259,8 @@ struct WidgetRowView: View {
             ForEach(departures?.prefix(Constants.maxDeparturesToShow) ?? [], id: \.self) { departure in
                 DepartureTimeBadgeView(
                     arrivalDeparture: departure,
-                    formatters: formatters
+                    formatters: formatters,
+                    now: entryDate
                 )
             }
         }

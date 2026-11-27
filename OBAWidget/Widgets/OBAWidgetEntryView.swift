@@ -57,7 +57,8 @@ struct OBAWidgetEntryView: View {
                                 bookmark: bookmark,
                                 formatters: formatters,
                                 departures: loadArrivalDeparture(with: bookmark),
-                                scheduledDepartures: loadScheduledDepartures(with: bookmark)
+                                scheduledDepartures: loadScheduledDepartures(with: bookmark),
+                                entryDate: entry.date
                             )
                         }
                     }

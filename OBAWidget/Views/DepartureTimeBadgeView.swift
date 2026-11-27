@@ -16,17 +16,10 @@ struct DepartureTimeBadgeView: View {
     let scheduleStatus: ScheduleStatus
     let formatters: Formatters
 
-    init(arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
+    init(arrivalDeparture: ArrivalDeparture, formatters: Formatters, now: Date = Date()) {
         self.init(
-            displayText: formatters.shortFormattedTime(
-                untilMinutes: arrivalDeparture.arrivalDepartureMinutes,
-                temporalState: arrivalDeparture.temporalState
-            ),
-            accessibilityLabel: formatters.explanationForArrivalDeparture(
-                tempuraState: arrivalDeparture.temporalState,
-                arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
-                arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes
-            ),
+            displayText: formatters.shortFormattedTime(until: arrivalDeparture, now: now),
+            accessibilityLabel: formatters.explanation(from: arrivalDeparture, now: now),
             scheduleStatus: arrivalDeparture.scheduleStatus,
             formatters: formatters
         )
