@@ -116,17 +116,7 @@ public struct TripLiveActivityCardView: View {
             isStale: isStale,
             now: now
         )
-        let pieces = segments.map { segment -> Text in
-            switch segment {
-            case .text(let text):
-                Text(verbatim: text)
-            case .countdown(let departure):
-                TickingCountdownText.spokenText(departure: departure, isLuminanceReduced: isLuminanceReduced)
-            }
-        }
-        // Same ", " joiner as `TripActivityPresenter.spokenString`, which the tests pin.
-        guard let first = pieces.first else { return Text(verbatim: "") }
-        return pieces.dropFirst().reduce(first) { $0 + Text(verbatim: ", ") + $1 }
+        return TripActivityPresenter.spokenText(segments, isLuminanceReduced: isLuminanceReduced)
     }
 
     @ViewBuilder
@@ -221,6 +211,25 @@ public struct TripLiveActivityCardView: View {
     private var resolvedRouteColor: Color {
         guard let hex = staticData.routeColorHex else { return Color(uiColor: ThemeColors.shared.brand) }
         return Color(uiColor: UIColor(hex: hex) ?? ThemeColors.shared.brand)
+    }
+}
+
+public extension TripActivityPresenter {
+    /// Joins spoken segments into one VoiceOver label, splicing ticking
+    /// countdowns between the static text so it keeps pace with the visible
+    /// minutes between pushes. Used by the card and the Dynamic Island.
+    static func spokenText(_ segments: [SpokenSegment], isLuminanceReduced: Bool) -> Text {
+        let pieces = segments.map { segment -> Text in
+            switch segment {
+            case .text(let text):
+                Text(verbatim: text)
+            case .countdown(let departure):
+                TickingCountdownText.spokenText(departure: departure, isLuminanceReduced: isLuminanceReduced)
+            }
+        }
+        // Same ", " joiner as `spokenString`, which the tests pin.
+        guard let first = pieces.first else { return Text(verbatim: "") }
+        return pieces.dropFirst().reduce(first) { $0 + Text(verbatim: ", ") + $1 }
     }
 }
 
