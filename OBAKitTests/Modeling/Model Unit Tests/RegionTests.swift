@@ -280,4 +280,30 @@ final class RegionTests: OBATestCase {
         let inactive = try Fixtures.dictionaryToModel(type: Region.self, dictionary: inactiveDict)
         #expect(inactive.isActive == false)
     }
+
+    // MARK: - RegionBound Spans
+
+    /// `lonSpanMeters` must convert `lat` from degrees to radians before
+    /// calling `cos`, and must multiply by the bound's own `lonSpan`. The old
+    /// implementation did neither, returning meters per degree — and a
+    /// negative value anywhere north of the equator.
+    @Test func `RegionBound longitude span measures the bound`() {
+        let equator = Region.RegionBound(lat: 0, lon: 0, latSpan: 0, lonSpan: 1)
+        expectClose(equator.lonSpanMeters, 111_320, within: 1)
+
+        // A degree of longitude is half as wide at 60° as at the equator.
+        let sixtyNorth = Region.RegionBound(lat: 60, lon: 0, latSpan: 0, lonSpan: 1)
+        expectClose(sixtyNorth.lonSpanMeters, 55_660, within: 1)
+
+        let seattle = Region.RegionBound(lat: 47.6, lon: -122.3, latSpan: 0.5, lonSpan: 0.5)
+        expectClose(seattle.lonSpanMeters, 37_532, within: 1)
+        #expect(seattle.lonSpanMeters > 0)
+    }
+
+    @Test func `RegionBound longitude span scales with the longitude span`() {
+        let halfDegree = Region.RegionBound(lat: 47.6, lon: -122.3, latSpan: 0.5, lonSpan: 0.5)
+        let fullDegree = Region.RegionBound(lat: 47.6, lon: -122.3, latSpan: 0.5, lonSpan: 1.0)
+
+        expectClose(fullDegree.lonSpanMeters, halfDegree.lonSpanMeters * 2, within: 0.001)
+    }
 }

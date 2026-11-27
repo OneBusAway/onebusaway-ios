@@ -483,11 +483,18 @@ public final class Region: NSObject, Identifiable, Codable, Sendable {
         }
 
         var latSpanMeters: CLLocationDistance {
-            111320.0 * latSpan
+            111_320.0 * latSpan
         }
 
+        /// The east-west extent of this bound, in meters.
+        ///
+        /// A degree of longitude is `111_320` meters wide at the equator and
+        /// narrows with the cosine of the latitude, so this multiplies that
+        /// equatorial figure by `cos(lat)` and then by the bound's own
+        /// `lonSpan`. `lat` is in degrees while `cos` expects radians, hence
+        /// the conversion.
         var lonSpanMeters: CLLocationDistance {
-            40075000.0 * cos(lat) / 360.0
+            111_320.0 * cos(lat * .pi / 180.0) * lonSpan
         }
     }
 
