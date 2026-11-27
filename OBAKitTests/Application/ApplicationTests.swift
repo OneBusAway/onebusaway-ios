@@ -307,6 +307,56 @@ final class ApplicationTests: OBATestCase {
         #expect(app.features.obaco == Application.FeatureStatus.off)
     }
 
+    @Test func `Switching to a region without a sidecar clears obacoService and switching back restores it`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        dataLoader.mock(data: Data(), statusCode: 404) { _ in true }
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+
+        let sidecarRegion = Fixtures.pugetSoundRegion
+        let noSidecarRegion = Fixtures.customMinneapolisRegion
+        try #require(sidecarRegion.sidecarBaseURL != nil)
+        try #require(noSidecarRegion.sidecarBaseURL == nil)
+
+        // Start in a region with an Obaco sidecar.
+        app.regionsService.currentRegion = sidecarRegion
+        #expect(app.obacoService?.regionID == sidecarRegion.regionIdentifier)
+        #expect(app.alertsStore.obacoService != nil)
+        #expect(app.donationsManager.obacoService != nil)
+        #expect(app.features.obaco == .running)
+
+        var postedObjects: [Any?] = []
+        let token = app.notificationCenter.addObserver(
+            forName: app.obacoServiceUpdatedNotification,
+            object: nil,
+            queue: nil
+        ) { notification in
+            postedObjects.append(notification.object)
+        }
+        defer { app.notificationCenter.removeObserver(token) }
+
+        // Switch to a region without a sidecar: obacoService and all dependents must clear.
+        app.regionsService.currentRegion = noSidecarRegion
+        #expect(app.obacoService == nil)
+        #expect(app.alertsStore.obacoService == nil)
+        #expect(app.donationsManager.obacoService == nil)
+        #expect(app.features.obaco == .off)
+        #expect(postedObjects.count == 1)
+        #expect(postedObjects.first.flatMap { $0 } == nil)
+
+        // Switch back to a sidecar region: obacoService and dependents must restore.
+        app.regionsService.currentRegion = sidecarRegion
+        #expect(app.obacoService?.regionID == sidecarRegion.regionIdentifier)
+        #expect(app.alertsStore.obacoService != nil)
+        #expect(app.donationsManager.obacoService != nil)
+        #expect(app.features.obaco == .running)
+        #expect(postedObjects.count == 2)
+        #expect((postedObjects.last as? ObacoAPIService)?.regionID == sidecarRegion.regionIdentifier)
+    }
+
     @Test func `Features push status off when no provider`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)

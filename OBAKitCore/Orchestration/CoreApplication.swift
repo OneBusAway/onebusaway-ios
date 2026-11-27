@@ -347,7 +347,10 @@ open class CoreApplication: NSObject,
         guard
             let region = regionsService.currentRegion,
             let baseURL = region.sidecarBaseURL
-        else { return }
+        else {
+            obacoService = nil
+            return
+        }
 
         let configuration = APIServiceConfiguration(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier)
         obacoService = ObacoAPIService(regionID: region.regionIdentifier, delegate: self, configuration: configuration, dataLoader: config.dataLoader)
