@@ -319,24 +319,25 @@ public struct LiveActivityControlHandler: Sendable {
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         let resolved = store.region(bundledRegionsFilePath: bundledRegionsFilePath)
 
-        if regionID != 0 {
-            if let resolved, resolved.regionIdentifier == regionID {
-                return resolved
-            }
-            if let bundledRegionsFilePath,
-               let data = FileManager.default.contents(atPath: bundledRegionsFilePath) {
-                let bundled: [Region]? = if let response = try? JSONDecoder.RESTDecoder().decode(RESTAPIResponse<[Region]>.self, from: data) {
-                    response.list
-                } else {
-                    try? JSONDecoder.RESTDecoder().decode([Region].self, from: data)
-                }
-                if let match = bundled?.first(where: { $0.regionIdentifier == regionID }) {
-                    return match
-                }
-            }
+        guard regionID != 0 else {
+            return resolved
         }
 
-        return resolved
+        if let resolved, resolved.regionIdentifier == regionID {
+            return resolved
+        }
+        if let bundledRegionsFilePath,
+           let data = FileManager.default.contents(atPath: bundledRegionsFilePath) {
+            let bundled: [Region]? = if let response = try? JSONDecoder.RESTDecoder().decode(RESTAPIResponse<[Region]>.self, from: data) {
+                response.list
+            } else {
+                try? JSONDecoder.RESTDecoder().decode([Region].self, from: data)
+            }
+            if let match = bundled?.first(where: { $0.regionIdentifier == regionID }) {
+                return match
+            }
+        }
+        return nil
     }
 
     // MARK: - Live ActivityKit Adapters

@@ -121,6 +121,52 @@ final class LiveActivityControlsTests: OBATestCase {
         #expect(registry.deleteURL(forActivityID: activityID) == nil)
     }
 
+    @Test func `Non-bundled regionID differing from stored region does not fall back to stored region`() async throws {
+        ResolvedRegionStore(userDefaults: userDefaults).write(Fixtures.pugetSoundRegion)
+        let regionsBundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("regions-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: regionsBundleURL) }
+        try Fixtures.loadData(file: "regions-v3.json").write(to: regionsBundleURL)
+
+        let customRegionID = 999_999
+        let resolved = LiveActivityControlHandler.resolveRegion(
+            regionID: customRegionID,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: regionsBundleURL.path
+        )
+        #expect(resolved == nil)
+
+        let customStaticData = TripAttributes.StaticData(
+            routeShortName: "1 Line",
+            routeHeadsign: "Downtown",
+            stopID: "99_stop",
+            regionID: customRegionID
+        )
+        let activityID = "activity-custom-region"
+        let deleteURLString = "https://custom-sidecar.example.com/api/v1/regions/\(customRegionID)/live_activities/\(activityID)"
+        userDefaults.set([activityID: deleteURLString], forKey: LiveActivityRegistry.deleteURLsDefaultsKey)
+        let registry = LiveActivityRegistry(userDefaults: userDefaults, obacoServiceProvider: { nil })
+
+        let dataLoader = MockDataLoader(testName: name)
+        let handler = LiveActivityControlHandler(
+            appGroupIdentifier: userDefaultsSuiteName,
+            bundledRegionsFilePath: regionsBundleURL.path,
+            restServerAPIKey: apiKey,
+            appVersion: appVersion,
+            dataLoader: dataLoader,
+            endActivity: { _, _ in true },
+            loadStaticData: { id in id == activityID ? customStaticData : nil },
+            updateActivity: { _, _, _ in true }
+        )
+
+        #expect(await handler.refresh(activityID: activityID) == .missingConfiguration)
+        #expect(dataLoader.recordedRequestURLs.isEmpty)
+
+        #expect(await handler.end(activityID: activityID) == .ended)
+        #expect(dataLoader.recordedRequestURLs.isEmpty)
+        #expect(registry.deleteURL(forActivityID: activityID)?.absoluteString == deleteURLString)
+    }
+
     // MARK: - Refresh Action
 
     private struct AppliedUpdate: Equatable {
