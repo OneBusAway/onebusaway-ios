@@ -1082,12 +1082,15 @@ final class ApplicationTests: OBATestCase {
 // MARK: - Mock Classes for Push Service Testing
 
 @MainActor
-class MockPushServiceProvider: NSObject, PushServiceProvider {
+class MockPushServiceProvider: NSObject, PushServicePushIDErrorReporting {
     var isRegisteredForRemoteNotifications: Bool = false
     var notificationReceivedHandler: PushServiceNotificationReceivedHandler!
     var errorHandler: PushServiceErrorHandler!
     var pushUserID: PushManagerUserID?
     var deviceTokenUpdatedHandler: PushServiceDeviceTokenCallback?
+
+    /// When set, `pushID()` fails with this error instead of returning a token.
+    var pushIDError: Error?
 
     func start(launchOptions: [AnyHashable: Any]) {
         // Mock implementation
@@ -1095,5 +1098,16 @@ class MockPushServiceProvider: NSObject, PushServiceProvider {
 
     func requestPushID(_ callback: @escaping PushManagerUserIDCallback) {
         callback("mock-push-id")
+    }
+
+    func requestPushID(
+        _ callback: @escaping PushManagerUserIDCallback,
+        onError: @escaping PushServicePushIDErrorCallback
+    ) {
+        if let pushIDError {
+            onError(pushIDError)
+        } else {
+            callback("mock-push-id")
+        }
     }
 }

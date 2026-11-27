@@ -262,6 +262,8 @@ If `AppConfig.pushServiceProvider` is nil (as in KiedyBus today), the entire pus
 
 A custom `PushServiceProvider` (e.g. wrapping a third-party push SDK) must satisfy the protocol in `PushService.swift`; the non-obvious requirement is invoking `deviceTokenUpdatedHandler` on **every** token delivery, including rotations — that callback is what keeps rotated tokens registered.
 
+A custom provider must also adopt `PushServicePushIDErrorReporting` (or awaiters of `PushService.pushID()` have no way to learn that authorization was denied or APNs registration failed, and wait forever). Invoking `onError` on those paths is what lets the alarm flow report the failure instead of hanging.
+
 ### 5.2 Non-OBAKit client (Android, forks, etc.)
 
 Implement the server contract directly:

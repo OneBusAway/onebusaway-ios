@@ -15,6 +15,8 @@ import OBAKitCore
 
 public typealias PushManagerUserID = String
 public typealias PushManagerUserIDCallback = ((PushManagerUserID) -> Void)
+/// Reports why a push ID request could not be satisfied.
+public typealias PushServicePushIDErrorCallback = ((Error) -> Void)
 public typealias PushServiceNotificationReceivedHandler = ((String, [AnyHashable: Any]?) -> Void)
 public typealias PushServiceErrorHandler = ((Error) -> Void)
 /// Carries the hex-encoded APNs device token (distinct from a provider's push user ID).
@@ -22,7 +24,7 @@ public typealias PushServiceDeviceTokenCallback = (String) -> Void
 
 // MARK: - Errors
 
-public enum PushErrors: Error {
+public enum PushErrors: Error, Equatable {
     case authorizationDenied
 }
 
@@ -43,6 +45,25 @@ public protocol PushServiceProvider: NSObjectProtocol {
     var deviceTokenUpdatedHandler: PushServiceDeviceTokenCallback? { get set }
 
     var pushUserID: PushManagerUserID? { get }
+}
+
+/// A push provider that can also report *why* it could not produce a push ID.
+///
+/// ``PushServiceProvider`` only offers the success-only `requestPushID(_:)`, so
+/// a provider that denies authorization or fails to register can leave its
+/// callers waiting forever. Providers that can fail should adopt this protocol;
+/// ``PushService/pushID()`` prefers it and throws the reported error instead of
+/// suspending. A provider that does not adopt it keeps the old behavior.
+public protocol PushServicePushIDErrorReporting: PushServiceProvider {
+    /// Requests a push ID, reporting failure through `onError` instead of only
+    /// the provider's global ``PushServiceProvider/errorHandler``.
+    ///
+    /// Exactly one of `callback` and `onError` must be invoked, or a caller
+    /// awaiting ``PushService/pushID()`` suspends forever.
+    func requestPushID(
+        _ callback: @escaping PushManagerUserIDCallback,
+        onError: @escaping PushServicePushIDErrorCallback
+    )
 }
 
 // MARK: - PushServiceDelegate
@@ -163,10 +184,29 @@ public class PushService: NSObject {
         serviceProvider.requestPushID(callback)
     }
 
-    public func pushID() async -> PushManagerUserID {
-        await withCheckedContinuation { continuation in
-            serviceProvider.requestPushID { userID in
-                continuation.resume(returning: userID)
+    /// Waits for the APNs device token.
+    ///
+    /// Throws when the provider can report a failure — notification
+    /// authorization was denied, or APNs registration failed. Those paths used
+    /// to never resume the continuation, so the caller stayed suspended forever.
+    ///
+    /// A provider that does not adopt ``PushServicePushIDErrorReporting`` has no
+    /// way to report failure and keeps the old wait-forever behavior.
+    public func pushID() async throws -> PushManagerUserID {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PushManagerUserID, Error>) in
+            if let errorReporting = serviceProvider as? PushServicePushIDErrorReporting {
+                errorReporting.requestPushID(
+                    { userID in
+                        continuation.resume(returning: userID)
+                    },
+                    onError: { error in
+                        continuation.resume(throwing: error)
+                    }
+                )
+            } else {
+                serviceProvider.requestPushID { userID in
+                    continuation.resume(returning: userID)
+                }
             }
         }
     }
