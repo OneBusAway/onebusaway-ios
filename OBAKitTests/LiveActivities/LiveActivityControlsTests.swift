@@ -30,19 +30,20 @@ final class LiveActivityControlsTests: OBATestCase {
 
     // MARK: - End Action
 
-    @Test func `End handler invokes immediate dismissal for target activity ID`() async {
+    @Test func `End handler invokes immediate dismissal and forwards regionID for target activity ID`() async {
         let recorded = SendableBox<(activityID: String, policy: ActivityUIDismissalPolicy)?>(nil)
-        let didEndID = SendableBox<String?>(nil)
+        let didEnd = SendableBox<(activityID: String, regionID: Int)?>(nil)
+        let expectedStaticData = staticData
 
         let handler = LiveActivityControlHandler(
             endActivity: { activityID, policy in
                 recorded.value = (activityID, policy)
                 return true
             },
-            onDidEnd: { activityID in
-                didEndID.value = activityID
+            onDidEnd: { activityID, regionID in
+                didEnd.value = (activityID, regionID)
             },
-            loadStaticData: { _ in nil },
+            loadStaticData: { _ in expectedStaticData },
             fetchStopArrivals: { _, _ in [] },
             updateActivity: { _, _, _ in false }
         )
@@ -52,7 +53,8 @@ final class LiveActivityControlsTests: OBATestCase {
         #expect(result == .ended)
         #expect(recorded.value?.activityID == "activity-42")
         #expect(recorded.value?.policy == .immediate)
-        #expect(didEndID.value == "activity-42")
+        #expect(didEnd.value?.activityID == "activity-42")
+        #expect(didEnd.value?.regionID == expectedStaticData.regionID)
     }
 
     @Test func `End handler gracefully no-ops when activity ID is empty or missing`() async {
@@ -63,7 +65,7 @@ final class LiveActivityControlsTests: OBATestCase {
                 endCallCount.value += 1
                 return false
             },
-            onDidEnd: { _ in
+            onDidEnd: { _, _ in
                 Issue.record("onDidEnd should not be called when activity is missing")
             },
             loadStaticData: { _ in nil },
@@ -76,6 +78,47 @@ final class LiveActivityControlsTests: OBATestCase {
 
         #expect(await handler.end(activityID: "missing-id") == .notFound)
         #expect(endCallCount.value == 1)
+    }
+
+    @Test func `End handler unregisters using activity staticData regionID when store holds another region`() async throws {
+        // Store currently points to a custom region without an Obaco sidecar, while the ended
+        // Live Activity belongs to Puget Sound (region 1).
+        ResolvedRegionStore(userDefaults: userDefaults).write(Fixtures.customMinneapolisRegion)
+        let regionsBundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("regions-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: regionsBundleURL) }
+        try Fixtures.loadData(file: "regions-v3.json").write(to: regionsBundleURL)
+
+        let pugetSoundSidecar = try #require(Fixtures.pugetSoundRegion.sidecarBaseURL)
+        let activityID = "activity-puget-sound"
+        let deleteURLString = pugetSoundSidecar
+            .appendingPathComponent("api/v1/regions/1/live_activities/\(activityID)")
+            .absoluteString
+        userDefaults.set([activityID: deleteURLString], forKey: LiveActivityRegistry.deleteURLsDefaultsKey)
+        let registry = LiveActivityRegistry(userDefaults: userDefaults, obacoServiceProvider: { nil })
+
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Data()) { request in
+            request.httpMethod == "DELETE"
+                && request.url?.absoluteString == deleteURLString
+        }
+
+        let handler = LiveActivityControlHandler(
+            appGroupIdentifier: userDefaultsSuiteName,
+            bundledRegionsFilePath: regionsBundleURL.path,
+            restServerAPIKey: apiKey,
+            appVersion: appVersion,
+            dataLoader: dataLoader,
+            endActivity: { _, _ in true },
+            loadStaticData: { [staticData] id in id == activityID ? staticData : nil }
+        )
+
+        let result = await handler.end(activityID: activityID)
+
+        #expect(result == .ended)
+        #expect(dataLoader.recordedRequestURLs.count == 1)
+        #expect(dataLoader.recordedRequestURLs.first?.absoluteString == deleteURLString)
+        #expect(registry.deleteURL(forActivityID: activityID) == nil)
     }
 
     // MARK: - Refresh Action
@@ -202,6 +245,38 @@ final class LiveActivityControlsTests: OBATestCase {
         #expect(updateCallCount.value == 0)
     }
 
+    @Test func `Refresh handler leaves activity untouched when no matching upcoming arrivals exist`() async throws {
+        let pastMatching = try makeArrival(
+            routeShortName: "1 Line",
+            headsign: "Downtown",
+            tripID: "trip_past",
+            departureDate: now.addingTimeInterval(-60)
+        )
+        let otherRouteUpcoming = try makeArrival(
+            routeShortName: "2 Line",
+            headsign: "Downtown",
+            tripID: "trip_other_route",
+            departureDate: now.addingTimeInterval(300)
+        )
+        let updateCallCount = SendableBox(0)
+
+        let handler = LiveActivityControlHandler(
+            endActivity: { _, _ in false },
+            loadStaticData: { [staticData] _ in staticData },
+            fetchStopArrivals: { _, _ in [pastMatching, otherRouteUpcoming] },
+            updateActivity: { _, _, _ in
+                updateCallCount.value += 1
+                return true
+            },
+            now: { [now] in now }
+        )
+
+        let result = await handler.refresh(activityID: "activity-1")
+
+        #expect(result == .noMatchingArrivals)
+        #expect(updateCallCount.value == 0)
+    }
+
     @Test func `Widget-configured handler fetches REST arrivals and handles missing API key`() async throws {
         let stopArrivals = try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals_and_departures_for_stop_1_29261.json")
         let firstArrival = try #require(stopArrivals.arrivalsAndDepartures.first)
@@ -259,23 +334,30 @@ final class LiveActivityControlsTests: OBATestCase {
 
     // MARK: - AppIntents Metadata & Localization
 
-    @Test func `Widget AppIntents metadata registers non-launching LiveActivityIntents`() throws {
-        let widgetPluginURL = Bundle.main.builtInPlugInsURL?.appendingPathComponent("OBAWidget.appex")
-        let actionsDataURL = widgetPluginURL?.appendingPathComponent("Metadata.appintents/extract.actionsdata")
-        guard let actionsDataURL, FileManager.default.fileExists(atPath: actionsDataURL.path) else {
-            return
-        }
+    @Test func `App and Widget AppIntents metadata registers non-launching LiveActivityIntents`() throws {
+        let appActionsDataURL = Bundle.main.bundleURL.appendingPathComponent("Metadata.appintents/extract.actionsdata")
+        let widgetPluginURL = try #require(
+            Bundle.main.builtInPlugInsURL?.appendingPathComponent("OBAWidget.appex"),
+            "Expected embedded OBAWidget.appex in test host bundle"
+        )
+        let widgetActionsDataURL = widgetPluginURL.appendingPathComponent("Metadata.appintents/extract.actionsdata")
 
-        let data = try Data(contentsOf: actionsDataURL)
-        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
-        let actions = json["actions"] as? [String: Any] ?? [:]
+        for (label, actionsDataURL) in [("App", appActionsDataURL), ("OBAWidget", widgetActionsDataURL)] {
+            try #require(
+                FileManager.default.fileExists(atPath: actionsDataURL.path),
+                "Missing \(label) Metadata.appintents/extract.actionsdata at \(actionsDataURL.path)"
+            )
+            let data = try Data(contentsOf: actionsDataURL)
+            let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            let actions = json["actions"] as? [String: Any] ?? [:]
 
-        for intentName in ["EndLiveActivityIntent", "RefreshLiveActivityIntent"] {
-            let metadata = try #require(actions[intentName] as? [String: Any], "Missing \(intentName) in OBAWidget Metadata.appintents")
-            let isDiscoverable = metadata["isDiscoverable"] as? Bool ?? true
-            #expect(!isDiscoverable, "\(intentName) should not be discoverable in Shortcuts")
-            let openAppWhenRun = metadata["openAppWhenRun"] as? Bool ?? false
-            #expect(!openAppWhenRun, "\(intentName) must keep openAppWhenRun == false")
+            for intentName in ["EndLiveActivityIntent", "RefreshLiveActivityIntent"] {
+                let metadata = try #require(actions[intentName] as? [String: Any], "Missing \(intentName) in \(label) Metadata.appintents")
+                let isDiscoverable = metadata["isDiscoverable"] as? Bool ?? true
+                #expect(!isDiscoverable, "\(intentName) in \(label) should not be discoverable in Shortcuts")
+                let openAppWhenRun = metadata["openAppWhenRun"] as? Bool ?? false
+                #expect(!openAppWhenRun, "\(intentName) in \(label) must keep openAppWhenRun == false")
+            }
         }
     }
 

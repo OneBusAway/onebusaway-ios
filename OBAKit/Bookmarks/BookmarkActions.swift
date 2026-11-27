@@ -124,11 +124,7 @@ final class BookmarkActions {
         for staticData: TripAttributes.StaticData,
         arrivalDepartures: [ArrivalDeparture]
     ) -> ArrivalDeparture? {
-        if !staticData.tripID.isEmpty,
-           let tracked = arrivalDepartures.first(where: { $0.tripID == staticData.tripID }) {
-            return tracked
-        }
-        return arrivalDepartures.first
+        TripActivityContentBuilder.primaryArrival(for: staticData, in: arrivalDepartures)
     }
 
     /// Builds refreshed content for a running bookmark Live Activity.
@@ -142,22 +138,14 @@ final class BookmarkActions {
         for staticData: TripAttributes.StaticData,
         arrivalDepartures: [ArrivalDeparture]
     ) -> TripAttributes.ContentState? {
-        guard !arrivalDepartures.isEmpty else { return nil }
-        if !staticData.tripID.isEmpty,
-           let tracked = arrivalDepartures.first(where: { $0.tripID == staticData.tripID }) {
-            return buildContentState(from: arrivalDepartures, matching: tracked)
-        }
-        return buildContentState(from: arrivalDepartures)
+        TripActivityContentBuilder.buildRefreshContentState(for: staticData, arrivalDepartures: arrivalDepartures)
     }
 
     /// Builds content from whatever arrivals a bookmark row has loaded, or `nil`
     /// when it has none — the bookmark paths have no single departure to fall
     /// back on, so an empty list really is a failure for them.
     static func buildContentState(from arrivalDepartures: [ArrivalDeparture]) -> TripAttributes.ContentState? {
-        guard !arrivalDepartures.isEmpty else {
-            return nil
-        }
-        return contentState(from: arrivalDepartures)
+        TripActivityContentBuilder.buildContentState(from: arrivalDepartures)
     }
 
     /// Builds content for the trip the rider actually tracked.
@@ -199,16 +187,7 @@ final class BookmarkActions {
         // card with no arrivals rather than being refused, so say so in debug
         // rather than shipping a blank Live Activity.
         assert(!arrivalDepartures.isEmpty, "contentState(from:) needs at least one arrival")
-
-        let arrivals = arrivalDepartures.prefix(3).map { arrDep in
-            TripAttributes.ContentState.ArrivalInfo(
-                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
-                scheduleStatus: .init(arrDep.scheduleStatus),
-                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
-                isArrival: arrDep.arrivalDepartureStatus == .arriving
-            )
-        }
-        return TripAttributes.ContentState(arrivals: Array(arrivals))
+        return TripActivityContentBuilder.buildContentState(from: arrivalDepartures) ?? TripAttributes.ContentState(arrivals: [])
     }
 
     @discardableResult

@@ -1,6 +1,6 @@
 //
 //  LiveActivityIntents.swift
-//  OBAWidget
+//  OneBusAway
 //
 //  Copyright © Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
@@ -11,8 +11,9 @@ import AppIntents
 import Foundation
 import OBAKitCore
 
-/// Shared control handler configured for the `OBAWidget` extension bundle.
-private enum LiveActivityWidgetController {
+/// Shared control handler configured from the executing bundle (`App.app` when
+/// the system invokes a `LiveActivityIntent` in the app process, or `OBAWidget.appex`).
+private enum LiveActivityIntentController {
     static func makeHandler() -> LiveActivityControlHandler {
         LiveActivityControlHandler(
             appGroupIdentifier: Bundle.main.appGroup,
@@ -23,8 +24,11 @@ private enum LiveActivityWidgetController {
     }
 }
 
-/// Refreshes a running Live Activity's departures directly from the widget extension
-/// without launching the main app.
+/// Refreshes a running Live Activity's departures without opening the app UI.
+///
+/// Conforms to `LiveActivityIntent` and is compiled into both the `App` target
+/// (where `LiveActivityIntent.perform()` runs in a backgrounded app process) and
+/// `OBAWidget` (whose `Button(intent:)` references the type).
 struct RefreshLiveActivityIntent: LiveActivityIntent {
     static let title = LocalizedStringResource(
         "refresh_live_activity_intent.title",
@@ -50,13 +54,16 @@ struct RefreshLiveActivityIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        await LiveActivityWidgetController.makeHandler().refresh(activityID: activityID)
+        await LiveActivityIntentController.makeHandler().refresh(activityID: activityID)
         return .result()
     }
 }
 
-/// Immediately ends and dismisses a running Live Activity from the Lock Screen card
-/// without launching the main app.
+/// Immediately ends and dismisses a running Live Activity without opening the app UI.
+///
+/// Conforms to `LiveActivityIntent` and is compiled into both the `App` target
+/// (where `LiveActivityIntent.perform()` runs in a backgrounded app process) and
+/// `OBAWidget` (whose `Button(intent:)` references the type).
 struct EndLiveActivityIntent: LiveActivityIntent {
     static let title = LocalizedStringResource(
         "end_live_activity_intent.title",
@@ -82,7 +89,7 @@ struct EndLiveActivityIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        await LiveActivityWidgetController.makeHandler().end(activityID: activityID)
+        await LiveActivityIntentController.makeHandler().end(activityID: activityID)
         return .result()
     }
 }

@@ -20,7 +20,7 @@ import Foundation
 /// or `WidgetKit`.
 public struct LiveActivityControlHandler: Sendable {
     public typealias EndActivity = @Sendable (_ activityID: String, _ dismissalPolicy: ActivityUIDismissalPolicy) async -> Bool
-    public typealias OnDidEnd = @Sendable (_ activityID: String) async -> Void
+    public typealias OnDidEnd = @Sendable (_ activityID: String, _ regionID: Int) async -> Void
     public typealias LoadStaticData = @Sendable (_ activityID: String) -> TripAttributes.StaticData?
     public typealias FetchStopArrivals = @Sendable (_ stopID: StopID, _ regionID: Int) async throws -> [ArrivalDeparture]
     public typealias UpdateActivity = @Sendable (_ activityID: String, _ state: TripAttributes.ContentState, _ staleDate: Date?) async -> Bool
@@ -34,6 +34,7 @@ public struct LiveActivityControlHandler: Sendable {
         case updated(TripAttributes.ContentState, staleDate: Date)
         case notFound
         case missingConfiguration
+        case noMatchingArrivals
         case failed
     }
 
@@ -109,7 +110,7 @@ public struct LiveActivityControlHandler: Sendable {
     }
 
     /// Configures a handler backed by the app group defaults and bundle settings
-    /// available inside the widget extension process.
+    /// available to either the app or widget extension process.
     public init(
         appGroupIdentifier: String?,
         bundledRegionsFilePath: String?,
@@ -196,7 +197,7 @@ public struct LiveActivityControlHandler: Sendable {
         appVersion: String,
         dataLoader: URLDataLoader
     ) -> OnDidEnd {
-        { activityID in
+        { activityID, regionID in
             guard let appGroupIdentifier,
                   let userDefaults = UserDefaults(suiteName: appGroupIdentifier),
                   let apiKey,
@@ -208,7 +209,7 @@ public struct LiveActivityControlHandler: Sendable {
                 userDefaults: userDefaults,
                 obacoServiceProvider: {
                     guard let region = Self.resolveRegion(
-                        regionID: 0,
+                        regionID: regionID,
                         userDefaults: userDefaults,
                         bundledRegionsFilePath: bundledRegionsFilePath
                     ),
@@ -237,13 +238,15 @@ public struct LiveActivityControlHandler: Sendable {
             return .notFound
         }
 
+        let regionID = loadStaticData(activityID)?.regionID ?? 0
+
         let ended = await endActivity(activityID, Self.endDismissalPolicy)
         guard ended else {
             Logger.info("Live Activity \(activityID) not found; skipping end.")
             return .notFound
         }
 
-        await onDidEnd?(activityID)
+        await onDidEnd?(activityID, regionID)
         Logger.info("Ended Live Activity \(activityID) with immediate dismissal.")
         return .ended
     }
@@ -267,7 +270,10 @@ public struct LiveActivityControlHandler: Sendable {
         }
 
         let refreshDate = now()
-        let contentState = Self.contentState(for: staticData, from: stopArrivals, now: refreshDate)
+        guard let contentState = Self.contentState(for: staticData, from: stopArrivals, now: refreshDate) else {
+            Logger.info("Live Activity \(activityID) refresh found no matching upcoming arrivals; leaving existing content untouched.")
+            return .noMatchingArrivals
+        }
         let staleDate = Self.staleDate(from: refreshDate, interval: staleInterval)
 
         let updated = await updateActivity(activityID, contentState, staleDate)
@@ -288,47 +294,17 @@ public struct LiveActivityControlHandler: Sendable {
         from stopArrivals: [ArrivalDeparture],
         now: Date = Date()
     ) -> [ArrivalDeparture] {
-        let upcoming = stopArrivals
-            .filter { $0.arrivalDepartureDate >= now }
-            .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
-
-        if !staticData.tripID.isEmpty {
-            let pinned = upcoming.filter { $0.tripID == staticData.tripID }
-            if !pinned.isEmpty {
-                return pinned
-            }
-        }
-
-        return upcoming.filter { arrival in
-            guard arrival.routeShortName == staticData.routeShortName else {
-                return false
-            }
-            if staticData.routeHeadsign.isEmpty {
-                return true
-            }
-            return (arrival.tripHeadsign ?? "") == staticData.routeHeadsign
-        }
+        TripActivityContentBuilder.matchingUpcomingArrivals(for: staticData, from: stopArrivals, now: now)
     }
 
-    /// Maps up to the next three matching upcoming arrivals into `TripAttributes.ContentState`.
+    /// Maps up to the next three matching upcoming arrivals into `TripAttributes.ContentState`,
+    /// returning `nil` if no matching upcoming arrivals exist.
     public static func contentState(
         for staticData: TripAttributes.StaticData,
         from stopArrivals: [ArrivalDeparture],
         now: Date = Date()
-    ) -> TripAttributes.ContentState {
-        let matching = matchingUpcomingArrivals(for: staticData, from: stopArrivals, now: now)
-        let arrivals = matching.prefix(3).map { arrDep in
-            // `TripAttributes.ContentState.ArrivalInfo.departureTime` is part of the
-            // iOS-only ActivityKit wire contract (`Int` epoch seconds).
-            let epochSeconds = Int64(arrDep.arrivalDepartureDate.timeIntervalSince1970)
-            return TripAttributes.ContentState.ArrivalInfo(
-                departureTime: Int(epochSeconds),
-                scheduleStatus: .init(arrDep.scheduleStatus),
-                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
-                isArrival: arrDep.arrivalDepartureStatus == .arriving
-            )
-        }
-        return TripAttributes.ContentState(arrivals: Array(arrivals))
+    ) -> TripAttributes.ContentState? {
+        TripActivityContentBuilder.refreshContentState(for: staticData, from: stopArrivals, now: now)
     }
 
     public static func staleDate(from now: Date, interval: TimeInterval = defaultRefreshStaleInterval) -> Date {
