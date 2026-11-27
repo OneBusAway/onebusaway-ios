@@ -123,6 +123,79 @@ final class OBACloudPushServiceTests: OBATestCase {
         #expect(receivedTokens.isEmpty)
     }
 
+    /// The async caller in `PushService.pushID()` needs the failure itself, not
+    /// just the global error handler: without it the continuation is never
+    /// resumed and the caller hangs.
+    @Test func `Did fail delivers the error to error aware callbacks`() {
+        var receivedErrors: [Error] = []
+        var receivedTokens: [String] = []
+
+        service.requestPushID(
+            { receivedTokens.append($0) },
+            onError: { receivedErrors.append($0) }
+        )
+
+        let registrationError = NSError(domain: "test", code: 3000, userInfo: nil)
+        service.didFailToRegisterForRemoteNotifications(withError: registrationError)
+
+        #expect(receivedErrors.count == 1)
+        #expect((receivedErrors.first as NSError?)?.code == 3000)
+        #expect(receivedTokens.isEmpty)
+
+        // The failed request is gone: a late token must not resume it.
+        service.didRegisterForRemoteNotifications(withDeviceToken: Data([0x11]))
+        #expect(receivedTokens.isEmpty)
+    }
+
+    @Test func `Authorization denial fails pending requests with authorizationDenied`() {
+        var receivedErrors: [Error] = []
+        var receivedTokens: [String] = []
+
+        service.requestPushID(
+            { receivedTokens.append($0) },
+            onError: { receivedErrors.append($0) }
+        )
+
+        service.handleAuthorizationResult(granted: false, error: nil)
+
+        #expect(receivedErrors.count == 1)
+        #expect((receivedErrors.first as? PushErrors) == .authorizationDenied)
+        #expect(receivedTokens.isEmpty)
+
+        service.didRegisterForRemoteNotifications(withDeviceToken: Data([0x11]))
+        #expect(receivedTokens.isEmpty)
+    }
+
+    @Test func `Authorization request error fails pending requests with that error`() {
+        var receivedErrors: [Error] = []
+
+        service.requestPushID(
+            { _ in },
+            onError: { receivedErrors.append($0) }
+        )
+
+        let authorizationError = NSError(domain: "test", code: 42, userInfo: nil)
+        service.handleAuthorizationResult(granted: false, error: authorizationError)
+
+        #expect(receivedErrors.count == 1)
+        #expect((receivedErrors.first as NSError?)?.code == 42)
+    }
+
+    @Test func `Error aware request with an existing token succeeds without an error`() {
+        service.didRegisterForRemoteNotifications(withDeviceToken: Data([0xDE, 0xAD]))
+
+        var receivedTokens: [String] = []
+        var receivedErrors: [Error] = []
+
+        service.requestPushID(
+            { receivedTokens.append($0) },
+            onError: { receivedErrors.append($0) }
+        )
+
+        #expect(receivedTokens == ["dead"])
+        #expect(receivedErrors.isEmpty)
+    }
+
     // MARK: - Token Update Handler
 
     @Test func `Did register invokes device token updated handler on every registration`() {

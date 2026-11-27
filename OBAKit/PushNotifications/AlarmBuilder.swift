@@ -133,9 +133,11 @@ class AlarmBuilder: NSObject {
             }
         }
 
-        let userPushID = await pushService.pushID()
         let alarm: Alarm
         do {
+            // Throws when notification permission is denied or APNs
+            // registration fails, rather than suspending here forever.
+            let userPushID = try await pushService.pushID()
             alarm = try await modelService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
         } catch {
             // No actor hop needed: OBAKit builds with

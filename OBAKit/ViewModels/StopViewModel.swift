@@ -931,13 +931,18 @@ class StopViewModel: ObservableObject {
         }
 
         do {
-            let userPushID = await pushService.pushID()
+            let userPushID = try await pushService.pushID()
             let alarm = try await obacoService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
             alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: arrivalDeparture, regionID: region.regionIdentifier)
             alarm.set(tripDate: arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
             recordAlarmCreated(alarm)
             alarmsByDepartureID[arrivalDeparture.id] = alarm
             alarmError = nil
+        } catch PushErrors.authorizationDenied {
+            // The rider answered "Don't Allow" to the first-time prompt that
+            // `pushID()` raised. Same dead end as the `.denied` pre-check above,
+            // so surface Settings guidance instead of a generic alarm error.
+            alarmPermissionDenied = true
         } catch {
             Logger.error("Alarm create failed for \(arrivalDeparture.id): \(error)")
             alarmError = error

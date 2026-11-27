@@ -162,4 +162,28 @@ final class AlarmBuilderTests: OBATestCase {
         #expect(requests.bodies.count == 1)
         #expect(delegate.created.count == 1)
     }
+
+    /// A denied notification prompt (or an APNs registration failure) used to
+    /// leave `pushID()` suspended forever, so this `await` never returned, the
+    /// deferred HUD dismissal never ran, and the alarm flow stayed locked.
+    @Test func `A failed push ID reports an error instead of hanging`() async throws {
+        let loader = MockDataLoader(testName: name)
+        let requests = stubAlarms(loader)
+        let app = try buildApp(loader)
+
+        let provider = MockPushServiceProvider()
+        provider.pushIDError = PushErrors.authorizationDenied
+        app.pushService = PushService(serviceProvider: provider, delegate: app)
+
+        let delegate = RecordingDelegate()
+        let builder = AlarmBuilder(arrivalDeparture: try departure(), application: app, delegate: delegate)
+
+        await builder.createAlarm(minutes: 7)
+
+        #expect(requests.bodies.isEmpty)
+        #expect(delegate.created.isEmpty)
+        #expect(delegate.errors.count == 1)
+        let error = try #require(delegate.errors.first as? AlarmBuilder.AlarmBuilderErrors)
+        #expect(error == .creationFailed)
+    }
 }

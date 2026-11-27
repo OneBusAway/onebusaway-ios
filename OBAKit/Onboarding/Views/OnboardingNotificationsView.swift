@@ -14,9 +14,10 @@ import OBAKitCore
 
 /// Pitches region-wide service-alert notifications, then triggers the OS permission prompt.
 ///
-/// Requests authorization directly (not via `PushService.pushID()`, whose callback never fires
-/// on denial and would hang the flow). On grant it calls `registerForRemoteNotifications()`;
-/// the resulting device token still flows through the existing AppDelegate → PushService wiring.
+/// Requests authorization directly rather than through `PushService.pushID()`: this step advances as
+/// soon as the rider answers the prompt, while `pushID()` waits for the APNs token. On grant it calls
+/// `registerForRemoteNotifications()`; the resulting device token still flows through the existing
+/// AppDelegate → PushService wiring.
 struct OnboardingNotificationsView: View {
     var progress: (index: Int, total: Int)?
     var advance: () -> Void

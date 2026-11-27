@@ -23,7 +23,7 @@ import OBAKitCore
 /// forward its `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` and
 /// `application(_:didFailToRegisterForRemoteNotificationsWithError:)` callbacks to this object.
 @objc(OBACloudPushService)
-public class OBACloudPushService: NSObject, PushServiceProvider {
+public class OBACloudPushService: NSObject, PushServicePushIDErrorReporting {
     /// Called when a push notification is received. Set by ``PushService`` during initialization.
     ///
     /// Setting it delivers any notification tap that arrived before it was set.
@@ -48,8 +48,14 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
     /// The hex-encoded APNs device token, or `nil` if the device has not yet registered.
     private var deviceToken: String?
 
+    /// A caller waiting for the device token, and how to tell it the wait failed.
+    private struct PendingPushIDRequest {
+        let callback: PushManagerUserIDCallback
+        let errorCallback: PushServicePushIDErrorCallback
+    }
+
     /// Callbacks waiting for the device token to become available.
-    private var pendingCallbacks: [PushManagerUserIDCallback] = []
+    private var pendingCallbacks: [PendingPushIDRequest] = []
 
     /// Becomes the notification center's delegate immediately.
     ///
@@ -90,34 +96,57 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
     /// for remote notifications, and all pending callbacks are invoked when the token arrives via
     /// ``didRegisterForRemoteNotifications(withDeviceToken:)``.
     ///
+    /// If authorization is denied or fails, or APNs registration fails, the
+    /// queued callbacks are discarded and their error callbacks are invoked.
+    ///
     /// - Parameter callback: A closure invoked with the hex-encoded device token string.
     public func requestPushID(_ callback: @escaping PushManagerUserIDCallback) {
+        // The success-only API cannot report failure. The failure paths still
+        // notify the global `errorHandler`, so this keeps them leak-free
+        // without reporting the same failure twice.
+        requestPushID(callback, onError: { _ in })
+    }
+
+    /// - Parameter callback: A closure invoked with the hex-encoded device token string.
+    /// - Parameter onError: A closure invoked if the token cannot be produced.
+    public func requestPushID(
+        _ callback: @escaping PushManagerUserIDCallback,
+        onError: @escaping PushServicePushIDErrorCallback
+    ) {
         if let deviceToken {
             callback(deviceToken)
             return
         }
 
-        pendingCallbacks.append(callback)
+        pendingCallbacks.append(PendingPushIDRequest(callback: callback, errorCallback: onError))
 
         // The completion handler runs on a background queue; hop to the main actor
         // before touching state or UIApplication.
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, error in
             Task { @MainActor in
-                guard let self else { return }
-
-                if let error {
-                    self.errorHandler?(error)
-                    return
-                }
-
-                guard granted else {
-                    self.errorHandler?(PushErrors.authorizationDenied)
-                    return
-                }
-
-                UIApplication.shared.registerForRemoteNotifications()
+                self?.handleAuthorizationResult(granted: granted, error: error)
             }
         }
+    }
+
+    /// Applies an authorization result to the queued requests.
+    ///
+    /// Split from the system callback above so tests can drive the denial and
+    /// error branches without depending on the simulator's permission state.
+    func handleAuthorizationResult(granted: Bool, error: Error?) {
+        if let error {
+            failPendingCallbacks(with: error)
+            errorHandler?(error)
+            return
+        }
+
+        guard granted else {
+            failPendingCallbacks(with: PushErrors.authorizationDenied)
+            errorHandler?(PushErrors.authorizationDenied)
+            return
+        }
+
+        UIApplication.shared.registerForRemoteNotifications()
     }
 
     // MARK: - Device Token Handling
@@ -136,23 +165,34 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
 
         deviceTokenUpdatedHandler?(token)
 
-        let callbacks = pendingCallbacks
+        let requests = pendingCallbacks
         pendingCallbacks.removeAll()
-        for callback in callbacks {
-            callback(token)
+        for request in requests {
+            request.callback(token)
         }
     }
 
     /// Handles a failed remote notification registration.
     ///
-    /// Logs the error, forwards it to ``errorHandler``, and clears all pending callbacks.
+    /// Logs the error, forwards it to ``errorHandler``, and fails every pending
+    /// request so callers awaiting a push ID are resumed instead of suspended
+    /// forever.
     /// This method should be called from `application(_:didFailToRegisterForRemoteNotificationsWithError:)`.
     ///
     /// - Parameter error: The error that prevented registration.
     @objc public func didFailToRegisterForRemoteNotifications(withError error: Error) {
         Logger.error("Failed to register for remote notifications: \(error)")
+        failPendingCallbacks(with: error)
         errorHandler?(error)
+    }
+
+    /// Discards every queued request, telling each one why it failed.
+    private func failPendingCallbacks(with error: Error) {
+        let requests = pendingCallbacks
         pendingCallbacks.removeAll()
+        for request in requests {
+            request.errorCallback(error)
+        }
     }
 
 }

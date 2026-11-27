@@ -15,12 +15,13 @@ import Testing
 
 // MARK: - Test Doubles
 
-private class RecordingPushServiceProvider: NSObject, PushServiceProvider {
+private class RecordingPushServiceProvider: NSObject, PushServicePushIDErrorReporting {
     var notificationReceivedHandler: PushServiceNotificationReceivedHandler!
     var errorHandler: PushServiceErrorHandler!
 
     var startedLaunchOptions: [AnyHashable: Any]?
     var stubbedPushUserID: PushManagerUserID? = "mock-token"
+    var stubbedError: Error?
     var isRegisteredForRemoteNotifications: Bool = true
     var deviceTokenUpdatedHandler: PushServiceDeviceTokenCallback?
 
@@ -30,6 +31,17 @@ private class RecordingPushServiceProvider: NSObject, PushServiceProvider {
 
     func requestPushID(_ callback: @escaping PushManagerUserIDCallback) {
         callback(stubbedPushUserID ?? "mock-token")
+    }
+
+    func requestPushID(
+        _ callback: @escaping PushManagerUserIDCallback,
+        onError: @escaping PushServicePushIDErrorCallback
+    ) {
+        if let stubbedError {
+            onError(stubbedError)
+        } else {
+            callback(stubbedPushUserID ?? "mock-token")
+        }
     }
 
     var pushUserID: PushManagerUserID? {
@@ -120,9 +132,22 @@ final class PushServiceTests: OBATestCase {
         #expect(pushService.pushUserID == nil)
     }
 
-    @Test func `Push ID async returns provider token`() async {
-        let token = await pushService.pushID()
+    @Test func `Push ID async returns provider token`() async throws {
+        let token = try await pushService.pushID()
         #expect(token == "mock-token")
+    }
+
+    /// The regression this guards: `pushID()` used to await a continuation the
+    /// provider could never resume, leaving the caller suspended forever.
+    @Test func `Push ID async throws the provider error`() async {
+        struct PushIDFailure: Error, Equatable {}
+
+        let failure = PushIDFailure()
+        provider.stubbedError = failure
+
+        await #expect(throws: failure) {
+            _ = try await pushService.pushID()
+        }
     }
 
     @Test func `Device token updates are forwarded to delegate`() {
