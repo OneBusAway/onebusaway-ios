@@ -15,8 +15,18 @@ import OBAKitCore
 struct GhostBusReportContext {
     let routeAndHeadsign: String
     let stopName: String?
-    let scheduledTime: Date?
+    /// The scheduled time, already formatted with the application formatters
+    /// (region time zone) — see `scheduledTimeText(from:formatters:)`.
+    let scheduledTimeText: String?
     let vehicleID: String?
+
+    /// Formats the scheduled time with the application formatters, so it
+    /// matches the trip page. `Date.formatted` would use the device time zone
+    /// instead, disagreeing with the trip page whenever "show region time
+    /// zone" is on and the zones differ (#2017).
+    static func scheduledTimeText(from date: Date?, formatters: Formatters) -> String? {
+        date.map { formatters.timeFormatter.string(from: $0) }
+    }
 }
 
 /// The "Report Ghost Bus" form: confirm the trip, say how long you waited,
@@ -75,10 +85,10 @@ struct GhostBusReportView: View {
                             value: stopName
                         )
                     }
-                    if let scheduledTime = context.scheduledTime {
+                    if let scheduledTimeText = context.scheduledTimeText {
                         LabeledContent(
                             OBALoc("ghost_bus_report.context.scheduled", value: "Scheduled", comment: "Label for the scheduled time on the ghost bus form."),
-                            value: scheduledTime.formatted(date: .omitted, time: .shortened)
+                            value: scheduledTimeText
                         )
                     }
                     if let vehicleID = context.vehicleID {
