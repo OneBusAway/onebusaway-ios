@@ -280,4 +280,71 @@ final class ResolvedRegionStoreTests: OBATestCase {
         #expect(callbackCount == 0)
         withExtendedLifetime(persister) {}
     }
+
+    @Test @MainActor func `Callback sees dropped-region marker when a trusted refresh retires the current region`() async throws {
+        struct RegionsList: Encodable {
+            let list: [Region]
+        }
+        struct RegionsResponse: Encodable {
+            let code = 200
+            let currentTime = 0
+            let data: RegionsList
+            let text = "OK"
+            let version = 2
+        }
+
+        let expectedPath = regionsAPIPath
+        let dataLoader = MockDataLoader(testName: name)
+        let tampaOnlyPayload = try JSONEncoder.RESTEncoder().encode(
+            RegionsResponse(data: RegionsList(list: [Fixtures.tampaRegion]))
+        )
+        dataLoader.mock(data: tampaOnlyPayload) { [expectedPath] request in
+            request.url?.path == expectedPath
+        }
+
+        let apiConfig = APIServiceConfiguration(
+            baseURL: regionsURL,
+            apiKey: apiKey,
+            uuid: "test-uuid",
+            appVersion: appVersion,
+            regionIdentifier: nil
+        )
+        let regionsAPIService = RegionsAPIService(apiConfig, dataLoader: dataLoader)
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock())
+        let service = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: MockRegionsFileStorage()
+        )
+        service.automaticallySelectRegion = false
+
+        let pugetSound = try #require(service.find(id: pugetSoundRegionIdentifier))
+        service.currentRegion = pugetSound
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(pugetSound)
+
+        var callbackObservations: [(isDropped: Bool, resolvedRegionID: Int?)] = []
+        let persister = ResolvedRegionPersister(
+            regionsService: service,
+            store: store,
+            onRegionIdentifierChanged: { [userDefaults, bundledRegionsPath] in
+                callbackObservations.append((
+                    isDropped: RegionsService.isDroppedRegionIdentifier(pugetSound.regionIdentifier, userDefaults: userDefaults),
+                    resolvedRegionID: store.region(bundledRegionsFilePath: bundledRegionsPath)?.regionIdentifier
+                ))
+            }
+        )
+
+        #expect(callbackObservations.isEmpty)
+
+        try await service.refreshRegions()
+
+        #expect(callbackObservations.count == 1)
+        #expect(callbackObservations.first?.isDropped == true)
+        #expect(callbackObservations.first?.resolvedRegionID == nil)
+        withExtendedLifetime(persister) {}
+    }
 }

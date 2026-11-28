@@ -25,6 +25,7 @@ public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
     private weak var regionsService: RegionsService?
     private let store: ResolvedRegionStore
     private let onRegionIdentifierChanged: (@MainActor () -> Void)?
+    private var lastPersistedRegionID: Int?
 
     public init(
         regionsService: RegionsService,
@@ -34,6 +35,7 @@ public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
         self.regionsService = regionsService
         self.store = store
         self.onRegionIdentifierChanged = onRegionIdentifierChanged
+        self.lastPersistedRegionID = store.storedRegion?.regionIdentifier
         super.init()
 
         // `RegionsService` holds its delegates weakly; the owner retains us.
@@ -51,7 +53,7 @@ public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
     /// actually changes, so region-scoped surfaces (such as the Bookmark control) can reload with
     /// the new region already on disk (#2006).
     public func persist() {
-        let previousID = store.storedRegion?.regionIdentifier
+        let previousID = lastPersistedRegionID
         let newID: Int?
 
         if let currentRegion = regionsService?.currentRegion {
@@ -64,6 +66,7 @@ public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
             return
         }
 
+        lastPersistedRegionID = newID
         if previousID != newID {
             onRegionIdentifierChanged?()
         }

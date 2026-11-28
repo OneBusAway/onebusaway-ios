@@ -216,6 +216,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         didSet {
             if regions.count > 0 {
                 storeRegions()
+                // Record any retired-region dropped marker before notifying delegates so
+                // region-scoped extensions reloading from `updatedRegionsList` never fall
+                // back to the bundled regions file for a just-retired region (#2006).
+                clearRetiredRegionFallback()
                 notifyDelegatesRegionsListUpdated()
                 updateCurrentRegionFromLocation()
             }
@@ -629,8 +633,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             userDefaults.set(true, forKey: RegionsService.hasCompletedSuccessfulRefreshUserDefaultsKey)
             lastRefreshFailed = false
             self.regions = regions
-
-            clearRetiredRegionFallback()
         } catch {
             lastRefreshFailed = true
             throw error
