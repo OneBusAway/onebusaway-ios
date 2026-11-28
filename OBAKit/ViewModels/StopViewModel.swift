@@ -197,6 +197,12 @@ class StopViewModel: ObservableObject {
     /// so a plain `Set` needs no further synchronization).
     private var alarmSetsInFlight: Set<String> = []
 
+    /// The notification permission `setAlarm` checks before asking for a push ID.
+    /// Tests replace it, since the simulator remembers the test host's real answer.
+    var notificationAuthorizationStatus: () async -> UNAuthorizationStatus = {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    }
+
     /// Cache for trip-panel approach timelines, invalidated on each refresh.
 
     private var alarmFiredCancellable: AnyCancellable?
@@ -924,8 +930,7 @@ class StopViewModel: ObservableObject {
         // alarms: pushID() can't yield a deliverable id. Surface Settings
         // guidance instead. (.notDetermined falls through so pushID() triggers
         // the first-time system prompt.)
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        if settings.authorizationStatus == .denied {
+        if await notificationAuthorizationStatus() == .denied {
             alarmPermissionDenied = true
             return
         }

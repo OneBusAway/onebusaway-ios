@@ -1003,6 +1003,44 @@ final class StopViewModelTests: OBATestCase {
         #expect(viewModel.alarmLeadTimeMinutes(alarm) == AlarmLeadTime.defaultMinutes)
     }
 
+    // MARK: - Alarm Creation
+
+    /// The rider tapped "Don't Allow" on the first-time prompt that `pushID()`
+    /// raised. That's the Settings dead end, not a failed alarm, so the page shows
+    /// the Settings guidance and no alarm error.
+    @Test(.timeLimit(.minutes(1))) @MainActor
+    func `Denying the notification prompt while setting an alarm shows the Settings guidance`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let alarmPosts = SendableBox(0)
+        dataLoader.mock(data: Data()) { [alarmPosts] request in
+            guard request.httpMethod == "POST", request.url?.path.hasSuffix("/alarms") ?? false else { return false }
+            alarmPosts.value += 1
+            return true
+        }
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let provider = MockPushServiceProvider()
+        provider.pushIDError = PushErrors.authorizationDenied
+        app.pushService = PushService(serviceProvider: provider, delegate: app)
+        try #require(app.obacoService != nil)
+
+        let reference = Int(Date(timeIntervalSinceNow: 20 * 60).timeIntervalSinceReferenceDate)
+        let departure = try Fixtures.arrivalDeparture(predicted: false, scheduledArrival: reference, scheduledDeparture: reference, stopSequence: 1, tripID: "trip_alarm_denied")
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        // The first-time prompt hasn't been answered yet, so `pushID()` raises it.
+        viewModel.notificationAuthorizationStatus = { .notDetermined }
+        try #require(viewModel.canCreateAlarm(for: departure))
+
+        await viewModel.setAlarm(for: departure, leadTimeMinutes: 5)
+
+        // The prompt was reached, so this is the `pushID()` catch and not the
+        // already-denied check before it.
+        #expect(provider.errorAwarePushIDRequests == 1)
+        #expect(viewModel.alarmPermissionDenied)
+        #expect(viewModel.alarmError == nil)
+        #expect(viewModel.alarm(for: departure) == nil)
+        #expect(alarmPosts.value == 0)
+    }
+
     // MARK: - Alarm Cancellation
 
     /// Cancelling with no Obaco service must not report success: the server alarm is

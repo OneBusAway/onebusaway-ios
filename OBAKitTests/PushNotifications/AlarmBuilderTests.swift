@@ -166,7 +166,8 @@ final class AlarmBuilderTests: OBATestCase {
     /// A denied notification prompt (or an APNs registration failure) used to
     /// leave `pushID()` suspended forever, so this `await` never returned, the
     /// deferred HUD dismissal never ran, and the alarm flow stayed locked.
-    @Test func `A failed push ID reports an error instead of hanging`() async throws {
+    @Test(.timeLimit(.minutes(1)))
+    func `A failed push ID reports an error instead of hanging`() async throws {
         let loader = MockDataLoader(testName: name)
         let requests = stubAlarms(loader)
         let app = try buildApp(loader)

@@ -139,7 +139,8 @@ final class PushServiceTests: OBATestCase {
 
     /// The regression this guards: `pushID()` used to await a continuation the
     /// provider could never resume, leaving the caller suspended forever.
-    @Test func `Push ID async throws the provider error`() async {
+    @Test(.timeLimit(.minutes(1)))
+    func `Push ID async throws the provider error`() async {
         struct PushIDFailure: Error, Equatable {}
 
         let failure = PushIDFailure()
