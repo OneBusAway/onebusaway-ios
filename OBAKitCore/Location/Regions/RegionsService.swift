@@ -96,7 +96,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         super.init()
 
         // A saved successful list may predate dropped-region tracking.
-        clearRetiredRegionFallback()
+        clearedRetiredRegionIdentifierOnInit = clearRetiredRegionFallback()
 
         if let delegate = delegate {
             addDelegate(delegate)
@@ -639,25 +639,33 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
     }
 
-    private func clearRetiredRegionFallback() {
+    /// If `init` cleared a retired cached region from `ResolvedRegionStore`, holds its
+    /// identifier so `ResolvedRegionPersister` (constructed right after `RegionsService`)
+    /// still detects the transition to `nil` and notifies region-scoped observers (#2006).
+    private(set) var clearedRetiredRegionIdentifierOnInit: Int?
+
+    @discardableResult
+    private func clearRetiredRegionFallback() -> Int? {
         guard canTrustRegionsList,
-              let identifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int else { return }
+              let identifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int else { return nil }
 
         if regions.contains(where: { $0.regionIdentifier == identifier }) {
             RegionsService.removeDroppedRegionIdentifier(identifier, userDefaults: userDefaults)
-            return
+            return nil
         }
 
         // One read decides both that custom regions are readable and that this one is absent.
         guard let customRegions = try? fileStorage.loadCustomRegions(),
-              !customRegions.contains(where: { $0.regionIdentifier == identifier }) else { return }
+              !customRegions.contains(where: { $0.regionIdentifier == identifier }) else { return nil }
 
         // The selected custom region cannot be deleted, so a missing one means its file failed to load.
         let store = ResolvedRegionStore(userDefaults: userDefaults)
-        if let cached = store.storedRegion, cached.regionIdentifier == identifier, cached.isCustom == true { return }
+        let cached = store.storedRegion
+        if let cached, cached.regionIdentifier == identifier, cached.isCustom == true { return nil }
 
         store.write(nil)
         RegionsService.recordDroppedRegionIdentifier(identifier, userDefaults: userDefaults)
+        return cached?.regionIdentifier
     }
 
     /// Fetches the current list of `Region`s from the network.

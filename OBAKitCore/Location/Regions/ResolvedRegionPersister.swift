@@ -36,6 +36,7 @@ public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
         self.store = store
         self.onRegionIdentifierChanged = onRegionIdentifierChanged
         self.lastPersistedRegionID = store.storedRegion?.regionIdentifier
+            ?? regionsService.clearedRetiredRegionIdentifierOnInit
         super.init()
 
         // `RegionsService` holds its delegates weakly; the owner retains us.

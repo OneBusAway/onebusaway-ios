@@ -347,4 +347,36 @@ final class ResolvedRegionStoreTests: OBATestCase {
         #expect(callbackObservations.first?.resolvedRegionID == nil)
         withExtendedLifetime(persister) {}
     }
+
+    @Test @MainActor func `Callback fires on launch when RegionsService init clears a retired stored region`() throws {
+        // Simulate a trusted saved regions list that no longer contains Puget Sound,
+        // while UserDefaults and ResolvedRegionStore still hold Puget Sound from before upgrade.
+        let remainingRegions = try Fixtures.loadSomeRegions().filter { $0.regionIdentifier != pugetSoundRegionIdentifier }
+        try #require(remainingRegions.count > 1)
+        let fileStorage = MockRegionsFileStorage(defaultRegions: remainingRegions)
+        userDefaults.set(true, forKey: RegionsService.hasCompletedSuccessfulRefreshUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        userDefaults.set(pugetSoundRegionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(Fixtures.pugetSoundRegion)
+
+        // RegionsService.init runs clearRetiredRegionFallback(), clearing the store and recording the marker.
+        let service = makeRegionsService(fileStorage: fileStorage)
+        #expect(store.storedRegion == nil)
+        #expect(RegionsService.isDroppedRegionIdentifier(pugetSoundRegionIdentifier, userDefaults: userDefaults))
+
+        var callbackObservations: [Int?] = []
+        let persister = ResolvedRegionPersister(
+            regionsService: service,
+            store: store,
+            onRegionIdentifierChanged: { [bundledRegionsPath] in
+                callbackObservations.append(store.region(bundledRegionsFilePath: bundledRegionsPath)?.regionIdentifier)
+            }
+        )
+
+        #expect(callbackObservations.count == 1)
+        #expect(callbackObservations.first.flatMap { $0 } == nil)
+        withExtendedLifetime(persister) {}
+    }
 }
