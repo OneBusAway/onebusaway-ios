@@ -51,3 +51,9 @@
 
 /* App Shortcuts: short tile label for Track Bookmark in Shortcuts and Spotlight. */
 "track_bookmark_intent.short_title" = "追蹤書籤";
+
+/* App Intents: name of the action the Control Center bookmark control runs when tapped. It opens the app, so the app carries it too. */
+"open_bookmark_control_intent.title" = "打開書籤";
+
+/* App Intents: label of the bookmark setting of the action the bookmark control runs. */
+"open_bookmark_control_intent.parameter_title" = "書籤";

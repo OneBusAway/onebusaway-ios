@@ -806,6 +806,21 @@ final class ApplicationTests: OBATestCase {
         #expect(app.pendingStopRegionID == 1)
     }
 
+    /// Tapping the Bookmark control runs its intent in the app, which reaches
+    /// `Application` only through this notification. Remove the observer and
+    /// nothing is stashed.
+    @Test func `A Bookmark control request opens the bookmark's stop`() async throws {
+        let app = makeApplicationForUserActivity()
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Home", regionIdentifier: 1, stop: stop)
+
+        BookmarkControlOpenRequest.post(bookmark)
+
+        await poll(until: { app.pendingStopID != nil }, "Bookmark control request was never handled")
+        #expect(app.pendingStopID == bookmark.stopID)
+        #expect(app.pendingStopRegionID == 1)
+    }
+
     /// A region change is where the previous region's stops leave Spotlight.
     /// Remove the call from `regionsService(_:updatedRegion:)` and nothing is
     /// cleared. The first replace makes a launch's refresh skip the clear, so

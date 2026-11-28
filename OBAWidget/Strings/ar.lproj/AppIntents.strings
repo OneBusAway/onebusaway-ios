@@ -18,3 +18,24 @@
 
 /* App Intents: name of the widget action that shows the previous page of bookmarks. */
 "previous_bookmark_page_intent.title" = "صفحة الإشارات المرجعية السابقة";
+
+/* App Intents: name of the control that opens a bookmarked stop, in the Control Center gallery and the Action button settings. */
+"bookmark_control.display_name" = "إشارة مرجعية";
+
+/* App Intents: description of the bookmark control in the Control Center gallery. */
+"bookmark_control.description" = "افتح محطة من الإشارات المرجعية.";
+
+/* App Intents: title of the bookmark control's settings, where a bookmark is picked. */
+"select_bookmark_control_intent.title" = "اختر إشارة مرجعية";
+
+/* App Intents: name of the action the bookmark control runs when tapped. */
+"open_bookmark_control_intent.title" = "فتح إشارة مرجعية";
+
+/* App Intents: label of the bookmark setting of the action the bookmark control runs. */
+"open_bookmark_control_intent.parameter_title" = "إشارة مرجعية";
+
+/* App Intents: label of the bookmark control's bookmark setting. */
+"control_bookmark_entity.parameter_title" = "إشارة مرجعية";
+
+/* App Intents: name of the bookmark type the control's picker lists. */
+"control_bookmark_entity.type_name" = "إشارة مرجعية";

@@ -51,6 +51,11 @@ targets:
   App:
     type: application
     platform: iOS
+    sources:
+      # Also compiled into OBAWidget: a Control Center control can only open the
+      # app with an intent that both define.
+      - path: ../../OBAWidget/Controls/OpenBookmarkControlIntent.swift
+        group: Shared
     dependencies:
       - package: OBAKit
         product: OBAKitCore

@@ -601,6 +601,9 @@
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "바람";
 
+/* Label of the bookmark control in Control Center before a bookmark is picked for it, or after its bookmark was deleted. */
+"widget.control.choose_bookmark" = "즐겨찾기 선택";
+
 /* Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical. */
 "widget.empty_state" = "즐겨찾기에서 ‘투데이 보기 위젯에 표시’를 켜면 여기에 표시됩니다.";
 

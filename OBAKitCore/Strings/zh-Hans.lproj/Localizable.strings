@@ -601,6 +601,9 @@
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "大风";
 
+/* Label of the bookmark control in Control Center before a bookmark is picked for it, or after its bookmark was deleted. */
+"widget.control.choose_bookmark" = "选择书签";
+
 /* Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical. */
 "widget.empty_state" = "为书签打开“在‘今天’视图小组件中显示”，即可在此处看到它。";
 

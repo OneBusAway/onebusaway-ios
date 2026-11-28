@@ -192,4 +192,41 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         #expect(reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
         #expect(reloadedKinds == ["OBAWidget"])
     }
+
+    // MARK: - Bookmark control
+
+    /// The control shows a bookmark's name, so a bookmark edit must reload it,
+    /// or a renamed or deleted bookmark keeps its old label in Control Center.
+    @Test @MainActor func `Changing bookmarks reloads the bookmark control`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        var controlReloads = 0
+        let refresher = BookmarkWidgetRefresher(reloadKind: { _ in }, reloadControls: { controlReloads += 1 })
+
+        let bookmark = try makeBookmark(application: application)
+        application.userDataStore.add(bookmark, to: nil)
+        await drainMainActor()
+        #expect(controlReloads == 1)
+
+        application.userDataStore.delete(bookmark: bookmark)
+        await drainMainActor()
+        #expect(controlReloads == 2)
+        withExtendedLifetime(refresher) {}
+    }
+
+    /// Arrival batches reload the widget's times through `reloadAllTimelines()`.
+    /// The control shows no times, so those must not reload it.
+    @Test @MainActor func `Reloading widget timelines does not reload the bookmark control`() {
+        var controlReloads = 0
+        let refresher = BookmarkWidgetRefresher(reloadKind: { _ in }, reloadControls: { controlReloads += 1 })
+
+        refresher.reloadTimelines()
+        BookmarkWidgetRefresher.reloadAllTimelines(using: { _ in })
+
+        #expect(controlReloads == 0)
+    }
+
+    @Test @MainActor func `Control kind matches the registered extension kind`() {
+        #expect(BookmarkWidgetRefresher.controlKind == "OBABookmarkControl")
+    }
 }

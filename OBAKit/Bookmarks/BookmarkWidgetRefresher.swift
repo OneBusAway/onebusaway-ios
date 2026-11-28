@@ -40,6 +40,15 @@ final class BookmarkWidgetRefresher {
     /// reloads without invoking `WidgetCenter`.
     static var defaultReloadKind: (String) -> Void = { WidgetCenter.shared.reloadTimelines(ofKind: $0) }
 
+    /// Matches `BookmarkControl.kind` in the widget extension. The control shows
+    /// a bookmark's name, so it reloads on bookmark edits only, not on the
+    /// arrival-batch reloads that `reloadAllTimelines()` also serves.
+    static let controlKind = "OBABookmarkControl"
+
+    static var defaultReloadControls: () -> Void = { ControlCenter.shared.reloadControls(ofKind: controlKind) }
+
+    private let reloadControls: () -> Void
+
     /// Invoked instead of `WidgetCenter` when set. Tests inject a spy here;
     /// production leaves it nil and reloads for real.
     private let reloadKind: ((String) -> Void)?
@@ -48,8 +57,9 @@ final class BookmarkWidgetRefresher {
     /// `UserDefaultsStore` posts — see its `delete(bookmark:)`, `setPinned(_:for:)`,
     /// and `add(_:to:index:)`. Selector-based observation is auto-removed on
     /// dealloc, so no token/deinit is needed.
-    init(reload: (() -> Void)? = nil) {
+    init(reload: (() -> Void)? = nil, reloadControls: @escaping () -> Void = { BookmarkWidgetRefresher.defaultReloadControls() }) {
         self.reloadKind = reload.map { spy in { _ in spy() } }
+        self.reloadControls = reloadControls
 
         NotificationCenter.default.addObserver(
             self,
@@ -59,8 +69,9 @@ final class BookmarkWidgetRefresher {
         )
     }
 
-    init(reloadKind: @escaping (String) -> Void) {
+    init(reloadKind: @escaping (String) -> Void, reloadControls: @escaping () -> Void = { BookmarkWidgetRefresher.defaultReloadControls() }) {
         self.reloadKind = reloadKind
+        self.reloadControls = reloadControls
 
         NotificationCenter.default.addObserver(
             self,
@@ -76,6 +87,7 @@ final class BookmarkWidgetRefresher {
     @objc private nonisolated func bookmarksDidChange() {
         Task { @MainActor in
             self.reloadTimelines()
+            self.reloadControls()
         }
     }
 

@@ -13,5 +13,6 @@ struct CBWidgetBundle: WidgetBundle {
     var body: some Widget {
         OBAWidget()
         TripLiveActivity()
+        BookmarkControl()
     }
 }
