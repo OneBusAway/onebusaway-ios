@@ -20,7 +20,9 @@ import OBAKitCore
 /// Lookups go through `BookmarkControlCatalog` so the tests can reach them.
 /// The app reloads the control whenever bookmarks change
 /// (`BookmarkWidgetRefresher`), so a rename or delete shows up without waiting
-/// for the system.
+/// for the system. It also reloads it when the current region changes
+/// (`ResolvedRegionPersister.onRegionIdentifierChanged`), because the picker
+/// and the label only cover bookmarks in that region.
 struct BookmarkControl: ControlWidget {
     static let kind = WidgetKinds.bookmarkControl
 

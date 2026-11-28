@@ -639,9 +639,11 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
     }
 
-    /// If `init` cleared a retired cached region from `ResolvedRegionStore`, holds its
-    /// identifier so `ResolvedRegionPersister` (constructed right after `RegionsService`)
-    /// still detects the transition to `nil` and notifies region-scoped observers (#2006).
+    /// If `init` found that the saved current region was retired, holds its identifier so
+    /// `ResolvedRegionPersister` (constructed right after `RegionsService`) still detects the
+    /// transition to `nil` and notifies region-scoped observers (#2006). This is set even when
+    /// `ResolvedRegionStore` was already empty, because extensions were then resolving the
+    /// retired region through the bundled regions file (#2013).
     private(set) var clearedRetiredRegionIdentifierOnInit: Int?
 
     @discardableResult
@@ -665,7 +667,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         store.write(nil)
         RegionsService.recordDroppedRegionIdentifier(identifier, userDefaults: userDefaults)
-        return cached?.regionIdentifier
+        return identifier
     }
 
     /// Fetches the current list of `Region`s from the network.

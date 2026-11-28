@@ -29,6 +29,11 @@ import OBAKitCore
 /// This is not the whole story for widget freshness — `BookmarksViewController`
 /// separately reloads on each completed arrival-data batch, which is what keeps
 /// the *times* current. This type covers changes to the bookmark set itself.
+///
+/// It also reloads the Bookmark control when the persisted region changes,
+/// since the control only lists bookmarks in the current region. That reload
+/// comes from `ResolvedRegionPersister.onRegionIdentifierChanged`, which
+/// `Application` wires to `reloadBookmarkControls()`.
 @MainActor
 final class BookmarkWidgetRefresher {
 

@@ -379,4 +379,106 @@ final class ResolvedRegionStoreTests: OBATestCase {
         #expect(callbackObservations.first.flatMap { $0 } == nil)
         withExtendedLifetime(persister) {}
     }
+
+    /// A control placed before the persister ever wrote the store resolves the region through the
+    /// bundled regions file, so launch cleanup must still report the change when the store is empty.
+    @Test @MainActor func `Callback fires on launch when RegionsService init retires a region the store never held`() throws {
+        let remainingRegions = try Fixtures.loadSomeRegions().filter { $0.regionIdentifier != pugetSoundRegionIdentifier }
+        try #require(remainingRegions.count > 1)
+        let fileStorage = MockRegionsFileStorage(defaultRegions: remainingRegions)
+        userDefaults.set(true, forKey: RegionsService.hasCompletedSuccessfulRefreshUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        userDefaults.set(pugetSoundRegionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        #expect(store.storedRegion == nil)
+
+        let service = makeRegionsService(fileStorage: fileStorage)
+        #expect(RegionsService.isDroppedRegionIdentifier(pugetSoundRegionIdentifier, userDefaults: userDefaults))
+
+        var callbackCount = 0
+        let persister = ResolvedRegionPersister(
+            regionsService: service,
+            store: store,
+            onRegionIdentifierChanged: { callbackCount += 1 }
+        )
+
+        #expect(callbackCount == 1)
+        withExtendedLifetime(persister) {}
+    }
+
+    /// The regions list `didSet` records the dropped marker before auto-select runs. When auto-select
+    /// then moves off a retired region, the control reloads twice: once with no region (marker already
+    /// set, so it can't fall back to the bundled file) and once with the new region. Both are correct
+    /// states, so the extra reload is harmless.
+    @Test @MainActor func `Auto-select off a retired region reloads with no region first, then the new region`() async throws {
+        struct RegionsList: Encodable {
+            let list: [Region]
+        }
+        struct RegionsResponse: Encodable {
+            let code = 200
+            let currentTime = 0
+            let data: RegionsList
+            let text = "OK"
+            let version = 2
+        }
+
+        let expectedPath = regionsAPIPath
+        let dataLoader = MockDataLoader(testName: name)
+        let tampaOnlyPayload = try JSONEncoder.RESTEncoder().encode(
+            RegionsResponse(data: RegionsList(list: [Fixtures.tampaRegion]))
+        )
+        dataLoader.mock(data: tampaOnlyPayload) { [expectedPath] request in
+            request.url?.path == expectedPath
+        }
+
+        let apiConfig = APIServiceConfiguration(
+            baseURL: regionsURL,
+            apiKey: apiKey,
+            uuid: "test-uuid",
+            appVersion: appVersion,
+            regionIdentifier: nil
+        )
+        let locationManager = LocationManagerMock()
+        let service = RegionsService(
+            apiService: RegionsAPIService(apiConfig, dataLoader: dataLoader),
+            locationService: LocationService(userDefaults: userDefaults, locationManager: locationManager),
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: MockRegionsFileStorage()
+        )
+        service.automaticallySelectRegion = false
+
+        let pugetSound = try #require(service.find(id: pugetSoundRegionIdentifier))
+        service.currentRegion = pugetSound
+        locationManager.location = TestData.mockTampaLocation
+        // Turn auto-select on without the setter, which would move to Tampa right away.
+        userDefaults.set(true, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(pugetSound)
+
+        var observations: [(isDropped: Bool, resolvedRegionID: Int?)] = []
+        let persister = ResolvedRegionPersister(
+            regionsService: service,
+            store: store,
+            onRegionIdentifierChanged: { [userDefaults, bundledRegionsPath] in
+                observations.append((
+                    isDropped: RegionsService.isDroppedRegionIdentifier(pugetSound.regionIdentifier, userDefaults: userDefaults),
+                    resolvedRegionID: store.region(bundledRegionsFilePath: bundledRegionsPath)?.regionIdentifier
+                ))
+            }
+        )
+        #expect(observations.isEmpty)
+
+        try await service.refreshRegions()
+
+        #expect(service.currentRegion?.regionIdentifier == Fixtures.tampaRegion.regionIdentifier)
+        try #require(observations.count == 2)
+        #expect(observations[0].isDropped)
+        #expect(observations[0].resolvedRegionID == nil)
+        #expect(observations[1].resolvedRegionID == Fixtures.tampaRegion.regionIdentifier)
+        withExtendedLifetime(persister) {}
+    }
 }
