@@ -120,4 +120,100 @@ final class ScheduleForRouteTests: OBATestCase {
         #expect(response.references != nil)
         #expect(response.references?.stops.isEmpty == false)
     }
+
+    // MARK: - Stop Time Date Calculation Tests
+
+    private func makeStopTime(arrivalTime: Int, departureTime: Int) throws -> ScheduleForRoute.RouteScheduleStopTime {
+        let json = """
+        {
+            "stopId": "1_41902",
+            "tripId": "1_761056039",
+            "arrivalTime": \(arrivalTime),
+            "departureTime": \(departureTime),
+            "arrivalEnabled": true,
+            "departureEnabled": true,
+            "serviceId": "",
+            "stopHeadsign": ""
+        }
+        """
+        return try JSONDecoder().decode(ScheduleForRoute.RouteScheduleStopTime.self, from: Data(json.utf8))
+    }
+
+    private func makeGregorianDate(
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int = 0,
+        minute: Int = 0,
+        timeZone: TimeZone
+    ) throws -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let components = DateComponents(year: year, month: month, day: day, hour: hour, minute: minute)
+        return try #require(calendar.date(from: components))
+    }
+
+    private func formatHourMinute(_ date: Date, timeZone: TimeZone) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
+    }
+
+    @Test func `Arrival and departure dates on a standard day match GTFS clock times`() throws {
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        let serviceDay = try makeGregorianDate(year: 2025, month: 12, day: 6, timeZone: losAngeles)
+
+        let morning = try makeStopTime(arrivalTime: 31_500, departureTime: 31_560) // 08:45 / 08:46
+        #expect(formatHourMinute(morning.arrivalDate(for: serviceDay, timeZone: losAngeles), timeZone: losAngeles) == "2025-12-06 08:45")
+        #expect(formatHourMinute(morning.departureDate(for: serviceDay, timeZone: losAngeles), timeZone: losAngeles) == "2025-12-06 08:46")
+
+        let overnight = try makeStopTime(arrivalTime: 91_800, departureTime: 91_860) // 25:30 / 25:31
+        #expect(formatHourMinute(overnight.arrivalDate(for: serviceDay, timeZone: losAngeles), timeZone: losAngeles) == "2025-12-07 01:30")
+        #expect(formatHourMinute(overnight.departureDate(for: serviceDay, timeZone: losAngeles), timeZone: losAngeles) == "2025-12-07 01:31")
+    }
+
+    @Test func `Arrival and departure dates on Spring Forward DST day do not shift forward an hour`() throws {
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        let springForwardDay = try makeGregorianDate(year: 2026, month: 3, day: 8, timeZone: losAngeles)
+
+        // 2026-03-08 is a 23-hour day in America/Los_Angeles (02:00 PST -> 03:00 PDT).
+        // Per GTFS, times are measured from local noon minus 12h so 08:45 stays 08:45 PDT.
+        let morning = try makeStopTime(arrivalTime: 31_500, departureTime: 31_560)
+        #expect(formatHourMinute(morning.arrivalDate(for: springForwardDay, timeZone: losAngeles), timeZone: losAngeles) == "2026-03-08 08:45")
+        #expect(formatHourMinute(morning.departureDate(for: springForwardDay, timeZone: losAngeles), timeZone: losAngeles) == "2026-03-08 08:46")
+
+        let overnight = try makeStopTime(arrivalTime: 91_800, departureTime: 91_860) // 25:30 / 25:31
+        #expect(formatHourMinute(overnight.arrivalDate(for: springForwardDay, timeZone: losAngeles), timeZone: losAngeles) == "2026-03-09 01:30")
+        #expect(formatHourMinute(overnight.departureDate(for: springForwardDay, timeZone: losAngeles), timeZone: losAngeles) == "2026-03-09 01:31")
+    }
+
+    @Test func `Arrival and departure dates on Fall Back DST day do not shift backward an hour`() throws {
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        let fallBackDay = try makeGregorianDate(year: 2026, month: 11, day: 1, timeZone: losAngeles)
+
+        // 2026-11-01 is a 25-hour day in America/Los_Angeles (01:59 PDT -> 01:00 PST).
+        // Per GTFS, times are measured from local noon minus 12h so 08:45 stays 08:45 PST.
+        let morning = try makeStopTime(arrivalTime: 31_500, departureTime: 31_560)
+        #expect(formatHourMinute(morning.arrivalDate(for: fallBackDay, timeZone: losAngeles), timeZone: losAngeles) == "2026-11-01 08:45")
+        #expect(formatHourMinute(morning.departureDate(for: fallBackDay, timeZone: losAngeles), timeZone: losAngeles) == "2026-11-01 08:46")
+
+        let overnight = try makeStopTime(arrivalTime: 91_800, departureTime: 91_860) // 25:30 / 25:31
+        #expect(formatHourMinute(overnight.arrivalDate(for: fallBackDay, timeZone: losAngeles), timeZone: losAngeles) == "2026-11-02 01:30")
+        #expect(formatHourMinute(overnight.departureDate(for: fallBackDay, timeZone: losAngeles), timeZone: losAngeles) == "2026-11-02 01:31")
+    }
+
+    @Test func `Arrival and departure dates handle midnight DST transitions`() throws {
+        // America/Havana springs forward at midnight on 2026-03-08 (00:00 does not exist).
+        let havana = try #require(TimeZone(identifier: "America/Havana"))
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = havana
+        let springForwardStart = calendar.startOfDay(for: try makeGregorianDate(year: 2026, month: 3, day: 8, hour: 12, timeZone: havana))
+
+        let morning = try makeStopTime(arrivalTime: 31_500, departureTime: 31_560)
+        #expect(formatHourMinute(morning.arrivalDate(for: springForwardStart, timeZone: havana), timeZone: havana) == "2026-03-08 08:45")
+        #expect(formatHourMinute(morning.departureDate(for: springForwardStart, timeZone: havana), timeZone: havana) == "2026-03-08 08:46")
+    }
 }

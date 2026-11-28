@@ -144,10 +144,10 @@ public class ScheduleForRoute: NSObject, Identifiable, Decodable, HasReferences 
         /// The trip ID
         public let tripID: String
 
-        /// Arrival time in seconds from midnight
+        /// Arrival time in GTFS seconds (from local noon minus 12 hours of the service day)
         public let arrivalTime: Int
 
-        /// Departure time in seconds from midnight
+        /// Departure time in GTFS seconds (from local noon minus 12 hours of the service day)
         public let departureTime: Int
 
         /// Whether arrival tracking is enabled
@@ -192,24 +192,29 @@ public class ScheduleForRoute: NSObject, Identifiable, Decodable, HasReferences 
         /// Formats the arrival time as a Date using the provided schedule date as the base.
         ///
         /// `timeZone` must match the zone used to *format* the result (typically
-        /// `formatters.timeZone`). Seconds-since-midnight values are agency-local;
-        /// synthesizing with `Calendar.current` while formatting in another zone
-        /// shifts every cell by the device↔region offset (#332 / PR #1308).
+        /// `formatters.timeZone`). Values follow GTFS `stop_times.txt` semantics—seconds
+        /// from "local noon minus 12 hours" of the service day in `timeZone`—so post-transition
+        /// times do not shift by ±1 hour on DST transition days (#2021), and so they do not
+        /// shift by the device↔region offset (#332 / PR #1308).
         public func arrivalDate(for scheduleDate: Date, timeZone: TimeZone) -> Date {
-            Self.date(secondsFromMidnight: arrivalTime, on: scheduleDate, timeZone: timeZone)
+            Self.date(gtfsSeconds: arrivalTime, on: scheduleDate, timeZone: timeZone)
         }
 
         /// Formats the departure time as a Date using the provided schedule date as the base.
         /// See `arrivalDate(for:timeZone:)` for why `timeZone` is required.
         public func departureDate(for scheduleDate: Date, timeZone: TimeZone) -> Date {
-            Self.date(secondsFromMidnight: departureTime, on: scheduleDate, timeZone: timeZone)
+            Self.date(gtfsSeconds: departureTime, on: scheduleDate, timeZone: timeZone)
         }
 
-        private static func date(secondsFromMidnight: Int, on scheduleDate: Date, timeZone: TimeZone) -> Date {
-            var calendar = Calendar.current
+        private static func date(gtfsSeconds: Int, on scheduleDate: Date, timeZone: TimeZone) -> Date {
+            var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = timeZone
-            let startOfDay = calendar.startOfDay(for: scheduleDate)
-            return startOfDay.addingTimeInterval(TimeInterval(secondsFromMidnight))
+            var noonComponents = calendar.dateComponents([.year, .month, .day], from: scheduleDate)
+            noonComponents.hour = 12
+            // Gregorian local noon always exists; startOfDay is strictly a defensive fallback.
+            let anchor = calendar.date(from: noonComponents)?.addingTimeInterval(-12 * 3600)
+                ?? calendar.startOfDay(for: scheduleDate)
+            return anchor.addingTimeInterval(TimeInterval(gtfsSeconds))
         }
     }
 }
