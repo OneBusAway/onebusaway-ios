@@ -32,13 +32,31 @@ final class AgenciesWithCoverageModelOperationTests: OBATestCase {
         expectClose(childrens.region.center.latitude, 47.6470785)
         expectClose(childrens.region.center.longitude, -122.296449)
 
-        expectClose(childrens.region.span.latitudeDelta, 0.06330499999999972, within: 0.1)
-        expectClose(childrens.region.span.longitudeDelta, 0.07930600000000254, within: 0.1)
+        expectClose(childrens.region.span.latitudeDelta, 0.06330499999999972, within: 1e-6)
+        expectClose(childrens.region.span.longitudeDelta, 0.07930600000000254, within: 1e-6)
 
         #expect(childrens.agencyID == "98")
         #expect(childrens.agency.name == "Seattle Children's Hospital")
         #expect(childrens.agency.disclaimer == nil)
         #expect(childrens.agency.email == nil)
         #expect(childrens.agency.fareURL == nil)
+    }
+
+    @Test func `Region span preserves API degrees rather than converting from meters`() throws {
+        let model = try Fixtures.dictionaryToModel(
+            type: AgencyWithCoverage.self,
+            dictionary: [
+                "agencyId": "1",
+                "lat": 47.560728,
+                "latSpan": 0.743228000000002,
+                "lon": -122.09015249999999,
+                "lonSpan": 0.8329389999999961
+            ]
+        )
+
+        expectClose(model.region.center.latitude, 47.560728, within: 1e-9)
+        expectClose(model.region.center.longitude, -122.09015249999999, within: 1e-9)
+        expectClose(model.region.span.latitudeDelta, 0.743228000000002, within: 1e-9)
+        expectClose(model.region.span.longitudeDelta, 0.8329389999999961, within: 1e-9)
     }
 }

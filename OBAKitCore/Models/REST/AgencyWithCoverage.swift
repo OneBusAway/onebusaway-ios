@@ -41,7 +41,10 @@ public final class AgencyWithCoverage: NSObject, Identifiable, Decodable, HasRef
         let latSpan = try container.decode(Double.self, forKey: .latSpan)
         let lonSpan = try container.decode(Double.self, forKey: .lonSpan)
 
-        region = MKCoordinateRegion(center: coordinate, latitudinalMeters: latSpan, longitudinalMeters: lonSpan)
+        region = MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: latSpan, longitudeDelta: lonSpan)
+        )
     }
 
     public func loadReferences(_ references: References, regionIdentifier: Int?) {
