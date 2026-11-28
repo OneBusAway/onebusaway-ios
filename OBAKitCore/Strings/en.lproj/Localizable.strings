@@ -610,6 +610,9 @@
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "Windy";
 
+/* Label of the bookmark control in Control Center before a bookmark is picked for it, or after its bookmark was deleted. */
+"widget.control.choose_bookmark" = "Choose Bookmark";
+
 /* Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical. */
 "widget.empty_state" = "Turn on “Show in Today View widget” for a bookmark to see it here.";
 

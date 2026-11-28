@@ -77,6 +77,13 @@ public enum WidgetStrings {
         let fmt = OBALoc("widget.pagination.page_indicator_fmt", value: "Page %d of %d", comment: "VoiceOver accessibility label for the current bookmark page in the home screen widget, e.g. 'Page 1 of 3'.")
         return String(format: fmt, locale: .current, current, total)
     }
+
+    // MARK: - Bookmark control
+
+    /// The control's label before a bookmark is picked for it, or after it was deleted.
+    public static var controlChooseBookmark: String {
+        OBALoc("widget.control.choose_bookmark", value: "Choose Bookmark", comment: "Label of the bookmark control in Control Center before a bookmark is picked for it, or after its bookmark was deleted.")
+    }
 }
 
 #endif // os(iOS)

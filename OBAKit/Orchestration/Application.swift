@@ -713,6 +713,24 @@ public class Application: CoreApplication, PushServiceDelegate {
                 self.queueOrOpenStop(destination)
             }
         }
+
+        // The Bookmark control's tap runs `OpenBookmarkControlIntent` in the
+        // app, which hands its stop over here the same way as Open Stop.
+        notificationCenter.addObserver(
+            forName: .bookmarkControlOpenRequested,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            guard let stopID = notification.userInfo?[BookmarkControlOpenRequest.stopIDUserInfoKey] as? StopID,
+                  let regionID = notification.userInfo?[BookmarkControlOpenRequest.regionIDUserInfoKey] as? Int else {
+                Logger.warn("Bookmark control request has no stop; nothing to open.")
+                return
+            }
+            MainActor.assumeIsolated {
+                self.queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopID, regionID: regionID))
+            }
+        }
     }
 
     @objc public func applicationWillResignActive(_ application: UIApplication) {
