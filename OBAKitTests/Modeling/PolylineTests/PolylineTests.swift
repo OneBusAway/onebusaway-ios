@@ -146,6 +146,45 @@ final class PolylineTests {
         #expect(sut.coordinates == nil)
     }
 
+    @Test func `Non-ASCII UTF-8 bytes return nil without overflowing`() {
+        let samples = ["🚌", "—", "©", "é", "東京", "\u{FFFD}", "_p~iF~ps|U🚌", "_p~iF~ps|Ué", "_©"]
+
+        for sample in samples {
+            let sut = Polyline(encodedPolyline: sample)
+            #expect(sut.coordinates == nil, "Expected nil coordinates for non-ASCII input \(sample)")
+            #expect(sut.locations == nil)
+            #expect(sut.mkPolyline == nil)
+        }
+    }
+
+    @Test func `ASCII bytes outside valid polyline range return nil`() {
+        let samples = ["00", "  ", "!!", "\u{007F}\u{007F}", "_p~iF~ps|U00", "_p~iF~ps|U\u{007F}"]
+
+        for sample in samples {
+            let sut = Polyline(encodedPolyline: sample)
+            #expect(sut.coordinates == nil, "Expected nil coordinates for out-of-range ASCII input")
+        }
+    }
+
+    @Test func `Truncated continuation or overlong polyline returns nil`() {
+        for sample in ["_", "?_", "_p~iF~ps|U?_", "~~~~~~~?"] {
+            let sut = Polyline(encodedPolyline: sample)
+            #expect(sut.coordinates == nil, "Expected nil coordinates for truncated/overlong input \(sample)")
+        }
+    }
+
+    @Test func `Boundary bytes '?' (63) and '~' (126) decode properly`() throws {
+        let zeroCoords = try #require(Polyline(encodedPolyline: "??").coordinates)
+        #expect(zeroCoords.count == 1)
+        expectClose(zeroCoords[0].latitude, 0, within: COORD_EPSILON_1e5)
+        expectClose(zeroCoords[0].longitude, 0, within: COORD_EPSILON_1e5)
+
+        let negativeBoundaryCoords = try #require(Polyline(encodedPolyline: "~@~@").coordinates)
+        #expect(negativeBoundaryCoords.count == 1)
+        expectClose(negativeBoundaryCoords[0].latitude, -0.00032, within: COORD_EPSILON_1e5)
+        expectClose(negativeBoundaryCoords[0].longitude, -0.00032, within: COORD_EPSILON_1e5)
+    }
+
     @Test func `Valid polyline should return valid location array`() {
         let sut = Polyline(encodedPolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@")
 
