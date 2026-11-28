@@ -14,7 +14,7 @@ import OBAKitCore
 
 @MainActor
 @Suite(.serialized)
-final class GhostBusReportViewTests {
+final class GhostBusReportViewTests: OBATestCase {
 
     @Test func testGhostBusReportConstants() {
         #expect(GhostBusReportView.waitChoices == [5, 10, 15, 20, 30])
