@@ -18,7 +18,14 @@ class ScheduleForRouteViewModel: ObservableObject {
 
     // MARK: - Published Properties
 
-    @Published var scheduleData: ScheduleForRoute?
+    @Published var scheduleData: ScheduleForRoute? {
+        didSet {
+            let resolvedIndex = resolvedDirectionIndex(afterReplacing: oldValue?.stopTripGroupings ?? [])
+            if selectedDirectionIndex != resolvedIndex {
+                selectedDirectionIndex = resolvedIndex
+            }
+        }
+    }
     @Published var selectedDate: Date
     @Published var selectedDirectionIndex: Int = 0
     @Published var isLoading: Bool = false
@@ -58,10 +65,37 @@ class ScheduleForRouteViewModel: ObservableObject {
 
     /// The currently selected direction
     var currentDirection: ScheduleForRoute.StopTripGrouping? {
-        guard !directions.isEmpty, selectedDirectionIndex < directions.count else {
+        guard directions.indices.contains(selectedDirectionIndex) else {
             return nil
         }
         return directions[selectedDirectionIndex]
+    }
+
+    /// Reconciles `selectedDirectionIndex` after `scheduleData` is replaced.
+    ///
+    /// When the previously selected grouping has a non-empty, unique `directionID`,
+    /// follow that direction into the new schedule (so reordered directions keep the
+    /// same selection, and a removed direction resets to `0`). When `directionID` is
+    /// empty or duplicated across groupings, fall back to keeping the index if it is
+    /// still in bounds, otherwise reset to `0`.
+    private func resolvedDirectionIndex(
+        afterReplacing previousGroupings: [ScheduleForRoute.StopTripGrouping]
+    ) -> Int {
+        if previousGroupings.indices.contains(selectedDirectionIndex) {
+            let previousDirectionID = previousGroupings[selectedDirectionIndex].directionID
+            if !previousDirectionID.isEmpty,
+               previousGroupings.filter({ $0.directionID == previousDirectionID }).count == 1 {
+                let matchingIndices = directions.indices.filter { directions[$0].directionID == previousDirectionID }
+                if matchingIndices.count == 1 {
+                    return matchingIndices[0]
+                }
+                if matchingIndices.isEmpty {
+                    return 0
+                }
+            }
+        }
+
+        return directions.indices.contains(selectedDirectionIndex) ? selectedDirectionIndex : 0
     }
 
     /// The headsign for the current direction
