@@ -461,4 +461,208 @@ final class ScheduleForRouteViewModelTests: OBATestCase {
         try await Task.sleep(for: .milliseconds(100))
         #expect(viewModel.formattersTimeZoneGeneration == 1)
     }
+
+    // MARK: - Direction Selection Updates
+
+    private func fixtureScheduleData(
+        transformGroupings: ([[String: Any]]) -> [[String: Any]]
+    ) throws -> Data {
+        let baseData = Fixtures.loadData(file: "schedule-for-route_1_100223.json")
+        var root = try #require(JSONSerialization.jsonObject(with: baseData) as? [String: Any])
+        var dataSection = try #require(root["data"] as? [String: Any])
+        var entry = try #require(dataSection["entry"] as? [String: Any])
+        let groupings = try #require(entry["stopTripGroupings"] as? [[String: Any]])
+
+        entry["stopTripGroupings"] = transformGroupings(groupings)
+        dataSection["entry"] = entry
+        root["data"] = dataSection
+        return try JSONSerialization.data(withJSONObject: root)
+    }
+
+    private func mockSchedule(
+        dataLoader: MockDataLoader,
+        dateQueryValue: String,
+        responseData: Data
+    ) {
+        dataLoader.mock(data: responseData) { [routeID] request in
+            guard let url = request.url,
+                  url.path.contains("/schedule-for-route/\(routeID).json") else {
+                return false
+            }
+            let dateParam = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .first { $0.name == "date" }?
+                .value
+            return dateParam == dateQueryValue
+        }
+    }
+
+    @Test @MainActor
+    func `Fetching a schedule with fewer directions resets out-of-bounds selectedDirectionIndex`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let twoDirections = Fixtures.loadData(file: "schedule-for-route_1_100223.json")
+        let oneDirection = try fixtureScheduleData { Array($0.prefix(1)) }
+
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-06", responseData: twoDirections)
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-07", responseData: oneDirection)
+
+        let app = createApplication(dataLoader: dataLoader)
+        app.formatters.timeZone = try #require(TimeZone(identifier: "UTC"))
+        let day1 = Date(timeIntervalSince1970: 1_765_022_400) // 2025-12-06 12:00 UTC
+        let day2 = Date(timeIntervalSince1970: 1_765_108_800) // 2025-12-07 12:00 UTC
+
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app, initialDate: day1)
+        await viewModel.fetchSchedule()
+        #expect(viewModel.directions.count == 2)
+
+        viewModel.selectedDirectionIndex = 1
+        #expect(viewModel.currentDirection?.directionID == "1")
+
+        viewModel.selectedDate = day2
+        await viewModel.fetchSchedule()
+
+        #expect(viewModel.directions.count == 1)
+        #expect(viewModel.selectedDirectionIndex == 0)
+        #expect(viewModel.currentDirection?.directionID == "0")
+        #expect(!viewModel.stopNames.isEmpty)
+    }
+
+    @Test @MainActor
+    func `Fetching a schedule with reordered directions follows the selected directionID`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let originalOrder = Fixtures.loadData(file: "schedule-for-route_1_100223.json")
+        let reversedOrder = try fixtureScheduleData { Array($0.reversed()) }
+
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-06", responseData: originalOrder)
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-07", responseData: reversedOrder)
+
+        let app = createApplication(dataLoader: dataLoader)
+        app.formatters.timeZone = try #require(TimeZone(identifier: "UTC"))
+        let day1 = Date(timeIntervalSince1970: 1_765_022_400)
+        let day2 = Date(timeIntervalSince1970: 1_765_108_800)
+
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app, initialDate: day1)
+        await viewModel.fetchSchedule()
+        viewModel.selectedDirectionIndex = 1
+        #expect(viewModel.currentDirection?.directionID == "1")
+
+        viewModel.selectedDate = day2
+        await viewModel.fetchSchedule()
+
+        #expect(viewModel.selectedDirectionIndex == 0)
+        #expect(viewModel.currentDirection?.directionID == "1")
+    }
+
+    @Test @MainActor
+    func `Fetching a schedule with more directions preserves the selected direction`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let twoDirections = Fixtures.loadData(file: "schedule-for-route_1_100223.json")
+        let threeDirections = try fixtureScheduleData { groupings in
+            var extra = groupings[0]
+            extra["directionId"] = "2"
+            return groupings + [extra]
+        }
+
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-06", responseData: twoDirections)
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-07", responseData: threeDirections)
+
+        let app = createApplication(dataLoader: dataLoader)
+        app.formatters.timeZone = try #require(TimeZone(identifier: "UTC"))
+        let day1 = Date(timeIntervalSince1970: 1_765_022_400)
+        let day2 = Date(timeIntervalSince1970: 1_765_108_800)
+
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app, initialDate: day1)
+        await viewModel.fetchSchedule()
+        viewModel.selectedDirectionIndex = 1
+
+        viewModel.selectedDate = day2
+        await viewModel.fetchSchedule()
+
+        #expect(viewModel.directions.count == 3)
+        #expect(viewModel.selectedDirectionIndex == 1)
+        #expect(viewModel.currentDirection?.directionID == "1")
+    }
+
+    @Test @MainActor
+    func `Fetching a schedule with zero directions resets selectedDirectionIndex to zero`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let twoDirections = Fixtures.loadData(file: "schedule-for-route_1_100223.json")
+        let noDirections = try fixtureScheduleData { _ in [] }
+
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-06", responseData: twoDirections)
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-07", responseData: noDirections)
+
+        let app = createApplication(dataLoader: dataLoader)
+        app.formatters.timeZone = try #require(TimeZone(identifier: "UTC"))
+        let day1 = Date(timeIntervalSince1970: 1_765_022_400)
+        let day2 = Date(timeIntervalSince1970: 1_765_108_800)
+
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app, initialDate: day1)
+        await viewModel.fetchSchedule()
+        viewModel.selectedDirectionIndex = 1
+
+        viewModel.selectedDate = day2
+        await viewModel.fetchSchedule()
+
+        #expect(viewModel.directions.isEmpty)
+        #expect(viewModel.selectedDirectionIndex == 0)
+        #expect(viewModel.currentDirection == nil)
+    }
+
+    @Test @MainActor
+    func `Empty directionIDs fall back to index bounds when schedule changes`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let twoEmptyIDs = try fixtureScheduleData { groupings in
+            groupings.map { grouping in
+                var copy = grouping
+                copy["directionId"] = ""
+                return copy
+            }
+        }
+        let oneEmptyID = try fixtureScheduleData { groupings in
+            var first = groupings[0]
+            first["directionId"] = ""
+            return [first]
+        }
+
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-06", responseData: twoEmptyIDs)
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-07", responseData: twoEmptyIDs)
+        mockSchedule(dataLoader: dataLoader, dateQueryValue: "2025-12-08", responseData: oneEmptyID)
+
+        let app = createApplication(dataLoader: dataLoader)
+        app.formatters.timeZone = try #require(TimeZone(identifier: "UTC"))
+        let day1 = Date(timeIntervalSince1970: 1_765_022_400)
+        let day2 = Date(timeIntervalSince1970: 1_765_108_800)
+        let day3 = Date(timeIntervalSince1970: 1_765_195_200)
+
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app, initialDate: day1)
+        await viewModel.fetchSchedule()
+        viewModel.selectedDirectionIndex = 1
+
+        // 2 -> 2 with empty directionIDs preserves index 1.
+        viewModel.selectedDate = day2
+        await viewModel.fetchSchedule()
+        #expect(viewModel.selectedDirectionIndex == 1)
+
+        // 2 -> 1 with empty directionIDs resets out-of-bounds index 1 to 0.
+        viewModel.selectedDate = day3
+        await viewModel.fetchSchedule()
+        #expect(viewModel.selectedDirectionIndex == 0)
+        #expect(!viewModel.stopNames.isEmpty)
+    }
+
+    @Test @MainActor
+    func `Negative selectedDirectionIndex returns nil for currentDirection`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "schedule-for-route_1_100223.json")) { [routeID] request in
+            request.url?.path.contains("/schedule-for-route/\(routeID).json") ?? false
+        }
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
+
+        await viewModel.fetchSchedule()
+        viewModel.selectedDirectionIndex = -1
+
+        #expect(viewModel.currentDirection == nil)
+    }
 }
