@@ -61,12 +61,12 @@ public struct NextDeparturesIntent: AppIntent {
     /// `nil` when there is none, which the store answers with `noBookmarks` or,
     /// without the app group, `noRegion`.
     @MainActor
-    private func resolveBookmarkID() async throws -> UUID? {
+    func resolveBookmarkID(using query: BookmarkEntityQuery = BookmarkEntityQuery()) async throws -> UUID? {
         if let bookmark {
             return bookmark.id
         }
 
-        let candidates = try await BookmarkEntityQuery().suggestedEntities()
+        let candidates = try await query.suggestedEntities()
         return try resolveBookmarkID(candidates: candidates)
     }
 

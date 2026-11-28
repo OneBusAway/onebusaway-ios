@@ -81,10 +81,18 @@ nonisolated public struct StopEntity: IndexedEntity {
 /// Searching every cached stop needs the cache to store names and codes in
 /// their own columns, which is #1555's region sync (PR A).
 nonisolated public struct StopEntityQuery: EntityStringQuery {
-    public init() {}
+    private let userDefaultsProvider: @Sendable () -> UserDefaults?
+
+    public init() {
+        self.userDefaultsProvider = Self.appGroupDefaults
+    }
+
+    init(userDefaultsProvider: @escaping @Sendable () -> UserDefaults?) {
+        self.userDefaultsProvider = userDefaultsProvider
+    }
 
     public func entities(for identifiers: [StopEntity.ID]) async throws -> [StopEntity] {
-        guard let defaults = Self.appGroupDefaults() else { return [] }
+        guard let defaults = userDefaultsProvider() else { return [] }
         let store = UserDefaultsStore(userDefaults: defaults)
         return StopEntityMapping.entities(forIdentifiers: identifiers, bookmarks: store.bookmarks, recentStops: store.recentStops)
     }
@@ -99,7 +107,7 @@ nonisolated public struct StopEntityQuery: EntityStringQuery {
     }
 
     private func suggested() -> [StopEntity] {
-        guard let defaults = Self.appGroupDefaults() else { return [] }
+        guard let defaults = userDefaultsProvider() else { return [] }
         let store = UserDefaultsStore(userDefaults: defaults)
         let regionID = defaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
         return StopEntityMapping.suggested(bookmarks: store.bookmarks, recentStops: store.recentStops, regionID: regionID)

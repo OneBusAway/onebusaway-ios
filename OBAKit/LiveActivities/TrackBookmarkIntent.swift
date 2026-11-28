@@ -73,7 +73,15 @@ nonisolated public struct BookmarkEntity: AppEntity {
 }
 
 nonisolated public struct BookmarkEntityQuery: EntityStringQuery {
-    public init() {}
+    private let userDefaultsProvider: @Sendable () -> UserDefaults?
+
+    public init() {
+        self.userDefaultsProvider = Self.appGroupDefaults
+    }
+
+    init(userDefaultsProvider: @escaping @Sendable () -> UserDefaults?) {
+        self.userDefaultsProvider = userDefaultsProvider
+    }
 
     public func entities(for identifiers: [UUID]) async throws -> [BookmarkEntity] {
         let (bookmarks, regionID) = loadBookmarksAndRegion()
@@ -97,11 +105,16 @@ nonisolated public struct BookmarkEntityQuery: EntityStringQuery {
     }
 
     private func loadBookmarksAndRegion() -> (bookmarks: [Bookmark], regionID: Int?) {
-        guard let suite = Bundle.main.appGroup,
-              let defaults = UserDefaults(suiteName: suite) else { return ([], nil) }
+        guard let defaults = userDefaultsProvider() else { return ([], nil) }
         let store = UserDefaultsStore(userDefaults: defaults)
         let regionID = defaults.object(forKey: BookmarkIntentMapping.regionIdentifierUserDefaultsKey) as? Int
         return (store.bookmarks, regionID)
+    }
+
+    private static func appGroupDefaults() -> UserDefaults? {
+        guard let suite = Bundle.main.appGroup,
+              let defaults = UserDefaults(suiteName: suite) else { return nil }
+        return defaults
     }
 }
 
