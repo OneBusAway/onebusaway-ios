@@ -190,4 +190,94 @@ final class ResolvedRegionStoreTests: OBATestCase {
         #expect(store.storedRegion?.regionIdentifier == pugetSoundRegionIdentifier)
         withExtendedLifetime(persister) {}
     }
+
+    // MARK: - Persister: onRegionIdentifierChanged
+
+    @Test @MainActor func `Callback fires after writing when the current region changes`() throws {
+        let service = makeRegionsService(fileStorage: MockRegionsFileStorage())
+        let pugetSound = try #require(service.find(id: pugetSoundRegionIdentifier))
+        service.currentRegion = pugetSound
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(pugetSound)
+
+        var storedIDsAtCallback: [Int?] = []
+        let persister = ResolvedRegionPersister(
+            regionsService: service,
+            store: store,
+            onRegionIdentifierChanged: {
+                storedIDsAtCallback.append(store.storedRegion?.regionIdentifier)
+            }
+        )
+
+        #expect(storedIDsAtCallback.isEmpty)
+
+        let other = try #require(service.regions.first { $0.regionIdentifier != pugetSound.regionIdentifier })
+        service.currentRegion = other
+
+        #expect(storedIDsAtCallback == [other.regionIdentifier])
+        withExtendedLifetime(persister) {}
+    }
+
+    @Test @MainActor func `Callback does not fire when launch or region edits keep the same identifier`() async throws {
+        let service = makeRegionsService(fileStorage: MockRegionsFileStorage())
+        let custom = Fixtures.customRegionWithSidecarAndUmami
+        try await service.add(customRegion: custom)
+        service.currentRegion = custom
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(custom)
+
+        var callbackCount = 0
+        let persister = ResolvedRegionPersister(
+            regionsService: service,
+            store: store,
+            onRegionIdentifierChanged: { callbackCount += 1 }
+        )
+
+        // Cold launch with the same stored region must not fire.
+        #expect(callbackCount == 0)
+
+        // List refresh and custom-region edit with the same identifier must not fire.
+        persister.regionsService(service, updatedRegionsList: service.regions)
+        try await service.add(customRegion: custom)
+        #expect(callbackCount == 0)
+        withExtendedLifetime(persister) {}
+    }
+
+    @Test @MainActor func `Callback fires when clearing a previously persisted region`() {
+        let service = makeRegionsService(fileStorage: MockRegionsFileStorage())
+        userDefaults.removeObject(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(Fixtures.pugetSoundRegion)
+
+        var storedIDsAtCallback: [Int?] = []
+        let persister = ResolvedRegionPersister(
+            regionsService: service,
+            store: store,
+            onRegionIdentifierChanged: {
+                storedIDsAtCallback.append(store.storedRegion?.regionIdentifier)
+            }
+        )
+
+        #expect(storedIDsAtCallback.count == 1)
+        #expect(storedIDsAtCallback.first.flatMap { $0 } == nil)
+        withExtendedLifetime(persister) {}
+    }
+
+    @Test @MainActor func `Callback does not fire when untrusted launch preserves the cached region`() {
+        let service = makeRegionsService(fileStorage: MockRegionsFileStorage())
+        userDefaults.set(999_999, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(Fixtures.pugetSoundRegion)
+
+        var callbackCount = 0
+        let persister = ResolvedRegionPersister(
+            regionsService: service,
+            store: store,
+            onRegionIdentifierChanged: { callbackCount += 1 }
+        )
+
+        #expect(callbackCount == 0)
+        withExtendedLifetime(persister) {}
+    }
 }

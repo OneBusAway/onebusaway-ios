@@ -94,6 +94,12 @@ final class BookmarkWidgetRefresher {
         Self.reloadAllTimelines()
     }
 
+    /// Reloads the Control Center / Lock Screen / Action button Bookmark control.
+    /// Called on bookmark edits and when the persisted region changes (#2006).
+    func reloadBookmarkControls() {
+        reloadControls()
+    }
+
     static func reloadAllTimelines(
         using reloadKind: (String) -> Void = defaultReloadKind
     ) {
