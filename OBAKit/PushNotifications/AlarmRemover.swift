@@ -30,11 +30,21 @@ struct AlarmRemover {
     static let alarmURLKey = "alarmURL"
 
     let obacoService: ObacoAPIService?
+    /// A service for the alarm's own region, used when the current region has no
+    /// sidecar. The Recent tab and the home sheet list alarms from every region,
+    /// and `Alarm.url` is absolute, so any region's sidecar can be the one to ask.
+    let alarmRegionObacoService: (Alarm) -> ObacoAPIService?
     let deleteLocalCopy: (Alarm) -> Void
     let notificationCenter: NotificationCenter
 
-    init(obacoService: ObacoAPIService?, deleteLocalCopy: @escaping (Alarm) -> Void, notificationCenter: NotificationCenter) {
+    init(
+        obacoService: ObacoAPIService?,
+        alarmRegionObacoService: @escaping (Alarm) -> ObacoAPIService? = { _ in nil },
+        deleteLocalCopy: @escaping (Alarm) -> Void,
+        notificationCenter: NotificationCenter
+    ) {
         self.obacoService = obacoService
+        self.alarmRegionObacoService = alarmRegionObacoService
         self.deleteLocalCopy = deleteLocalCopy
         self.notificationCenter = notificationCenter
     }
@@ -42,6 +52,9 @@ struct AlarmRemover {
     init(application: Application) {
         self.init(
             obacoService: application.obacoService,
+            alarmRegionObacoService: { alarm in
+                alarm.deepLink.flatMap { application.obacoService(forRegionID: $0.regionID) }
+            },
             deleteLocalCopy: { [userDataStore = application.userDataStore] in userDataStore.delete(alarm: $0) },
             notificationCenter: application.notificationCenter
         )
@@ -52,7 +65,7 @@ struct AlarmRemover {
     /// deleted.
     func remove(_ alarm: Alarm) async throws {
         do {
-            guard let obacoService else {
+            guard let obacoService = obacoService ?? alarmRegionObacoService(alarm) else {
                 throw StopViewModel.AlarmCancellationError.serviceUnavailable
             }
             try await obacoService.deleteAlarm(url: alarm.url)

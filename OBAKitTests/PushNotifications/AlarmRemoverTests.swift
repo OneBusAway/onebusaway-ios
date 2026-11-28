@@ -83,6 +83,30 @@ final class AlarmRemoverTests: OBATestCase {
         #expect(postedURLs == [alarm.url])
     }
 
+    /// A rider who set the alarm in a sidecar region and then moved to a region
+    /// without one can still delete it.
+    @Test func `Without a current service the alarm's own region deletes it`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubDelete(dataLoader)
+        let alarm = try Fixtures.loadAlarm()
+        var askedFor: [URL] = []
+        let remover = AlarmRemover(
+            obacoService: nil,
+            alarmRegionObacoService: { [self] in
+                askedFor.append($0.url)
+                return buildObacoService(dataLoader: dataLoader)
+            },
+            deleteLocalCopy: { [steps] _ in steps.value.append("local") },
+            notificationCenter: notificationCenter
+        )
+
+        try await remover.remove(alarm)
+
+        #expect(askedFor == [alarm.url])
+        #expect(steps.value == ["server", "local"])
+        #expect(postedURLs == [alarm.url])
+    }
+
     /// The server alarm would still fire, with nothing left in the app to stop it.
     @Test func `Without an alarm service nothing is deleted`() async throws {
         let alarm = try Fixtures.loadAlarm()
