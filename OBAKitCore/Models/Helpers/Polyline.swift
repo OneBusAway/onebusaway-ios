@@ -165,34 +165,34 @@ func encodeLevels(_ levels: [UInt32]) -> String {
 ///
 /// - returns: A `[CLLocationCoordinate2D]` representing the decoded polyline if valid, `nil` otherwise
 func decodePolyline(_ encodedPolyline: String, precision: Double = 1e5) -> [CLLocationCoordinate2D]? {
+    var encoded = encodedPolyline
 
-    let data = encodedPolyline.data(using: String.Encoding.utf8)!
+    return encoded.withUTF8 { byteArray in
+        let length = byteArray.count
+        var position = 0
 
-    let byteArray = (data as NSData).bytes.assumingMemoryBound(to: Int8.self)
-    let length = Int(data.count)
-    var position = Int(0)
+        var decodedCoordinates = [CLLocationCoordinate2D]()
 
-    var decodedCoordinates = [CLLocationCoordinate2D]()
+        var lat = 0.0
+        var lon = 0.0
 
-    var lat = 0.0
-    var lon = 0.0
+        while position < length {
 
-    while position < length {
+            do {
+                let resultingLat = try decodeSingleCoordinate(byteArray: byteArray, length: length, position: &position, precision: precision)
+                lat += resultingLat
 
-        do {
-            let resultingLat = try decodeSingleCoordinate(byteArray: byteArray, length: length, position: &position, precision: precision)
-            lat += resultingLat
+                let resultingLon = try decodeSingleCoordinate(byteArray: byteArray, length: length, position: &position, precision: precision)
+                lon += resultingLon
+            } catch {
+                return nil
+            }
 
-            let resultingLon = try decodeSingleCoordinate(byteArray: byteArray, length: length, position: &position, precision: precision)
-            lon += resultingLon
-        } catch {
-            return nil
+            decodedCoordinates.append(CLLocationCoordinate2D(latitude: lat, longitude: lon))
         }
 
-        decodedCoordinates.append(CLLocationCoordinate2D(latitude: lat, longitude: lon))
+        return decodedCoordinates
     }
-
-    return decodedCoordinates
 }
 
 /// This function decodes a String to a [CLLocation]?
@@ -287,29 +287,33 @@ private func encodeFiveBitComponents(_ value: Int) -> String {
 
 // MARK: Decode Coordinate
 
-// We use a byte array (UnsafePointer<Int8>) here for performance reasons. Check with swift 2 if we can
-// go back to using [Int8]
-private func decodeSingleCoordinate(byteArray: UnsafePointer<Int8>, length: Int, position: inout Int, precision: Double = 1e5) throws -> Double {
+// Decode from contiguous unsigned UTF-8 bytes so non-ASCII bytes cannot underflow Int8 on `- 63`.
+private func decodeSingleCoordinate(byteArray: UnsafeBufferPointer<UInt8>, length: Int, position: inout Int, precision: Double = 1e5) throws -> Double {
 
     guard position < length else { throw PolylineError.singleCoordinateDecodingError }
 
-    let bitMask = Int8(0x1F)
+    let bitMask = UInt8(0x1F)
 
     var coordinate: Int32 = 0
 
-    var currentChar: Int8
+    var currentChar: UInt8
     var componentCounter: Int32 = 0
     var component: Int32 = 0
 
     repeat {
-        currentChar = byteArray[position] - 63
+        let byte = byteArray[position]
+        guard byte >= 63, byte <= 126 else {
+            throw PolylineError.singleCoordinateDecodingError
+        }
+
+        currentChar = byte - 63
         component = Int32(currentChar & bitMask)
         coordinate |= (component << (5*componentCounter))
         position += 1
         componentCounter += 1
     } while ((currentChar & 0x20) == 0x20) && (position < length) && (componentCounter < 6)
 
-    if (componentCounter == 6) && ((currentChar & 0x20) == 0x20) {
+    if (currentChar & 0x20) == 0x20 {
         throw PolylineError.singleCoordinateDecodingError
     }
 

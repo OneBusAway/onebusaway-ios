@@ -108,6 +108,15 @@ final class FunctionalPolylineTests {
         #expect(decodePolyline("invalidPolylineString") as [CLLocationCoordinate2D]? == nil)
     }
 
+    @Test func `Malformed non-ASCII, out-of-range, and truncated polylines return nil`() {
+        for sample in ["🚌", "—", "©", "é", "_p~iF~ps|Ué", "00", "\u{007F}\u{007F}", "?_", "_p~iF~ps|U?_"] {
+            let coords: [CLLocationCoordinate2D]? = decodePolyline(sample)
+            let locations: [CLLocation]? = decodePolyline(sample)
+            #expect(coords == nil)
+            #expect(locations == nil)
+        }
+    }
+
     @Test func `Valid polyline should return valid location array`() {
         let coordinates: [CLLocationCoordinate2D] = decodePolyline("_p~iF~ps|U_ulLnnqC_mqNvxq`@")!
 
