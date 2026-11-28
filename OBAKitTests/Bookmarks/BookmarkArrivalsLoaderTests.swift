@@ -269,4 +269,130 @@ final class BookmarkArrivalsLoaderTests: OBATestCase {
         let matched = request.matching(arrivals)
         #expect(matched.isEmpty)
     }
+
+    // MARK: - Saved timetables are matched by day in the loader's time zone (#2018)
+
+    /// Pacific/Kiritimati (UTC+14): the agency zone for these tests. It sits
+    /// far enough from the device zone on CI (UTC) and on a developer Mac
+    /// that the agency day and the device day disagree for the instants
+    /// below — so these tests fail with the old `Calendar.current` checks
+    /// and pass with the loader's time zone.
+    private let agencyZone = TimeZone(identifier: "Pacific/Kiritimati")!
+
+    /// The start of the agency day containing now.
+    private var agencyMidnight: Date {
+        var calendar = Calendar.current
+        calendar.timeZone = agencyZone
+        return calendar.startOfDay(for: Date())
+    }
+
+    /// `body` with every epoch-millisecond time in it moved by `shift`
+    /// milliseconds — the same helper `SavedTimetableHeadsignTests` uses,
+    /// so a fixture's timetable stays self-consistent when its `date` moves.
+    private func shifted(_ body: Data, by milliseconds: Int64) throws -> Data {
+        func shift(_ value: Any) -> Any {
+            switch value {
+            case let dictionary as [String: Any]: return dictionary.mapValues(shift)
+            case let array as [Any]: return array.map(shift)
+            case let number as NSNumber where number.int64Value > 1_000_000_000_000: return number.int64Value + milliseconds
+            default: return value
+            }
+        }
+        return try JSONSerialization.data(withJSONObject: shift(try JSONSerialization.jsonObject(with: body)))
+    }
+
+    /// A store holding stop 1_75403's schedule fixture with its `date` moved
+    /// to `target`, plus the directory it lives in (the caller removes it).
+    private func storeWithScheduleDated(_ target: Date) throws -> (store: SavedArrivalsStore, directory: URL) {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "BookmarkArrivalsLoaderTests-\(UUID().uuidString)")
+        let store = SavedArrivalsStore(directory: directory)
+        let body = Fixtures.loadData(file: "schedule-for-stop_1_75403-route-72.json")
+        let schedule = try buildRESTService().decodeKeptBody(ScheduleForStop.self, from: body).entry
+        let shift = Int64(target.timeIntervalSince(schedule.date) * 1000)
+        store.save(try shifted(body, by: shift), kind: .schedule, stopID: "1_75403", regionID: pugetSoundRegionIdentifier)
+        return (store, directory)
+    }
+
+    @Test func `Saved arrival times match by the agency zone day, not the device day`() throws {
+        // 01:00 and 23:00 on the same agency day — but different device
+        // (UTC) days: the timetable must match.
+        let scheduleDate = agencyMidnight.addingTimeInterval(3600)
+        let serviceDate = agencyMidnight.addingTimeInterval(23 * 3600)
+
+        let (store, directory) = try storeWithScheduleDated(scheduleDate)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let times = BookmarkArrivalsLoader(savedArrivals: store, timeZone: agencyZone)
+            .savedArrivalTimes(stopID: "1_75403", serviceDate: serviceDate, using: buildRESTService())
+
+        #expect(times != nil)
+        #expect(times?.isEmpty == false)
+    }
+
+    @Test func `Saved arrival times ignore a timetable from another agency day`() throws {
+        // 23:00 on the previous agency day and 01:00 today — the same
+        // device (UTC) day, but the timetable is yesterday's in the agency
+        // zone, so it must not match.
+        let scheduleDate = agencyMidnight.addingTimeInterval(-3600)
+        let serviceDate = agencyMidnight.addingTimeInterval(3600)
+
+        let (store, directory) = try storeWithScheduleDated(scheduleDate)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let times = BookmarkArrivalsLoader(savedArrivals: store, timeZone: agencyZone)
+            .savedArrivalTimes(stopID: "1_75403", serviceDate: serviceDate, using: buildRESTService())
+
+        #expect(times == nil)
+    }
+
+    /// A data loader that records every schedule-for-stop fetch it serves.
+    private func scheduleFetchLog(dataLoader: MockDataLoader, body: Data) -> RequestLog {
+        let log = RequestLog()
+        dataLoader.mock(data: body) { request in
+            guard let path = request.url?.path, path.contains("/api/where/schedule-for-stop") else { return false }
+            log.record(path)
+            return true
+        }
+        return log
+    }
+
+    @Test func `Save-today check uses the agency zone day`() async throws {
+        // Saved at 01:00 agency today — yesterday in the device (UTC) day.
+        // No refetch: the timetable is already today's in the agency zone.
+        let savedAt = agencyMidnight.addingTimeInterval(3600)
+
+        let directory = FileManager.default.temporaryDirectory.appending(path: "BookmarkArrivalsLoaderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SavedArrivalsStore(directory: directory)
+        let body = Fixtures.loadData(file: "schedule-for-stop_1_75403-route-72.json")
+        store.save(body, kind: .schedule, stopID: "1_75403", regionID: pugetSoundRegionIdentifier, savedAt: savedAt)
+
+        let dataLoader = MockDataLoader(testName: name)
+        let log = scheduleFetchLog(dataLoader: dataLoader, body: body)
+
+        await BookmarkArrivalsLoader(savedArrivals: store, timeZone: agencyZone)
+            .saveTodaysScheduleIfNeeded(stopID: "1_75403", using: buildRESTService(dataLoader: dataLoader))
+
+        #expect(log.all.isEmpty)
+    }
+
+    @Test func `Save-today check refetches when the saved day is yesterday in the agency zone`() async throws {
+        // Saved at 23:00 agency yesterday — today in the device (UTC) day.
+        // The timetable is stale in the agency zone, so it must refetch.
+        let savedAt = agencyMidnight.addingTimeInterval(-3600)
+
+        let directory = FileManager.default.temporaryDirectory.appending(path: "BookmarkArrivalsLoaderTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SavedArrivalsStore(directory: directory)
+        let body = Fixtures.loadData(file: "schedule-for-stop_1_75403-route-72.json")
+        store.save(body, kind: .schedule, stopID: "1_75403", regionID: pugetSoundRegionIdentifier, savedAt: savedAt)
+
+        let dataLoader = MockDataLoader(testName: name)
+        let log = scheduleFetchLog(dataLoader: dataLoader, body: body)
+
+        await BookmarkArrivalsLoader(savedArrivals: store, timeZone: agencyZone)
+            .saveTodaysScheduleIfNeeded(stopID: "1_75403", using: buildRESTService(dataLoader: dataLoader))
+
+        #expect(log.all.count == 1)
+    }
 }
