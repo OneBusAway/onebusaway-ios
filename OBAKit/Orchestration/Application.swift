@@ -222,7 +222,10 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         resolvedRegionPersister = ResolvedRegionPersister(
             regionsService: regionsService,
-            store: ResolvedRegionStore(userDefaults: userDefaults)
+            store: ResolvedRegionStore(userDefaults: userDefaults),
+            onRegionIdentifierChanged: { [bookmarkWidgetRefresher] in
+                bookmarkWidgetRefresher.reloadBookmarkControls()
+            }
         )
 
         // Force the proximity alert manager now instead of leaving it to a first

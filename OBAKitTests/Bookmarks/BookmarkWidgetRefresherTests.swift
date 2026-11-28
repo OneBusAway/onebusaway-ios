@@ -71,7 +71,7 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         application.userDataStore.delete(bookmark: bookmark)
         await drainMainActor()
 
-        #expect(recorder.reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+        #expect(recorder.reloadedKinds == WidgetKinds.timelineKinds)
         withExtendedLifetime(refresher) {}
     }
 
@@ -91,7 +91,7 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         application.userDataStore.setPinned(true, for: bookmark)
         await drainMainActor()
 
-        #expect(recorder.reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+        #expect(recorder.reloadedKinds == WidgetKinds.timelineKinds)
         withExtendedLifetime(refresher) {}
     }
 
@@ -107,7 +107,7 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         application.userDataStore.add(bookmark, to: nil)
         await drainMainActor()
 
-        #expect(recorder.reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+        #expect(recorder.reloadedKinds == WidgetKinds.timelineKinds)
         withExtendedLifetime(refresher) {}
     }
 
@@ -153,7 +153,7 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         application.userDataStore.deleteGroup(group)
         await drainMainActor()
 
-        #expect(recorder.reloadedKinds == BookmarkWidgetRefresher.widgetKinds, "Must reload widget exactly once for the group deletion")
+        #expect(recorder.reloadedKinds == WidgetKinds.timelineKinds, "Must reload widget exactly once for the group deletion")
         withExtendedLifetime(refresher) {}
     }
 
@@ -178,19 +178,19 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         withExtendedLifetime(refresher) {}
     }
 
-    /// The tab's own arrival-batch reload targets the same widget kinds, so the
-    /// two paths can't drift apart on the identifiers.
+    /// Pin the raw kind strings that the system stores for widgets and controls
+    /// users have already placed, so renaming both targets together can't silently
+    /// orphan them (#2006).
     @Test @MainActor func `Widget kind matches the registered extension kind`() {
-        #expect(BookmarkWidgetRefresher.widgetKind == "OBAWidget")
-        #expect(BookmarkWidgetRefresher.widgetKinds == ["OBAWidget"])
+        #expect(WidgetKinds.bookmarksWidget == "OBAWidget")
+        #expect(WidgetKinds.timelineKinds == ["OBAWidget"])
     }
 
     @Test @MainActor func `ReloadAllTimelines reloads every registered widget kind`() {
         var reloadedKinds: [String] = []
         BookmarkWidgetRefresher.reloadAllTimelines(using: { reloadedKinds.append($0) })
 
-        #expect(reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
-        #expect(reloadedKinds == ["OBAWidget"])
+        #expect(reloadedKinds == WidgetKinds.timelineKinds)
     }
 
     // MARK: - Bookmark control
@@ -227,6 +227,48 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
     }
 
     @Test @MainActor func `Control kind matches the registered extension kind`() {
-        #expect(BookmarkWidgetRefresher.controlKind == "OBABookmarkControl")
+        #expect(WidgetKinds.bookmarkControl == "OBABookmarkControl")
+    }
+
+    @Test @MainActor func `Reloading bookmark controls does not reload widget timelines`() {
+        let recorder = ReloadRecorder()
+        var controlReloads = 0
+        let refresher = BookmarkWidgetRefresher(
+            reloadKind: { recorder.record(kind: $0) },
+            reloadControls: { controlReloads += 1 }
+        )
+
+        refresher.reloadBookmarkControls()
+
+        #expect(controlReloads == 1)
+        #expect(recorder.reloadedKinds.isEmpty)
+    }
+
+    /// Switching regions writes the new region to `ResolvedRegionStore` and then
+    /// reloads `OBABookmarkControl` so a control configured for the previous
+    /// region refreshes its label (#2006).
+    @Test @MainActor func `Switching the application region reloads the bookmark control after persisting`() throws {
+        let originalReloadControls = BookmarkWidgetRefresher.defaultReloadControls
+        defer { BookmarkWidgetRefresher.defaultReloadControls = originalReloadControls }
+
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Data(), statusCode: 404) { _ in true }
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        var persistedIDsAtReload: [Int?] = []
+
+        BookmarkWidgetRefresher.defaultReloadControls = {
+            persistedIDsAtReload.append(store.storedRegion?.regionIdentifier)
+        }
+
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let currentID = application.regionsService.currentRegion?.regionIdentifier
+        let otherRegion = try #require(
+            application.regionsService.regions.first { $0.regionIdentifier != currentID }
+        )
+        persistedIDsAtReload.removeAll()
+
+        application.regionsService.currentRegion = otherRegion
+
+        #expect(persistedIDsAtReload == [otherRegion.regionIdentifier])
     }
 }

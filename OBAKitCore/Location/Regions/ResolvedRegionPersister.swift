@@ -24,10 +24,19 @@ import Foundation
 public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
     private weak var regionsService: RegionsService?
     private let store: ResolvedRegionStore
+    private let onRegionIdentifierChanged: (@MainActor () -> Void)?
+    private var lastPersistedRegionID: Int?
 
-    public init(regionsService: RegionsService, store: ResolvedRegionStore) {
+    public init(
+        regionsService: RegionsService,
+        store: ResolvedRegionStore,
+        onRegionIdentifierChanged: (@MainActor () -> Void)? = nil
+    ) {
         self.regionsService = regionsService
         self.store = store
+        self.onRegionIdentifierChanged = onRegionIdentifierChanged
+        self.lastPersistedRegionID = store.storedRegion?.regionIdentifier
+            ?? regionsService.clearedRetiredRegionIdentifierOnInit
         super.init()
 
         // `RegionsService` holds its delegates weakly; the owner retains us.
@@ -40,11 +49,27 @@ public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
     /// If `currentRegion` evaluates to `nil`, we preserve the store's cached region only while
     /// the regions list cannot yet be trusted (e.g. offline launch or failed refresh) and a selection
     /// identifier is stored. Once the regions list is trusted or if no identifier is stored, we clear the store.
+    ///
+    /// Invokes `onRegionIdentifierChanged` after writing whenever the persisted region identifier
+    /// actually changes, so region-scoped surfaces (such as the Bookmark control) can reload with
+    /// the new region already on disk (#2006).
     public func persist() {
+        let previousID = lastPersistedRegionID
+        let newID: Int?
+
         if let currentRegion = regionsService?.currentRegion {
             store.write(currentRegion)
+            newID = currentRegion.regionIdentifier
         } else if regionsService?.canTrustRegionsList == true || store.userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == nil {
             store.write(nil)
+            newID = nil
+        } else {
+            return
+        }
+
+        lastPersistedRegionID = newID
+        if previousID != newID {
+            onRegionIdentifierChanged?()
         }
     }
 

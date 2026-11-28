@@ -732,7 +732,7 @@ final class HomeSectionModelTests: OBATestCase {
         await model.loader.loadDataAndWait()
         try #require(model.loader.lastBatchHadError == false, "Precondition: the batch must have succeeded")
 
-        #expect(reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+        #expect(reloadedKinds == WidgetKinds.timelineKinds)
     }
 
     /// When a batch fails or delivers no arrivals, widget timelines must not be reloaded.
