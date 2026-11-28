@@ -48,14 +48,28 @@ public struct BookmarkArrivalsLoader: Sendable {
     private let minutesBefore: UInt
     private let minutesAfter: UInt
     private let savedArrivals: SavedArrivalsStore?
+    private let timeZone: TimeZone
+
+    /// Days are judged in `timeZone`: a timetable saved for a service day
+    /// belongs to that day in the agency zone, not in the device zone.
+    private var calendar: Calendar {
+        var calendar = Calendar.current
+        calendar.timeZone = timeZone
+        return calendar
+    }
 
     /// - Parameter savedArrivals: When set, each stop's successful response is
     ///   saved there, and a stop that can't be fetched for lack of a connection
     ///   fails with a `SavedArrivalsFallback` carrying its saved arrivals.
-    public init(minutesBefore: UInt = 0, minutesAfter: UInt = 60, savedArrivals: SavedArrivalsStore? = nil) {
+    /// - Parameter timeZone: The zone whose days the saved timetables are
+    ///   matched by. Service days are agency-zone days, so callers that know
+    ///   the region zone pass it (e.g. `application.formatters.timeZone`).
+    ///   Defaults to the device zone, which is the previous behaviour.
+    public init(minutesBefore: UInt = 0, minutesAfter: UInt = 60, savedArrivals: SavedArrivalsStore? = nil, timeZone: TimeZone = .current) {
         self.minutesBefore = minutesBefore
         self.minutesAfter = minutesAfter
         self.savedArrivals = savedArrivals
+        self.timeZone = timeZone
     }
 
     /// Streams one result per *distinct stop*, as each fetch lands.
@@ -127,7 +141,7 @@ public struct BookmarkArrivalsLoader: Sendable {
     public func saveTodaysScheduleIfNeeded(stopID: StopID, using apiService: RESTAPIService) async {
         guard let savedArrivals, let regionID = apiService.regionIdentifier else { return }
         if let saved = savedArrivals.load(kind: .schedule, stopID: stopID, regionID: regionID),
-           Calendar.current.isDateInToday(saved.savedAt) {
+           calendar.isDateInToday(saved.savedAt) {
             return
         }
 
@@ -204,14 +218,14 @@ public struct BookmarkArrivalsLoader: Sendable {
     /// previous day's file, and its times would drop today's trips. The day is
     /// compared, not the exact `date`: for today's timetable the server sends
     /// the time of the request, which differs between the two stops' fetches.
-    /// It uses the device's calendar, as `saveTodaysScheduleIfNeeded` does.
+    /// It uses the loader's time zone, as `saveTodaysScheduleIfNeeded` does.
     public func savedArrivalTimes(stopID: StopID, serviceDate: Date, using apiService: RESTAPIService) -> [TripIdentifier: Date]? {
         guard
             let savedArrivals,
             let regionID = apiService.regionIdentifier,
             let saved = savedArrivals.load(kind: .schedule, stopID: stopID, regionID: regionID),
             let schedule = try? apiService.decodeKeptBody(ScheduleForStop.self, from: saved.body).entry,
-            Calendar.current.isDate(schedule.date, inSameDayAs: serviceDate)
+            calendar.isDate(schedule.date, inSameDayAs: serviceDate)
         else {
             return nil
         }
