@@ -357,6 +357,59 @@ final class ApplicationTests: OBATestCase {
         #expect((postedObjects.last as? ObacoAPIService)?.regionID == sidecarRegion.regionIdentifier)
     }
 
+    @Test func `An alarm set in a sidecar region can be deleted from a region without one`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        let deletedURLs = SendableBox<[URL]>([])
+        dataLoader.mock(data: Data(), statusCode: 200) { [deletedURLs] request in
+            guard request.httpMethod == "DELETE", let url = request.url else { return false }
+            deletedURLs.value.append(url)
+            return true
+        }
+        dataLoader.mock(data: Data(), statusCode: 404) { _ in true }
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+
+        let sidecarRegion = Fixtures.pugetSoundRegion
+        let noSidecarRegion = Fixtures.customMinneapolisRegion
+        try #require(sidecarRegion.sidecarBaseURL != nil)
+        try #require(noSidecarRegion.sidecarBaseURL == nil)
+        app.regionsService.currentRegion = sidecarRegion
+        app.regionsService.currentRegion = noSidecarRegion
+        try #require(app.obacoService == nil)
+
+        let alarm = try Fixtures.loadAlarm(region: String(sidecarRegion.regionIdentifier))
+        alarm.deepLink = ArrivalDepartureDeepLink(title: "10 - Downtown", regionID: sidecarRegion.regionIdentifier, stopID: "1_75403", tripID: "1_604670535", serviceDate: Date(), stopSequence: 5, vehicleID: nil)
+        app.userDataStore.add(alarm: alarm)
+
+        try await AlarmRemover(application: app).remove(alarm)
+
+        #expect(deletedURLs.value == [alarm.url])
+        #expect(app.userDataStore.alarms.isEmpty)
+    }
+
+    @Test func `obacoService for a region ID needs a known region with a sidecar`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        dataLoader.mock(data: Data(), statusCode: 404) { _ in true }
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+
+        let sidecarRegion = Fixtures.pugetSoundRegion
+        let noSidecarRegion = Fixtures.customMinneapolisRegion
+        try await app.regionsService.add(customRegion: noSidecarRegion)
+        app.regionsService.currentRegion = noSidecarRegion
+        try #require(app.regionsService.find(id: noSidecarRegion.regionIdentifier) != nil)
+
+        #expect(app.obacoService(forRegionID: sidecarRegion.regionIdentifier)?.regionID == sidecarRegion.regionIdentifier)
+        #expect(app.obacoService(forRegionID: noSidecarRegion.regionIdentifier) == nil)
+        #expect(app.obacoService(forRegionID: 987_654) == nil)
+    }
+
     @Test func `Features push status off when no provider`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)

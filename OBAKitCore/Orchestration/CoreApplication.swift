@@ -329,7 +329,7 @@ open class CoreApplication: NSObject,
     /// user dismissed while the app wasn't running.
     ///
     /// `obacoService` is resolved lazily on each call because it's recreated when the region
-    /// changes and is nil until a region is available.
+    /// changes, and is nil until a region is available and in regions without a sidecar.
     public private(set) lazy var liveActivityRegistry = LiveActivityRegistry(
         userDefaults: userDefaults,
         obacoServiceProvider: { [weak self] in self?.obacoService }
@@ -344,16 +344,22 @@ open class CoreApplication: NSObject,
     /// Reloads the Obaco Service stack, including the network queue, api service manager, and model service manager.
     /// This must be called when the region changes.
     private func refreshObacoService() {
-        guard
-            let region = regionsService.currentRegion,
-            let baseURL = region.sidecarBaseURL
-        else {
-            obacoService = nil
-            return
-        }
+        obacoService = regionsService.currentRegion.flatMap(makeObacoService(for:))
+    }
+
+    /// A new Obaco service for the region with `regionID`, bundled or custom, or nil
+    /// when the app doesn't know that region or it has no sidecar. For work that
+    /// belongs to another region than the current one, like deleting an alarm set
+    /// there.
+    public func obacoService(forRegionID regionID: Int) -> ObacoAPIService? {
+        regionsService.find(id: regionID).flatMap(makeObacoService(for:))
+    }
+
+    private func makeObacoService(for region: Region) -> ObacoAPIService? {
+        guard let baseURL = region.sidecarBaseURL else { return nil }
 
         let configuration = APIServiceConfiguration(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier)
-        obacoService = ObacoAPIService(regionID: region.regionIdentifier, delegate: self, configuration: configuration, dataLoader: config.dataLoader)
+        return ObacoAPIService(regionID: region.regionIdentifier, delegate: self, configuration: configuration, dataLoader: config.dataLoader)
     }
 
     // MARK: - UUID
