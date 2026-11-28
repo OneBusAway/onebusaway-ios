@@ -6,6 +6,8 @@ targets:
       - path: "."
         # Not a resource; without this it ships inside the .appex.
         excludes: ["project.yml"]
+      - path: "../Apps/Shared/CommonClient/LiveActivityIntents.swift"
+        type: file
     dependencies:
       - package: OBAKit
         product: OBAKitCore

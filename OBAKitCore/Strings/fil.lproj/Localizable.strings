@@ -786,3 +786,12 @@
 
 /* An error shown when an SSL/TLS handshake or secure connection fails. */
 "api_error.tls_handshake_failed" = "Hindi maitatag ang ligtas na koneksyon sa server. Pakisuri ang iyong koneksyon sa network, i-disable ang anumang aktibong VPN o proxy, at subukang muli.";
+
+/* Button on a Live Activity Lock Screen card that stops tracking and dismisses the Live Activity. */
+"live_activity.end" = "Tapusin";
+
+/* VoiceOver accessibility label for the Refresh button on a Live Activity card. */
+"live_activity.a11y_refresh" = "I-refresh ang mga pagdating";
+
+/* VoiceOver accessibility label for the End button on a Live Activity card. */
+"live_activity.a11y_end" = "Tapusin ang Live Activity";

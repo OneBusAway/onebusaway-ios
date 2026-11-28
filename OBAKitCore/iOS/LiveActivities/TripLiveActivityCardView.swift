@@ -15,7 +15,7 @@ import SwiftUI
 /// route badge + headsign + corrected departure time (the scheduled time struck through when a
 /// prediction has moved it) with adherence status + countdown + departure chips.
 /// No alarm pill or expand chevron.
-public struct TripLiveActivityCardView: View {
+public struct TripLiveActivityCardView<Controls: View>: View {
     public let staticData: TripAttributes.StaticData
     public let contentState: TripAttributes.ContentState
     /// From `ActivityViewContext.isStale` — ActivityKit flips this after `staleDate`.
@@ -23,18 +23,25 @@ public struct TripLiveActivityCardView: View {
     /// From `TripAttributes.showsDismissHint`.
     public let showsDismissHint: Bool
 
+    private let controls: Controls
     private let presenter = TripActivityPresenter()
 
     public init(
         staticData: TripAttributes.StaticData,
         contentState: TripAttributes.ContentState,
         isStale: Bool = false,
-        showsDismissHint: Bool = false
+        showsDismissHint: Bool = false,
+        @ViewBuilder controls: () -> Controls
     ) {
         self.staticData = staticData
         self.contentState = contentState
         self.isStale = isStale
         self.showsDismissHint = showsDismissHint
+        self.controls = controls()
+    }
+
+    private var hasControls: Bool {
+        Controls.self != EmptyView.self
     }
 
     public var body: some View {
@@ -43,16 +50,32 @@ public struct TripLiveActivityCardView: View {
         let primary = upcoming.first
         let chips = Array(upcoming.dropFirst())
 
-        VStack(alignment: .leading, spacing: 10) {
-            // Dim arrival content only — the stale warning must stay full
-            // opacity or light-mode orange ~1.6:1 and becomes unreadable (#1376).
-            VStack(alignment: .leading, spacing: 10) {
-                primaryRow(primary: primary, now: now)
-                if !chips.isEmpty {
-                    chipsRow(chips: chips)
+        VStack(alignment: .leading, spacing: 8) {
+            // Dim arrival content only — the stale warning and interactive controls
+            // stay full opacity or light-mode orange ~1.6:1 and buttons look disabled (#1376).
+            primaryRow(primary: primary, now: now)
+                .opacity(LiveActivityStaleChrome.contentOpacity(isStale: isStale))
+                // One summary element with a long-form label: see `accessibilitySegments`.
+                // Keeping `.ignore` on the summary rather than the outer card leaves
+                // interactive `controls` reachable by VoiceOver.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(accessibilityLabel(now: now))
+                // A focused card re-speaks as its countdown ticks.
+                .accessibilityAddTraits(.updatesFrequently)
+
+            if !chips.isEmpty || hasControls {
+                HStack(alignment: .center, spacing: 8) {
+                    if !chips.isEmpty {
+                        chipsRow(chips: chips)
+                            .opacity(LiveActivityStaleChrome.contentOpacity(isStale: isStale))
+                            .accessibilityHidden(true)
+                    }
+                    Spacer(minLength: 4)
+                    if hasControls {
+                        controls
+                    }
                 }
             }
-            .opacity(LiveActivityStaleChrome.contentOpacity(isStale: isStale))
 
             if isStale {
                 HStack(spacing: 6) {
@@ -61,6 +84,8 @@ public struct TripLiveActivityCardView: View {
                 }
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(LiveActivityStaleChrome.warningColor)
+                // Already appended to the summary element's `accessibilityLabel`.
+                .accessibilityHidden(true)
             }
 
             // One quiet line under everything else, so the arrivals keep the top
@@ -74,16 +99,13 @@ public struct TripLiveActivityCardView: View {
                     .foregroundStyle(.secondary)
                     // Wraps rather than truncating the longer translations.
                     .lineLimit(2)
+                    .accessibilityHidden(true)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color(uiColor: .systemBackground))
-        // One element with a long-form label: see `accessibilitySegments`.
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel(now: now))
-        // A focused card re-speaks as its countdown ticks.
-        .accessibilityAddTraits(.updatesFrequently)
+        .accessibilityElement(children: .contain)
     }
 
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
@@ -191,7 +213,6 @@ public struct TripLiveActivityCardView: View {
             ForEach(Array(chips.enumerated()), id: \.offset) { _, arrival in
                 departurePill(for: arrival)
             }
-            Spacer()
         }
     }
 
@@ -211,6 +232,25 @@ public struct TripLiveActivityCardView: View {
     private var resolvedRouteColor: Color {
         guard let hex = staticData.routeColorHex else { return Color(uiColor: ThemeColors.shared.brand) }
         return Color(uiColor: UIColor(hex: hex) ?? ThemeColors.shared.brand)
+    }
+}
+
+extension TripLiveActivityCardView where Controls == EmptyView {
+    /// Backwards-compatible initializer without interactive controls.
+    public init(
+        staticData: TripAttributes.StaticData,
+        contentState: TripAttributes.ContentState,
+        isStale: Bool = false,
+        showsDismissHint: Bool = false
+    ) {
+        self.init(
+            staticData: staticData,
+            contentState: contentState,
+            isStale: isStale,
+            showsDismissHint: showsDismissHint
+        ) {
+            EmptyView()
+        }
     }
 }
 

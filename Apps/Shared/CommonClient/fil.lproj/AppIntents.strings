@@ -51,3 +51,12 @@
 
 /* App Shortcuts: short tile label for Track Bookmark in Shortcuts and Spotlight. */
 "track_bookmark_intent.short_title" = "I-track ang bookmark";
+
+/* App Intents: name of the Live Activity action that refreshes arrivals. */
+"refresh_live_activity_intent.title" = "I-refresh ang Live Activity";
+
+/* App Intents: name of the Live Activity action that ends and dismisses the Live Activity. */
+"end_live_activity_intent.title" = "Tapusin ang Live Activity";
+
+/* App Intents: parameter title for the Live Activity identifier. */
+"live_activity_intent.activity_id_parameter_title" = "Activity ID";

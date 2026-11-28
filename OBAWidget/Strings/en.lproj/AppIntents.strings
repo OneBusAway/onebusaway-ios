@@ -18,3 +18,12 @@
 
 /* App Intents: name of the widget action that shows the previous page of bookmarks. */
 "previous_bookmark_page_intent.title" = "Previous Bookmarks Page";
+
+/* App Intents: name of the Live Activity action that refreshes arrivals. */
+"refresh_live_activity_intent.title" = "Refresh Live Activity";
+
+/* App Intents: name of the Live Activity action that ends and dismisses the Live Activity. */
+"end_live_activity_intent.title" = "End Live Activity";
+
+/* App Intents: parameter title for the Live Activity identifier. */
+"live_activity_intent.activity_id_parameter_title" = "Activity ID";

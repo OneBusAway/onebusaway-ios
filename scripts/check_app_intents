@@ -35,6 +35,8 @@ EXPECTED = {
         "RefreshWidgetIntent",
         "NextBookmarkPageIntent",
         "PreviousBookmarkPageIntent",
+        "EndLiveActivityIntent",
+        "RefreshLiveActivityIntent",
     },
     "entities": {"BookmarkEntity", "StopEntity"},
     "queries": {"BookmarkEntityQuery", "StopEntityQuery"},

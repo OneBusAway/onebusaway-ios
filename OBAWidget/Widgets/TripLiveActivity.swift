@@ -21,6 +21,7 @@
  */
 
 import ActivityKit
+import AppIntents
 import WidgetKit
 import SwiftUI
 import OBAKitCore
@@ -270,8 +271,53 @@ private struct TripLiveActivityContentView: View {
                 contentState: context.state,
                 isStale: context.isStale,
                 showsDismissHint: context.attributes.showsDismissHint
-            )
+            ) {
+                TripLiveActivityControls(activityID: context.activityID)
+            }
             .activityBackgroundTint(Color(UIColor.systemBackground))
+        }
+    }
+}
+
+/// Interactive Refresh and End controls shown on the Lock Screen Live Activity card.
+private struct TripLiveActivityControls: View {
+    let activityID: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(intent: RefreshLiveActivityIntent(activityID: activityID)) {
+                HStack(spacing: 3) {
+                    Image(systemName: "arrow.clockwise")
+                    Text(LiveActivityControlHandler.refreshTitle)
+                }
+                .font(.caption2.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .foregroundStyle(Color(uiColor: ThemeColors.shared.brandAccent))
+                .background(Color(uiColor: ThemeColors.shared.brandAccent).opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+            .fixedSize(horizontal: true, vertical: false)
+            .accessibilityLabel(LiveActivityControlHandler.refreshAccessibilityLabel)
+
+            Button(intent: EndLiveActivityIntent(activityID: activityID)) {
+                HStack(spacing: 3) {
+                    Image(systemName: "xmark")
+                    Text(LiveActivityControlHandler.endTitle)
+                }
+                .font(.caption2.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .foregroundStyle(.primary)
+                .background(Color.secondary.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+            .fixedSize(horizontal: true, vertical: false)
+            .accessibilityLabel(LiveActivityControlHandler.endAccessibilityLabel)
         }
     }
 }
@@ -330,7 +376,7 @@ private struct TripLiveActivitySmallView: View {
         .padding(.vertical, 8)
         // The Lock Screen card's label, so every surface speaks the same words.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(TripLiveActivityCardView.accessibilityLabel(
+        .accessibilityLabel(TripLiveActivityCardView<EmptyView>.accessibilityLabel(
             staticData: staticData,
             contentState: context.state,
             isStale: context.isStale,
