@@ -63,7 +63,7 @@ public struct BookmarkArrivalsLoader: Sendable {
     ///   fails with a `SavedArrivalsFallback` carrying its saved arrivals.
     /// - Parameter timeZone: The zone whose days the saved timetables are
     ///   matched by. Service days are agency-zone days, so callers that know
-    ///   the region zone pass it (e.g. `application.formatters.timeZone`).
+    ///   the region zone pass it (e.g. `application.formatters.agencyTimeZone`).
     ///   Defaults to the device zone, which is the previous behaviour.
     public init(minutesBefore: UInt = 0, minutesAfter: UInt = 60, savedArrivals: SavedArrivalsStore? = nil, timeZone: TimeZone = .current) {
         self.minutesBefore = minutesBefore

@@ -118,7 +118,7 @@ public class BookmarkDataLoader: NSObject {
         using apiService: RESTAPIService
     ) -> [StopID: [TripIdentifier: Date]] {
         guard let serviceDate else { return [:] }
-        let arrivalsLoader = BookmarkArrivalsLoader(savedArrivals: savedArrivals, timeZone: application.formatters.timeZone)
+        let arrivalsLoader = BookmarkArrivalsLoader(savedArrivals: savedArrivals, timeZone: application.formatters.agencyTimeZone)
         var arrivalTimes = [StopID: [TripIdentifier: Date]]()
         for destination in destinations {
             arrivalTimes[destination.stopID] = arrivalsLoader.savedArrivalTimes(stopID: destination.stopID, serviceDate: serviceDate, using: apiService)
@@ -268,7 +268,7 @@ public class BookmarkDataLoader: NSObject {
         let slots = slotsByStop
         let destinationsByStopSnapshot = destinationsByStop
         let requests = slots.keys.map { BookmarkArrivalsRequest(stopID: $0) }
-        let arrivalsLoader = BookmarkArrivalsLoader(savedArrivals: savedArrivals, timeZone: application.formatters.timeZone)
+        let arrivalsLoader = BookmarkArrivalsLoader(savedArrivals: savedArrivals, timeZone: application.formatters.agencyTimeZone)
         Task(priority: .userInitiated) {
             for await (stopID, result) in arrivalsLoader.arrivals(for: requests, using: apiService) {
                 // The loader only ever reports stops it was asked about, so a
@@ -350,7 +350,7 @@ public class BookmarkDataLoader: NSObject {
 
                 // The destinations' timetables, saved for offline use, tell
                 // which trips reach them.
-                let arrivalsLoader = BookmarkArrivalsLoader(savedArrivals: savedArrivals, timeZone: application.formatters.timeZone)
+                let arrivalsLoader = BookmarkArrivalsLoader(savedArrivals: savedArrivals, timeZone: application.formatters.agencyTimeZone)
                 let destinationStopIDs = Set(destinations.map(\.stopID))
                 Task {
                     for destinationStopID in destinationStopIDs {

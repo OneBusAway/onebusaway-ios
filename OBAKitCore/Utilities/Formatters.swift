@@ -34,6 +34,17 @@ public class Formatters: NSObject {
         }
     }
 
+    /// The region's dominant agency zone, resolved from agencies-with-coverage
+    /// independently of the `showRegionTimeZone` display preference.
+    ///
+    /// Saved timetables are matched by day in this zone (#2018): service days
+    /// are agency-zone days, whatever the rider chose for clock display.
+    /// `CoreApplication` keeps it current; before the lookup completes, or
+    /// when it fails, this is the device zone — the previous behaviour.
+    /// Unlike `timeZone`, nothing formats with this, so changing it posts no
+    /// notification.
+    public var agencyTimeZone: TimeZone = .autoupdatingCurrent
+
     /// Creates a new `Formatters` object that will use the provided `Calendar` and `Locale` for locale-specific customization.
     ///
     /// - Note: You probably should pass in the `autoupdatingCurrent` instances of `Locale` and `Calendar` to this method.
