@@ -11,7 +11,7 @@ import SwiftUI
 import OBAKitCore
 
 struct OBAWidget: Widget {
-    let kind: String = "OBAWidget"
+    let kind: String = WidgetKinds.bookmarksWidget
 
     var body: some WidgetConfiguration {
         // WidgetDataProvider.shared is main-actor-isolated; Widget.body is

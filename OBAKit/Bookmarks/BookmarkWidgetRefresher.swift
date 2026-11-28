@@ -32,20 +32,15 @@ import OBAKitCore
 @MainActor
 final class BookmarkWidgetRefresher {
 
-    /// Matches the `kind` values the widget extension registers under.
-    static let widgetKind = "OBAWidget"
-    static let widgetKinds = [widgetKind]
-
     /// The default action invoked to reload a widget kind. Overridden in tests to spy on
     /// reloads without invoking `WidgetCenter`.
     static var defaultReloadKind: (String) -> Void = { WidgetCenter.shared.reloadTimelines(ofKind: $0) }
 
-    /// Matches `BookmarkControl.kind` in the widget extension. The control shows
-    /// a bookmark's name, so it reloads on bookmark edits only, not on the
-    /// arrival-batch reloads that `reloadAllTimelines()` also serves.
-    static let controlKind = "OBABookmarkControl"
-
-    static var defaultReloadControls: () -> Void = { ControlCenter.shared.reloadControls(ofKind: controlKind) }
+    /// The default action invoked to reload the Bookmark control. Overridden in tests
+    /// to spy on reloads without invoking `ControlCenter`.
+    static var defaultReloadControls: () -> Void = {
+        ControlCenter.shared.reloadControls(ofKind: WidgetKinds.bookmarkControl)
+    }
 
     private let reloadControls: () -> Void
 
@@ -102,7 +97,7 @@ final class BookmarkWidgetRefresher {
     static func reloadAllTimelines(
         using reloadKind: (String) -> Void = defaultReloadKind
     ) {
-        for kind in widgetKinds {
+        for kind in WidgetKinds.timelineKinds {
             reloadKind(kind)
         }
     }

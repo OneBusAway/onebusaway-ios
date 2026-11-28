@@ -188,7 +188,7 @@ final class BookmarksSheetViewTests: OBATestCase {
 
         await drainMainActor()
 
-        #expect(reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+        #expect(reloadedKinds == WidgetKinds.timelineKinds)
         withExtendedLifetime(refresher) {}
     }
 }

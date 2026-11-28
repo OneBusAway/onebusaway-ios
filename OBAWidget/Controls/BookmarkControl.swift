@@ -22,7 +22,7 @@ import OBAKitCore
 /// (`BookmarkWidgetRefresher`), so a rename or delete shows up without waiting
 /// for the system.
 struct BookmarkControl: ControlWidget {
-    static let kind = "OBABookmarkControl"
+    static let kind = WidgetKinds.bookmarkControl
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(kind: Self.kind, provider: BookmarkControlValueProvider()) { value in

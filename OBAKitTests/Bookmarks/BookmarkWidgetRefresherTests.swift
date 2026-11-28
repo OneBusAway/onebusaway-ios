@@ -71,7 +71,7 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         application.userDataStore.delete(bookmark: bookmark)
         await drainMainActor()
 
-        #expect(recorder.reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+        #expect(recorder.reloadedKinds == WidgetKinds.timelineKinds)
         withExtendedLifetime(refresher) {}
     }
 
@@ -91,7 +91,7 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         application.userDataStore.setPinned(true, for: bookmark)
         await drainMainActor()
 
-        #expect(recorder.reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+        #expect(recorder.reloadedKinds == WidgetKinds.timelineKinds)
         withExtendedLifetime(refresher) {}
     }
 
@@ -107,7 +107,7 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         application.userDataStore.add(bookmark, to: nil)
         await drainMainActor()
 
-        #expect(recorder.reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+        #expect(recorder.reloadedKinds == WidgetKinds.timelineKinds)
         withExtendedLifetime(refresher) {}
     }
 
@@ -153,7 +153,7 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         application.userDataStore.deleteGroup(group)
         await drainMainActor()
 
-        #expect(recorder.reloadedKinds == BookmarkWidgetRefresher.widgetKinds, "Must reload widget exactly once for the group deletion")
+        #expect(recorder.reloadedKinds == WidgetKinds.timelineKinds, "Must reload widget exactly once for the group deletion")
         withExtendedLifetime(refresher) {}
     }
 
@@ -178,19 +178,19 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         withExtendedLifetime(refresher) {}
     }
 
-    /// The tab's own arrival-batch reload targets the same widget kinds, so the
-    /// two paths can't drift apart on the identifiers.
+    /// Pin the raw kind strings that the system stores for widgets and controls
+    /// users have already placed, so renaming both targets together can't silently
+    /// orphan them (#2006).
     @Test @MainActor func `Widget kind matches the registered extension kind`() {
-        #expect(BookmarkWidgetRefresher.widgetKind == "OBAWidget")
-        #expect(BookmarkWidgetRefresher.widgetKinds == ["OBAWidget"])
+        #expect(WidgetKinds.bookmarksWidget == "OBAWidget")
+        #expect(WidgetKinds.timelineKinds == ["OBAWidget"])
     }
 
     @Test @MainActor func `ReloadAllTimelines reloads every registered widget kind`() {
         var reloadedKinds: [String] = []
         BookmarkWidgetRefresher.reloadAllTimelines(using: { reloadedKinds.append($0) })
 
-        #expect(reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
-        #expect(reloadedKinds == ["OBAWidget"])
+        #expect(reloadedKinds == WidgetKinds.timelineKinds)
     }
 
     // MARK: - Bookmark control
@@ -227,6 +227,6 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
     }
 
     @Test @MainActor func `Control kind matches the registered extension kind`() {
-        #expect(BookmarkWidgetRefresher.controlKind == "OBABookmarkControl")
+        #expect(WidgetKinds.bookmarkControl == "OBABookmarkControl")
     }
 }
