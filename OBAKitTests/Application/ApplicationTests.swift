@@ -821,6 +821,21 @@ final class ApplicationTests: OBATestCase {
         #expect(app.pendingStopRegionID == 1)
     }
 
+    /// The Bookmark control only finds bookmarks in the current region, so a
+    /// region change must reload it. Remove the call from
+    /// `regionsService(_:updatedRegion:)` and this fails.
+    @Test func `A region change reloads the Bookmark control`() {
+        let app = makeApplicationForUserActivity()
+        let originalReload = BookmarkWidgetRefresher.defaultReloadControls
+        defer { BookmarkWidgetRefresher.defaultReloadControls = originalReload }
+        var controlReloads = 0
+        BookmarkWidgetRefresher.defaultReloadControls = { controlReloads += 1 }
+
+        app.regionsService(app.regionsService, updatedRegion: Fixtures.pugetSoundRegion)
+
+        #expect(controlReloads >= 1)
+    }
+
     /// A region change is where the previous region's stops leave Spotlight.
     /// Remove the call from `regionsService(_:updatedRegion:)` and nothing is
     /// cleared. The first replace makes a launch's refresh skip the clear, so

@@ -91,6 +91,12 @@ final class BookmarkWidgetRefresher {
         }
     }
 
+    /// The control only finds bookmarks in the current region, and a region
+    /// change does not post `.bookmarksDidChange`.
+    func regionDidChange() {
+        reloadControls()
+    }
+
     func reloadTimelines() {
         if let reloadKind {
             Self.reloadAllTimelines(using: reloadKind)

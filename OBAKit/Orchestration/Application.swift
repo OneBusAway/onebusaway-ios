@@ -922,6 +922,9 @@ public class Application: CoreApplication, PushServiceDelegate {
         // would keep offering the previous region's trip bookmarks.
         appShortcutParametersRefresher?.refresh()
 
+        // The Bookmark control only shows bookmarks from the current region.
+        bookmarkWidgetRefresher.regionDidChange()
+
         // Deletes the previous region's stops from Spotlight, then indexes this one's.
         stopSpotlightIndexer?.replaceAll()
     }

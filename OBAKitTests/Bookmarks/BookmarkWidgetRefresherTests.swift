@@ -226,6 +226,19 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         #expect(controlReloads == 0)
     }
 
+    /// The control only finds bookmarks in the current region, so switching
+    /// regions must reload it, or it keeps the old region's bookmark or placeholder.
+    @Test @MainActor func `A region change reloads the bookmark control but not the widget`() {
+        var controlReloads = 0
+        var widgetReloads = 0
+        let refresher = BookmarkWidgetRefresher(reloadKind: { _ in widgetReloads += 1 }, reloadControls: { controlReloads += 1 })
+
+        refresher.regionDidChange()
+
+        #expect(controlReloads == 1)
+        #expect(widgetReloads == 0)
+    }
+
     @Test @MainActor func `Control kind matches the registered extension kind`() {
         #expect(BookmarkWidgetRefresher.controlKind == "OBABookmarkControl")
     }
