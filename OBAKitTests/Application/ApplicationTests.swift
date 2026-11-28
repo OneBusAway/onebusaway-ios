@@ -1093,7 +1093,14 @@ class MockPushServiceProvider: NSObject, PushServiceProvider {
         // Mock implementation
     }
 
-    func requestPushID(_ callback: @escaping PushManagerUserIDCallback) {
-        callback("mock-push-id")
+    /// Set to make `requestPushID` fail instead of returning "mock-push-id".
+    var requestError: Error?
+
+    func requestPushID(success: @escaping PushManagerUserIDCallback, failure: @escaping PushManagerFailureCallback) {
+        if let requestError {
+            failure(requestError)
+        } else {
+            success("mock-push-id")
+        }
     }
 }

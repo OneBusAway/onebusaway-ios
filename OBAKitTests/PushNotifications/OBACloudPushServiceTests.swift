@@ -77,7 +77,7 @@ final class OBACloudPushServiceTests: OBATestCase {
         service.didRegisterForRemoteNotifications(withDeviceToken: Data([0xDE, 0xAD]))
 
         var receivedTokens: [String] = []
-        service.requestPushID { receivedTokens.append($0) }
+        service.requestPushID(success: { receivedTokens.append($0) }, failure: { _ in })
 
         #expect(receivedTokens == ["dead"])
     }
@@ -85,8 +85,8 @@ final class OBACloudPushServiceTests: OBATestCase {
     @Test func `Did register delivers all pending callbacks exactly once`() {
         var firstTokens: [String] = []
         var secondTokens: [String] = []
-        service.requestPushID { firstTokens.append($0) }
-        service.requestPushID { secondTokens.append($0) }
+        service.requestPushID(success: { firstTokens.append($0) }, failure: { _ in })
+        service.requestPushID(success: { secondTokens.append($0) }, failure: { _ in })
 
         #expect(firstTokens.isEmpty, "Callbacks must not fire before a token arrives")
 
@@ -105,22 +105,48 @@ final class OBACloudPushServiceTests: OBATestCase {
 
     // MARK: - Failure Handling
 
-    @Test func `Did fail forwards error and clears pending callbacks`() {
+    @Test func `Did fail forwards error and fails pending requests`() {
         var receivedErrors: [Error] = []
         service.errorHandler = { receivedErrors.append($0) }
 
         var receivedTokens: [String] = []
-        service.requestPushID { receivedTokens.append($0) }
+        var failures: [Error] = []
+        service.requestPushID(success: { receivedTokens.append($0) }, failure: { failures.append($0) })
 
         let registrationError = NSError(domain: "test", code: 3000, userInfo: nil)
         service.didFailToRegisterForRemoteNotifications(withError: registrationError)
 
         #expect(receivedErrors.count == 1)
         #expect((receivedErrors.first as NSError?)?.code == 3000)
+        #expect(failures.count == 1, "A registration failure must resolve the waiting request")
+        #expect((failures.first as NSError?)?.code == 3000)
 
         // A token arriving after failure must not invoke the cleared callbacks.
         service.didRegisterForRemoteNotifications(withDeviceToken: Data([0x11]))
         #expect(receivedTokens.isEmpty)
+    }
+
+    @Test func `Denied authorization fails pending requests`() async {
+        var failures: [Error] = []
+        var receivedTokens: [String] = []
+        service.requestPushID(success: { receivedTokens.append($0) }, failure: { failures.append($0) })
+
+        // Stands in for the `requestAuthorization` completion, whose outcome
+        // depends on the simulator's permission state.
+        service.authorizationRequestFinished(granted: false, error: nil)
+
+        #expect(receivedTokens.isEmpty)
+        #expect(failures.count == 1)
+        #expect(failures.first as? PushErrors == .authorizationDenied)
+    }
+
+    @Test func `Authorization error fails pending requests`() async {
+        var failures: [Error] = []
+        service.requestPushID(success: { _ in }, failure: { failures.append($0) })
+
+        service.authorizationRequestFinished(granted: false, error: NSError(domain: "test", code: 7))
+
+        #expect((failures.first as NSError?)?.code == 7)
     }
 
     // MARK: - Token Update Handler

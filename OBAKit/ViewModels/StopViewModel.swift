@@ -900,13 +900,16 @@ class StopViewModel: ObservableObject {
         }
 
         do {
-            let userPushID = await pushService.pushID()
+            let userPushID = try await pushService.pushID()
             let alarm = try await obacoService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
             alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: arrivalDeparture, regionID: region.regionIdentifier)
             alarm.set(tripDate: arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
             recordAlarmCreated(alarm)
             alarmsByDepartureID[arrivalDeparture.id] = alarm
             alarmError = nil
+        } catch PushErrors.authorizationDenied {
+            // Denied at the first-time prompt (or revoked since the check above).
+            alarmPermissionDenied = true
         } catch {
             Logger.error("Alarm create failed for \(arrivalDeparture.id): \(error)")
             alarmError = error

@@ -133,9 +133,22 @@ class AlarmBuilder: NSObject {
             }
         }
 
-        let userPushID = await pushService.pushID()
         let alarm: Alarm
         do {
+            let userPushID: PushManagerUserID
+            do {
+                userPushID = try await pushService.pushID()
+            } catch PushErrors.authorizationDenied {
+                // Notifications are off. Hand the delegate the denial itself so
+                // it can send the rider to Settings rather than say "failed".
+                delegate?.alarmBuilder(self, error: PushErrors.authorizationDenied)
+                return
+            } catch {
+                Logger.error("Could not get a push ID for the alarm: \(error)")
+                delegate?.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
+                return
+            }
+
             alarm = try await modelService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
         } catch {
             // No actor hop needed: OBAKit builds with

@@ -28,8 +28,14 @@ private class RecordingPushServiceProvider: NSObject, PushServiceProvider {
         startedLaunchOptions = launchOptions
     }
 
-    func requestPushID(_ callback: @escaping PushManagerUserIDCallback) {
-        callback(stubbedPushUserID ?? "mock-token")
+    var requestError: Error?
+
+    func requestPushID(success: @escaping PushManagerUserIDCallback, failure: @escaping PushManagerFailureCallback) {
+        if let requestError {
+            failure(requestError)
+        } else {
+            success(stubbedPushUserID ?? "mock-token")
+        }
     }
 
     var pushUserID: PushManagerUserID? {
@@ -120,9 +126,17 @@ final class PushServiceTests: OBATestCase {
         #expect(pushService.pushUserID == nil)
     }
 
-    @Test func `Push ID async returns provider token`() async {
-        let token = await pushService.pushID()
+    @Test func `Push ID async returns provider token`() async throws {
+        let token = try await pushService.pushID()
         #expect(token == "mock-token")
+    }
+
+    @Test func `Push ID async throws the provider's failure`() async {
+        provider.requestError = PushErrors.authorizationDenied
+
+        await #expect(throws: PushErrors.self) {
+            try await pushService.pushID()
+        }
     }
 
     @Test func `Device token updates are forwarded to delegate`() {

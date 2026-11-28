@@ -49,7 +49,17 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
     private var deviceToken: String?
 
     /// Callbacks waiting for the device token to become available.
-    private var pendingCallbacks: [PushManagerUserIDCallback] = []
+    private var pendingCallbacks: [(success: PushManagerUserIDCallback, failure: PushManagerFailureCallback)] = []
+
+    /// Reports `error` to ``errorHandler`` and fails every waiting request.
+    private func failPendingRequests(with error: Error) {
+        errorHandler?(error)
+        let callbacks = pendingCallbacks
+        pendingCallbacks.removeAll()
+        for callback in callbacks {
+            callback.failure(error)
+        }
+    }
 
     /// Becomes the notification center's delegate immediately.
     ///
@@ -90,34 +100,43 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
     /// for remote notifications, and all pending callbacks are invoked when the token arrives via
     /// ``didRegisterForRemoteNotifications(withDeviceToken:)``.
     ///
-    /// - Parameter callback: A closure invoked with the hex-encoded device token string.
-    public func requestPushID(_ callback: @escaping PushManagerUserIDCallback) {
+    /// If authorization fails or is denied, or APNs registration fails, every pending request's
+    /// `failure` is invoked instead.
+    ///
+    /// - Parameters:
+    ///   - success: A closure invoked with the hex-encoded device token string.
+    ///   - failure: A closure invoked with the error that prevented getting a token.
+    public func requestPushID(success: @escaping PushManagerUserIDCallback, failure: @escaping PushManagerFailureCallback) {
         if let deviceToken {
-            callback(deviceToken)
+            success(deviceToken)
             return
         }
 
-        pendingCallbacks.append(callback)
+        pendingCallbacks.append((success, failure))
 
         // The completion handler runs on a background queue; hop to the main actor
         // before touching state or UIApplication.
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, error in
             Task { @MainActor in
-                guard let self else { return }
-
-                if let error {
-                    self.errorHandler?(error)
-                    return
-                }
-
-                guard granted else {
-                    self.errorHandler?(PushErrors.authorizationDenied)
-                    return
-                }
-
-                UIApplication.shared.registerForRemoteNotifications()
+                self?.authorizationRequestFinished(granted: granted, error: error)
             }
         }
+    }
+
+    /// Handles the outcome of the notification authorization request. Internal so
+    /// tests can drive it without depending on the simulator's permission state.
+    func authorizationRequestFinished(granted: Bool, error: Error?) {
+        if let error {
+            failPendingRequests(with: error)
+            return
+        }
+
+        guard granted else {
+            failPendingRequests(with: PushErrors.authorizationDenied)
+            return
+        }
+
+        UIApplication.shared.registerForRemoteNotifications()
     }
 
     // MARK: - Device Token Handling
@@ -139,20 +158,19 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
         let callbacks = pendingCallbacks
         pendingCallbacks.removeAll()
         for callback in callbacks {
-            callback(token)
+            callback.success(token)
         }
     }
 
     /// Handles a failed remote notification registration.
     ///
-    /// Logs the error, forwards it to ``errorHandler``, and clears all pending callbacks.
+    /// Logs the error, forwards it to ``errorHandler``, and fails all pending requests.
     /// This method should be called from `application(_:didFailToRegisterForRemoteNotificationsWithError:)`.
     ///
     /// - Parameter error: The error that prevented registration.
     @objc public func didFailToRegisterForRemoteNotifications(withError error: Error) {
         Logger.error("Failed to register for remote notifications: \(error)")
-        errorHandler?(error)
-        pendingCallbacks.removeAll()
+        failPendingRequests(with: error)
     }
 
 }

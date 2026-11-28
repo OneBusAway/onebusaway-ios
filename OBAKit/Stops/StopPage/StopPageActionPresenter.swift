@@ -787,7 +787,11 @@ extension StopPageActionPresenter: AlarmBuilderDelegate {
         // it, and the bulletin's view is left on screen and unresponsive.
         Task { @MainActor in
             await waitForBulletinDismissal(alarmBuilder)
-            showError(error)
+            if case PushErrors.authorizationDenied = error {
+                showAlarmPermissionDeniedAlert(onPresented: {})
+            } else {
+                showError(error)
+            }
         }
         alarmFlow = nil
     }

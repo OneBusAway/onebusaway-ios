@@ -69,11 +69,11 @@ final class AlarmBuilderTests: OBATestCase {
 
     /// An app in Puget Sound, whose region has a sidecar, so `obacoService`
     /// exists. `withPushService` stands in for what launch sets up.
-    private func buildApp(_ loader: MockDataLoader, withPushService: Bool = true) throws -> Application {
+    private func buildApp(_ loader: MockDataLoader, withPushService: Bool = true, pushProvider: MockPushServiceProvider = MockPushServiceProvider()) throws -> Application {
         Fixtures.stubAllAgencyAlerts(dataLoader: loader)
         let app = buildApplication(queue: queue, dataLoader: loader)
         if withPushService {
-            app.pushService = PushService(serviceProvider: MockPushServiceProvider(), delegate: app)
+            app.pushService = PushService(serviceProvider: pushProvider, delegate: app)
         }
         try #require(app.currentRegion != nil)
         try #require(app.obacoService != nil)
@@ -144,6 +144,42 @@ final class AlarmBuilderTests: OBATestCase {
 
         #expect(requests.bodies.isEmpty)
         #expect(delegate.created.isEmpty)
+    }
+
+    /// Regression: with notifications denied the push ID request never resolved,
+    /// so `createAlarm` hung and the HUD spun forever.
+    @Test func `A denied notification permission finishes and tells the delegate`() async throws {
+        let loader = MockDataLoader(testName: name)
+        let requests = stubAlarms(loader)
+        let provider = MockPushServiceProvider()
+        provider.requestError = PushErrors.authorizationDenied
+        let app = try buildApp(loader, pushProvider: provider)
+        let delegate = RecordingDelegate()
+        let builder = AlarmBuilder(arrivalDeparture: try departure(), application: app, delegate: delegate)
+
+        await builder.createAlarm(minutes: 7)
+
+        #expect(requests.bodies.isEmpty)
+        #expect(delegate.created.isEmpty)
+        #expect(delegate.errors.count == 1)
+        #expect(delegate.errors.first as? PushErrors == .authorizationDenied)
+    }
+
+    @Test func `A push registration failure finishes and reports a creation failure`() async throws {
+        let loader = MockDataLoader(testName: name)
+        let requests = stubAlarms(loader)
+        let provider = MockPushServiceProvider()
+        provider.requestError = NSError(domain: "test", code: 3000)
+        let app = try buildApp(loader, pushProvider: provider)
+        let delegate = RecordingDelegate()
+        let builder = AlarmBuilder(arrivalDeparture: try departure(), application: app, delegate: delegate)
+
+        await builder.createAlarm(minutes: 7)
+
+        #expect(requests.bodies.isEmpty)
+        #expect(delegate.created.isEmpty)
+        let error = try #require(delegate.errors.first as? AlarmBuilder.AlarmBuilderErrors)
+        #expect(error == .creationFailed)
     }
 
     /// Add Alarm stays tappable while the request is in flight. Both calls start

@@ -15,6 +15,9 @@ import OBAKitCore
 
 public typealias PushManagerUserID = String
 public typealias PushManagerUserIDCallback = ((PushManagerUserID) -> Void)
+/// Called when a push ID request cannot be satisfied: notification authorization failed or was
+/// denied, or registration with APNs failed.
+public typealias PushManagerFailureCallback = ((Error) -> Void)
 public typealias PushServiceNotificationReceivedHandler = ((String, [AnyHashable: Any]?) -> Void)
 public typealias PushServiceErrorHandler = ((Error) -> Void)
 /// Carries the hex-encoded APNs device token (distinct from a provider's push user ID).
@@ -22,8 +25,20 @@ public typealias PushServiceDeviceTokenCallback = (String) -> Void
 
 // MARK: - Errors
 
-public enum PushErrors: Error {
+public enum PushErrors: Error, LocalizedError {
     case authorizationDenied
+
+    /// Reuses the stop page's "notifications are off" wording, so surfaces without the
+    /// Settings-guidance alert still tell the rider what to fix.
+    public var errorDescription: String? {
+        switch self {
+        case .authorizationDenied:
+            return String(
+                format: OBALoc("stop_page.alarm_permission_denied.message", value: "To get departure alarms, allow notifications for %@ in Settings.", comment: "Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. %@ is the app name."),
+                Bundle.main.appName
+            )
+        }
+    }
 }
 
 // MARK: - PushServiceProvider Protocol
@@ -33,7 +48,10 @@ public protocol PushServiceProvider: NSObjectProtocol {
     var isRegisteredForRemoteNotifications: Bool { get }
 
     func start(launchOptions: [AnyHashable: Any])
-    func requestPushID(_ callback: @escaping PushManagerUserIDCallback)
+
+    /// Requests a push ID. Exactly one of `success` or `failure` is eventually called for every
+    /// request, so callers awaiting the result are never left hanging.
+    func requestPushID(success: @escaping PushManagerUserIDCallback, failure: @escaping PushManagerFailureCallback)
 
     var notificationReceivedHandler: PushServiceNotificationReceivedHandler! { get set }
     var errorHandler: PushServiceErrorHandler! { get set }
@@ -160,14 +178,17 @@ public class PushService: NSObject {
     }
 
     @objc public func requestPushID(callback: @escaping PushManagerUserIDCallback) {
-        serviceProvider.requestPushID(callback)
+        serviceProvider.requestPushID(success: callback, failure: { _ in })
     }
 
-    public func pushID() async -> PushManagerUserID {
-        await withCheckedContinuation { continuation in
-            serviceProvider.requestPushID { userID in
-                continuation.resume(returning: userID)
-            }
+    /// - Throws: ``PushErrors/authorizationDenied`` when the rider has denied notifications, or
+    ///   the underlying error when authorization or APNs registration fails.
+    public func pushID() async throws -> PushManagerUserID {
+        try await withCheckedThrowingContinuation { continuation in
+            serviceProvider.requestPushID(
+                success: { continuation.resume(returning: $0) },
+                failure: { continuation.resume(throwing: $0) }
+            )
         }
     }
 
