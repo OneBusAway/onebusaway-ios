@@ -698,7 +698,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
                 .compactMap { $0 }
                 .joined(separator: " — "),
             stopName: departure?.stop.name,
-            scheduledTime: draft.scheduledArrivalAt,
+            scheduledTimeText: GhostBusReportContext.scheduledTimeText(from: draft.scheduledArrivalAt, formatters: application.formatters),
             vehicleID: draft.vehicleID
         )
 
