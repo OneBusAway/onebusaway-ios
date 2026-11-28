@@ -33,25 +33,67 @@ import Testing
 ///   - timeout: How long to keep trying before recording a failure.
 ///   - interval: How long to wait between evaluations.
 ///   - message: Describes what was expected, used in the failure message.
+///   - clock: The clock used to measure `timeout` and sleep between intervals.
+///     Pass `TestClock()` for deterministic virtual time; defaults to
+///     `ContinuousClock()` when `nil`.
 @MainActor
 func poll(
     until condition: @MainActor () -> Bool,
     timeout: Duration = .seconds(2),
     interval: Duration = .milliseconds(10),
     _ message: @autoclosure () -> String = "condition never became true",
+    clock: (any Clock<Duration>)? = nil,
     sourceLocation: SourceLocation = #_sourceLocation
 ) async {
-    let deadline = ContinuousClock.now + timeout
-    while ContinuousClock.now < deadline {
+    if let clock {
+        await pollWithClock(
+            until: condition,
+            timeout: timeout,
+            interval: interval,
+            message: message,
+            clock: clock,
+            sourceLocation: sourceLocation
+        )
+    } else {
+        await pollWithClock(
+            until: condition,
+            timeout: timeout,
+            interval: interval,
+            message: message,
+            clock: ContinuousClock(),
+            sourceLocation: sourceLocation
+        )
+    }
+}
+
+@MainActor
+private func pollWithClock<C: Clock>(
+    until condition: @MainActor () -> Bool,
+    timeout: Duration,
+    interval: Duration,
+    message: () -> String,
+    clock: C,
+    sourceLocation: SourceLocation
+) async where C.Duration == Duration {
+    let step = interval > .zero ? interval : .nanoseconds(1)
+    let deadline = clock.now.advanced(by: timeout)
+    while !Task.isCancelled && clock.now < deadline {
         if condition() {
             return
         }
-        try? await Task.sleep(for: interval)
+        let nextWake = min(deadline, clock.now.advanced(by: step))
+        do {
+            try await clock.sleep(until: nextWake, tolerance: nil)
+        } catch {
+            // Unpark immediately on cancellation rather than spinning until deadline.
+            return
+        }
     }
 
     // One last evaluation: a condition that flipped during the final sleep
-    // should pass rather than fail on a scheduling technicality.
-    if condition() {
+    // should pass rather than fail on a scheduling technicality. Skip issue
+    // recording if the task was cancelled while waiting.
+    if Task.isCancelled || condition() {
         return
     }
 
@@ -71,7 +113,7 @@ func poll(
 /// handlers simply never fire. Suspending releases the main actor, which is what
 /// actually lets that work run.
 ///
-/// Prefer ``poll(until:timeout:interval:_:sourceLocation:)`` when there is a
+/// Prefer ``poll(until:timeout:interval:_:clock:sourceLocation:)`` when there is a
 /// condition to wait on: it returns as soon as the condition holds, where this
 /// always burns the full duration. Use this only to let an animation of known
 /// length play out.
