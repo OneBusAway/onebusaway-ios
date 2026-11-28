@@ -1209,6 +1209,8 @@ class MockPushServiceProvider: NSObject, PushServicePushIDErrorReporting {
 
     /// When set, `pushID()` fails with this error instead of returning a token.
     var pushIDError: Error?
+    /// How many times the error-aware `requestPushID` was called.
+    private(set) var errorAwarePushIDRequests = 0
 
     func start(launchOptions: [AnyHashable: Any]) {
         // Mock implementation
@@ -1222,6 +1224,7 @@ class MockPushServiceProvider: NSObject, PushServicePushIDErrorReporting {
         _ callback: @escaping PushManagerUserIDCallback,
         onError: @escaping PushServicePushIDErrorCallback
     ) {
+        errorAwarePushIDRequests += 1
         if let pushIDError {
             onError(pushIDError)
         } else {
